@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/* Basis-Styles für das Theme */
+:root {
+  --color-primary: #2c3e50;
+  --color-secondary: #c0862a;
+  --color-accent: #e67e22;
+  --color-bg: #ffffff;
+  --color-text: #333333;
+  --color-muted: #6b7280;
+}
+
+/* WordPress-spezifische Klassen */
+.alignwide {
+  @apply max-w-screen-xl mx-auto;
+}
+
+.alignfull {
+  @apply w-full;
+}
+
+.aligncenter {
+  @apply mx-auto text-center;
+}
+
+/* Smooth page transitions */
+#app {
+  @apply min-h-screen;
+}
