@@ -1,0 +1,150 @@
+{
+	"$schema": "https://schemas.wp.org/wp/6.7/theme.json",
+	"version": 3,
+	"settings": {
+		"layout": {
+			"contentSize": "56rem",
+			"wideSize": "80rem"
+		},
+		"color": {
+			"custom": false,
+			"customGradient": false,
+			"defaultPalette": false,
+			"palette": [
+				{
+					"slug": "primary",
+					"color": "#2c3e50",
+					"name": "Primärfarbe"
+				},
+				{
+					"slug": "secondary",
+					"color": "#c0862a",
+					"name": "Sekundärfarbe"
+				},
+				{
+					"slug": "accent",
+					"color": "#e67e22",
+					"name": "Akzentfarbe"
+				},
+				{
+					"slug": "background",
+					"color": "#ffffff",
+					"name": "Hintergrund"
+				},
+				{
+					"slug": "text",
+					"color": "#333333",
+					"name": "Textfarbe"
+				},
+				{
+					"slug": "muted",
+					"color": "#6b7280",
+					"name": "Gedämpft"
+				}
+			]
+		},
+		"typography": {
+			"customFontSize": false,
+			"fontFamilies": [
+				{
+					"fontFamily": "'Inter', sans-serif",
+					"slug": "inter",
+					"name": "Inter"
+				},
+				{
+					"fontFamily": "'Manuskript Gotisch', serif",
+					"slug": "manuskript-gotisch",
+					"name": "Manuskript Gotisch"
+				},
+				{
+					"fontFamily": "Georgia, serif",
+					"slug": "georgia",
+					"name": "Georgia"
+				},
+				{
+					"fontFamily": "'Times New Roman', Times, serif",
+					"slug": "times-new-roman",
+					"name": "Times New Roman"
+				},
+				{
+					"fontFamily": "Arial, Helvetica, sans-serif",
+					"slug": "arial",
+					"name": "Arial"
+				},
+				{
+					"fontFamily": "Verdana, Geneva, sans-serif",
+					"slug": "verdana",
+					"name": "Verdana"
+				},
+				{
+					"fontFamily": "system-ui, sans-serif",
+					"slug": "system-ui",
+					"name": "System (Standard)"
+				}
+			],
+			"fontSizes": [
+				{
+					"slug": "small",
+					"size": "0.875rem",
+					"name": "Klein"
+				},
+				{
+					"slug": "medium",
+					"size": "1rem",
+					"name": "Normal"
+				},
+				{
+					"slug": "large",
+					"size": "1.25rem",
+					"name": "Groß"
+				},
+				{
+					"slug": "x-large",
+					"size": "1.5rem",
+					"name": "Extra groß"
+				},
+				{
+					"slug": "xx-large",
+					"size": "2.25rem",
+					"name": "Riesig"
+				}
+			]
+		},
+		"spacing": {
+			"units": [ "px", "rem", "%", "vw" ],
+			"spacingSizes": [
+				{
+					"slug": "10",
+					"size": "0.5rem",
+					"name": "XS"
+				},
+				{
+					"slug": "20",
+					"size": "1rem",
+					"name": "S"
+				},
+				{
+					"slug": "30",
+					"size": "1.5rem",
+					"name": "M"
+				},
+				{
+					"slug": "40",
+					"size": "2rem",
+					"name": "L"
+				},
+				{
+					"slug": "50",
+					"size": "3rem",
+					"name": "XL"
+				},
+				{
+					"slug": "60",
+					"size": "4rem",
+					"name": "XXL"
+				}
+			]
+		},
+		"appearanceTools": true
+	}
+}
