@@ -13,12 +13,19 @@ Neue Website für den Korn- und Hansemarkt Haselünne. Ziel ist eine moderne, sc
 ## Projektstruktur
 
 ```
-├── functions.php          # WordPress Theme-Funktionen & REST API
+├── functions.php          # Theme-Setup, Konstanten & Includes
 ├── index.php              # Minimales PHP-Template (SPA-Shell)
 ├── style.css              # WordPress Theme-Metadaten
 ├── package.json           # Node.js Abhängigkeiten
 ├── vite.config.ts         # Vite Build-Konfiguration
 ├── tsconfig.json          # TypeScript-Konfiguration
+├── inc/
+│   ├── helpers.php        # Logo, Menüs, SVG-Support
+│   ├── assets.php         # Vite Dev Server / Production Build
+│   ├── customizer.php     # Farben & Header Customizer
+│   ├── rest-api.php       # REST-Felder, Menü-Endpoint, CORS
+│   ├── meta-fields.php    # Custom Meta-Felder & Meta-Boxen
+│   └── seo.php            # SEO Meta-Tags & Open Graph
 ├── src/
 │   ├── main.ts            # Svelte App Einstiegspunkt
 │   ├── App.svelte         # Root-Komponente mit Layout
@@ -91,6 +98,7 @@ korn-und-hansemarkt-theme/
 ├── index.php
 ├── style.css
 ├── screenshot.png   # falls vorhanden
+├── inc/             # PHP-Module
 └── dist/            # Build-Output
 ```
 
@@ -136,4 +144,10 @@ Das Theme erweitert die WordPress REST API um:
 - **`/wp-json/kuh/v1/menus`** – Navigationsmenüs
 - **Featured Image URLs** – Automatisch an Posts/Pages angehängt
 - **Frontend-Daten** – Site-Info, Menüs, Nonce via `window.kuhData`
+
+## Custom Meta-Felder
+
+| Feld | Post-Typen | Beschreibung |
+|------|-----------|-------------|
+| `kuh_hide_title` | Post, Page | Titel auf dieser Seite/Beitrag ausblenden (Checkbox im Editor) |
 

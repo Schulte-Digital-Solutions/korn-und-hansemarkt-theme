@@ -29,6 +29,7 @@ jobs:
           mkdir -p deploy/korn-und-hansemarkt-theme
           cp functions.php index.php style.css deploy/korn-und-hansemarkt-theme/
           cp screenshot.png deploy/korn-und-hansemarkt-theme/ 2>/dev/null || true
+          cp -r inc deploy/korn-und-hansemarkt-theme/
           cp -r dist deploy/korn-und-hansemarkt-theme/
 
       - name: Deploy to server
