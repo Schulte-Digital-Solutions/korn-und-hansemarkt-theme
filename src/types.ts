@@ -38,6 +38,9 @@ interface WPPost {
     large: string;
     full: string;
   } | null;
+  meta?: {
+    kuh_hide_title?: boolean;
+  };
   _embedded?: {
     author?: Array<{ name: string; avatar_urls: Record<string, string> }>;
   };
@@ -54,6 +57,9 @@ interface WPPage {
     large: string;
     full: string;
   } | null;
+  meta?: {
+    kuh_hide_title?: boolean;
+  };
 }
 
 declare global {

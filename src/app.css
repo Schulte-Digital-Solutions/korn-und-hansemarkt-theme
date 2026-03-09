@@ -63,7 +63,11 @@ body {
 }
 
 .alignfull {
-  @apply w-full;
+  width: 100vw;
+  max-width: 100vw;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .aligncenter {

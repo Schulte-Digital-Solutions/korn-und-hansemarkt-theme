@@ -11,12 +11,14 @@
   let page: WPPage | null = $state(null);
   let loading = $state(true);
   let error: string | null = $state(null);
+  let showTitle = $state(true);
 
   async function loadPage(slug: string) {
     try {
       loading = true;
       error = null;
       page = await getPageBySlug(slug);
+      showTitle = !page?.meta?.kuh_hide_title;
       if (!page) {
         error = 'Seite nicht gefunden';
       }
@@ -48,9 +50,11 @@
       />
     {/if}
 
-    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-8">
-      {@html page.title.rendered}
-    </h1>
+    {#if showTitle}
+      <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-8">
+        {@html page.title.rendered}
+      </h1>
+    {/if}
 
     <div class="prose prose-lg max-w-none">
       {@html page.content.rendered}

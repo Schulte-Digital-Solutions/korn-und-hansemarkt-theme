@@ -8,6 +8,7 @@
   let posts: WPPost[] = $state([]);
   let loading = $state(true);
   let error: string | null = $state(null);
+  let showTitle = $state(true);
 
   async function loadData() {
     try {
@@ -18,6 +19,7 @@
       ]);
       frontPage = page;
       posts = latestPosts;
+      showTitle = !frontPage?.meta?.kuh_hide_title;
     } catch (e) {
       error = e instanceof Error ? e.message : 'Fehler beim Laden';
     } finally {
@@ -39,14 +41,18 @@
 {:else}
   <!-- Hero / Frontpage Inhalt -->
   {#if frontPage}
-    <section class="bg-gradient-to-br from-gray-50 to-gray-100 py-20">
-      <div class="max-w-4xl mx-auto px-4 text-center">
-        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-          {@html frontPage.title.rendered}
-        </h1>
-        <div class="prose prose-lg max-w-none mx-auto text-gray-600">
-          {@html frontPage.content.rendered}
+    {#if showTitle}
+      <section class="bg-gradient-to-br from-gray-50 to-gray-100 py-20">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+          <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            {@html frontPage.title.rendered}
+          </h1>
         </div>
+      </section>
+    {/if}
+    <section class="wp-content">
+      <div class="prose prose-lg max-w-4xl mx-auto px-4">
+        {@html frontPage.content.rendered}
       </div>
     </section>
   {:else}

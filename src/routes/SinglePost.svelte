@@ -12,12 +12,14 @@
   let post: WPPost | null = $state(null);
   let loading = $state(true);
   let error: string | null = $state(null);
+  let showTitle = $state(true);
 
   async function loadPost(slug: string) {
     try {
       loading = true;
       error = null;
       post = await getPostBySlug(slug);
+      showTitle = !post?.meta?.kuh_hide_title;
       if (!post) {
         error = 'Beitrag nicht gefunden';
       }
@@ -59,9 +61,11 @@
     {/if}
 
     <!-- Titel -->
-    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-      {@html post.title.rendered}
-    </h1>
+    {#if showTitle}
+      <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+        {@html post.title.rendered}
+      </h1>
+    {/if}
 
     <!-- Meta -->
     <div class="flex items-center gap-4 text-gray-500 text-sm mb-8 pb-8 border-b border-gray-200">
