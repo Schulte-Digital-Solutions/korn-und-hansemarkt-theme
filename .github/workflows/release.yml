@@ -20,7 +20,8 @@ jobs:
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
       - name: Update version in style.css
-        run: sed -i "s/^Version: .*/Version: ${{ steps.version.outputs.VERSION }}/" style.css
+        run: |
+          sed -i "s/^Version: .*/Version: ${{ steps.version.outputs.VERSION }}/" style.css
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
