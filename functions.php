@@ -22,6 +22,9 @@ function kuh_theme_setup() {
     add_theme_support( 'custom-logo' );
     add_theme_support( 'menus' );
 
+    // Dynamische laden der Block-Assets deaktivieren (da wir sie manuell einbinden)
+    add_filter( 'should_load_separate_core_block_assets', '__return_false' );
+
     // Navigationsmenüs registrieren
     register_nav_menus( array(
         'primary'   => __( 'Hauptnavigation', 'korn-und-hansemarkt' ),
@@ -34,6 +37,9 @@ add_action( 'after_setup_theme', 'kuh_theme_setup' );
  * Assets einbinden
  */
 function kuh_enqueue_assets() {
+    // Block-Styles explizit laden (headless Theme ruft nie the_content() auf)
+    wp_enqueue_style( 'wp-block-library' );
+
     $manifest_path = KUH_THEME_DIR . '/dist/.vite/manifest.json';
     $is_dev = defined( 'WP_DEBUG' ) && WP_DEBUG;
     $use_dev_server = false;
