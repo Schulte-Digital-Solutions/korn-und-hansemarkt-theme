@@ -73,6 +73,16 @@ function kuh_rewrite_rules() {
 }
 add_action( 'init', 'kuh_rewrite_rules' );
 
+/**
+ * WordPress-Canonical-Redirect für SPA-Routen deaktivieren
+ */
+add_filter( 'redirect_canonical', function ( $redirect_url ) {
+    if ( ! is_admin() ) {
+        return false;
+    }
+    return $redirect_url;
+} );
+
 // Module laden
 require_once KUH_THEME_DIR . '/inc/helpers.php';
 require_once KUH_THEME_DIR . '/inc/assets.php';
