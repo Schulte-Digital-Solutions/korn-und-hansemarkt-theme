@@ -3,6 +3,13 @@
 @theme {
   --font-sans: 'Inter', sans-serif;
   --font-old: 'Manuskript Gotisch', serif;
+
+  --color-primary: #2c3e50;
+  --color-secondary: #c0862a;
+  --color-accent: #e67e22;
+  --color-bg: #ffffff;
+  --color-text: #333333;
+  --color-muted: #6b7280;
 }
 
 @font-face {
@@ -46,15 +53,6 @@
 }
 
 /* Basis-Styles für das Theme */
-:root {
-  --color-primary: #2c3e50;
-  --color-secondary: #c0862a;
-  --color-accent: #e67e22;
-  --color-bg: #ffffff;
-  --color-text: #333333;
-  --color-muted: #6b7280;
-}
-
 body {
   font-family: 'Inter', sans-serif;
 }

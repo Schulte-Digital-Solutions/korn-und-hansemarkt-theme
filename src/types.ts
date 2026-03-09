@@ -9,6 +9,11 @@ interface KuhData {
   siteDesc: string;
   logo: string;
   menus: Record<string, MenuItem[]>;
+  header: {
+    bg: string;
+    text: string;
+    sticky: boolean;
+  };
 }
 
 interface MenuItem {
