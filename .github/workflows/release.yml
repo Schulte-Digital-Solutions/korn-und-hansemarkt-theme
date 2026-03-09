@@ -37,7 +37,7 @@ jobs:
       - name: Prepare release package
         run: |
           mkdir -p release/korn-und-hansemarkt-theme
-          cp functions.php index.php style.css release/korn-und-hansemarkt-theme/
+          cp functions.php index.php style.css LICENSE release/korn-und-hansemarkt-theme/
           cp screenshot.png release/korn-und-hansemarkt-theme/ 2>/dev/null || true
           cp -r inc release/korn-und-hansemarkt-theme/
           cp -r dist release/korn-und-hansemarkt-theme/
