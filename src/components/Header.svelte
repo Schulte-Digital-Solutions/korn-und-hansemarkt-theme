@@ -21,7 +21,7 @@
           {#if config.logo}
             <img src={config.logo} alt={config.siteName} class="h-10 w-auto" />
           {:else}
-            <span class="text-xl font-bold text-gray-900">{config.siteName}</span>
+            <span class="text-xl text-gray-900 font-old">{config.siteName}</span>
           {/if}
         </Link>
       </div>

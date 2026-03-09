@@ -1,5 +1,50 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --font-old: 'Manuskript Gotisch', serif;
+}
+
+@font-face {
+  font-family: 'Manuskript Gotisch';
+  src: url('./assets/fonts/manuskript-gothisch.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('./assets/fonts/inter-v20-latin-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('./assets/fonts/inter-v20-latin-italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('./assets/fonts/inter-v20-latin-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('./assets/fonts/inter-v20-latin-700italic.woff2') format('woff2');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
 /* Basis-Styles für das Theme */
 :root {
   --color-primary: #2c3e50;
@@ -8,6 +53,10 @@
   --color-bg: #ffffff;
   --color-text: #333333;
   --color-muted: #6b7280;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
 }
 
 /* WordPress-spezifische Klassen */
