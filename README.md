@@ -16,6 +16,7 @@ Neue Website für den Korn- und Hansemarkt Haselünne. Ziel ist eine moderne, sc
 ├── functions.php          # Theme-Setup, Konstanten & Includes
 ├── index.php              # Minimales PHP-Template (SPA-Shell)
 ├── style.css              # WordPress Theme-Metadaten
+├── svelte.config.js       # Svelte-Konfiguration
 ├── package.json           # Node.js Abhängigkeiten
 ├── vite.config.ts         # Vite Build-Konfiguration
 ├── tsconfig.json          # TypeScript-Konfiguration
@@ -31,12 +32,18 @@ Neue Website für den Korn- und Hansemarkt Haselünne. Ziel ist eine moderne, sc
 │   ├── App.svelte         # Root-Komponente mit Layout
 │   ├── app.css            # Globale Styles & TailwindCSS
 │   ├── types.ts           # TypeScript Typdefinitionen
+│   ├── vite-env.d.ts      # Vite Typdeklarationen
+│   ├── assets/
+│   │   └── fonts/         # Selbst gehostete Schriftarten (woff2)
 │   ├── lib/
-│   │   └── api.ts         # WordPress REST API Client
+│   │   ├── api.ts         # WordPress REST API Client
+│   │   └── router.ts      # Client-Side Router Logik
 │   ├── components/
 │   │   ├── Header.svelte  # Navigation & Logo
 │   │   ├── Footer.svelte  # Footer mit Links
-│   │   └── Loading.svelte # Lade-Spinner
+│   │   ├── Loading.svelte # Lade-Spinner
+│   │   ├── Link.svelte    # SPA-Link-Komponente
+│   │   └── Router.svelte  # Client-Side Router
 │   └── routes/
 │       ├── index.ts       # Router-Konfiguration
 │       ├── Home.svelte    # Startseite
@@ -88,7 +95,7 @@ Erstellt optimierte Assets im `dist/` Ordner. Das Theme liest automatisch das Vi
 
 ### Deployment (Produktion)
 
-Das Deployment läuft automatisch über **GitHub Actions**. Bei jedem Push auf `main` wird das Theme gebaut und per rsync auf den Server deployt.
+Das Deployment läuft automatisch über **GitHub Actions**. Beim Pushen eines Version-Tags (`v*`) wird das Theme gebaut, per rsync auf den Server deployt und ein GitHub Release erstellt.
 
 Auf dem Produktionsserver landen **nur** die benötigten Dateien:
 
@@ -97,6 +104,7 @@ korn-und-hansemarkt-theme/
 ├── functions.php
 ├── index.php
 ├── style.css
+├── LICENSE
 ├── screenshot.png   # falls vorhanden
 ├── inc/             # PHP-Module
 └── dist/            # Build-Output
@@ -110,16 +118,18 @@ Im Repository unter *Settings → Secrets and variables → Actions* folgende Se
 |--------|-------------|----------|
 | `DEPLOY_HOST` | Hostname/IP des Servers | `example.com` |
 | `DEPLOY_USER` | SSH-Benutzername | `www-data` |
-| `DEPLOY_KEY` | Privater SSH-Key (PEM-Format) | `-----BEGIN OPENSSH...` |
+| `DEPLOY_PASSWORD` | SSH-Passwort | `***` |
 | `DEPLOY_PATH` | Zielpfad auf dem Server | `/var/www/html/wp-content/themes/korn-und-hansemarkt-theme/` |
 | `DEPLOY_PORT` | SSH-Port (optional, Standard: 22) | `22` |
 
 #### Deployment-Ablauf
 
-1. Push auf `main` triggert den Workflow
-2. GitHub Actions baut das Projekt (`npm ci && npm run build`)
-3. Nur produktionsrelevante Dateien werden per rsync auf den Server kopiert
-4. `WP_DEBUG` in `wp-config.php` sollte auf dem Server auf `false` stehen
+1. Tag pushen (`git tag v1.0.0 && git push --tags`) triggert den Workflow
+2. Version in `style.css` wird automatisch aus dem Tag aktualisiert
+3. GitHub Actions baut das Projekt (`npm ci && npm run build`)
+4. Nur produktionsrelevante Dateien werden per rsync auf den Server kopiert
+5. Ein GitHub Release mit ZIP-Archiv wird erstellt
+6. `WP_DEBUG` in `wp-config.php` sollte auf dem Server auf `false` stehen
 
 ## SPA-Routing
 
