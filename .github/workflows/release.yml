@@ -1,0 +1,58 @@
+name: Release Theme
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Update version in style.css
+        run: sed -i "s/^Version: .*/Version: ${{ steps.version.outputs.VERSION }}/" style.css
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Prepare release package
+        run: |
+          mkdir -p release/korn-und-hansemarkt-theme
+          cp functions.php index.php style.css release/korn-und-hansemarkt-theme/
+          cp screenshot.png release/korn-und-hansemarkt-theme/ 2>/dev/null || true
+          cp -r inc release/korn-und-hansemarkt-theme/
+          cp -r dist release/korn-und-hansemarkt-theme/
+          cd release && zip -r ../korn-und-hansemarkt-theme-${{ steps.version.outputs.VERSION }}.zip korn-und-hansemarkt-theme/
+
+      - name: Deploy to server
+        run: |
+          sudo apt-get update && sudo apt-get install -y sshpass
+          sshpass -p "${{ secrets.DEPLOY_PASSWORD }}" rsync -avz --delete \
+            -e "ssh -p ${{ secrets.DEPLOY_PORT }} -o StrictHostKeyChecking=no" \
+            release/korn-und-hansemarkt-theme/ \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: korn-und-hansemarkt-theme-${{ steps.version.outputs.VERSION }}.zip
+          generate_release_notes: true
