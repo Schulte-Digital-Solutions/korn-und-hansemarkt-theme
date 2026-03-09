@@ -20,7 +20,7 @@ function kuh_theme_setup() {
     add_theme_support( 'post-thumbnails' );
     add_theme_support( 'custom-logo' );
     add_theme_support( 'menus' );
-    // add_theme_support( 'title-tag' );
+    add_theme_support( 'title-tag' );
     add_theme_support( 'align-wide' );
     add_theme_support( 'responsive-embeds' );
     add_theme_support( 'editor-styles' );
@@ -74,6 +74,42 @@ function kuh_rewrite_rules() {
 add_action( 'init', 'kuh_rewrite_rules' );
 
 /**
+ * WordPress-Query anhand der URL setzen, damit SEO-Plugins
+ * die richtigen Meta-Daten für Unterseiten generieren.
+ */
+function kuh_parse_spa_request( $wp ) {
+    if ( is_admin() ) {
+        return;
+    }
+
+    $request_uri = trim( wp_parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH ), '/' );
+    $home_path   = trim( wp_parse_url( home_url(), PHP_URL_PATH ) ?: '', '/' );
+    if ( $home_path && str_starts_with( $request_uri, $home_path ) ) {
+        $request_uri = trim( substr( $request_uri, strlen( $home_path ) ), '/' );
+    }
+
+    if ( empty( $request_uri ) ) {
+        return; // Startseite – WordPress-Default
+    }
+
+    if ( preg_match( '#^post/([a-zA-Z0-9_-]+)$#', $request_uri, $matches ) ) {
+        $wp->query_vars = array(
+            'post_type' => 'post',
+            'name'      => sanitize_title( $matches[1] ),
+        );
+    } else {
+        $slug = sanitize_title( basename( $request_uri ) );
+        $page = get_page_by_path( $slug );
+        if ( $page ) {
+            $wp->query_vars = array(
+                'page_id' => $page->ID,
+            );
+        }
+    }
+}
+add_action( 'parse_request', 'kuh_parse_spa_request' );
+
+/**
  * WordPress-Canonical-Redirect für SPA-Routen deaktivieren
  */
 add_filter( 'redirect_canonical', function ( $redirect_url ) {
@@ -89,4 +125,3 @@ require_once KUH_THEME_DIR . '/inc/assets.php';
 require_once KUH_THEME_DIR . '/inc/customizer.php';
 require_once KUH_THEME_DIR . '/inc/rest-api.php';
 require_once KUH_THEME_DIR . '/inc/meta-fields.php';
-require_once KUH_THEME_DIR . '/inc/seo.php';

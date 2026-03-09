@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getPosts } from '../lib/api';
+  import { updateSeo } from '../lib/seo';
   import Link from '../components/Link.svelte';
   import Loading from '../components/Loading.svelte';
   import type { WPPost } from '../types';
@@ -16,6 +17,13 @@
       const newPosts = await getPosts(pageNum, 10);
       posts = pageNum === 1 ? newPosts : [...posts, ...newPosts];
       hasMore = newPosts.length === 10;
+      if (pageNum === 1) {
+        updateSeo({
+          title: 'Blog',
+          description: 'Aktuelle Beiträge und Neuigkeiten',
+          canonical: window.kuhData?.homeUrl?.replace(/\/$/, '') + '/blog',
+        });
+      }
     } catch (e) {
       error = e instanceof Error ? e.message : 'Fehler beim Laden';
     } finally {

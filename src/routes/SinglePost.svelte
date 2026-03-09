@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getPostBySlug } from '../lib/api';
+  import { updateSeo } from '../lib/seo';
   import Link from '../components/Link.svelte';
   import Loading from '../components/Loading.svelte';
   import type { WPPost } from '../types';
@@ -20,7 +21,15 @@
       error = null;
       post = await getPostBySlug(slug);
       showTitle = !post?.meta?.kuh_hide_title;
-      if (!post) {
+      if (post) {
+        updateSeo({
+          title: post.title.rendered.replace(/<[^>]*>/g, ''),
+          description: post.excerpt.rendered.replace(/<[^>]*>/g, '').trim() || post.content.rendered.replace(/<[^>]*>/g, '').slice(0, 160).trim(),
+          ogType: 'article',
+          ogImage: post.featured_image_url?.large,
+          canonical: window.kuhData?.homeUrl?.replace(/\/$/, '') + '/post/' + slug,
+        });
+      } else {
         error = 'Beitrag nicht gefunden';
       }
     } catch (e) {

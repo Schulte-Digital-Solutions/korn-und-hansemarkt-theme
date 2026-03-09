@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getPageBySlug } from '../lib/api';
+  import { updateSeo } from '../lib/seo';
   import Loading from '../components/Loading.svelte';
   import type { WPPage } from '../types';
 
@@ -19,7 +20,14 @@
       error = null;
       page = await getPageBySlug(slug);
       showTitle = !page?.meta?.kuh_hide_title;
-      if (!page) {
+      if (page) {
+        updateSeo({
+          title: page.title.rendered.replace(/<[^>]*>/g, ''),
+          description: page.content.rendered.replace(/<[^>]*>/g, '').slice(0, 160).trim(),
+          ogImage: page.featured_image_url?.large,
+          canonical: window.kuhData?.homeUrl?.replace(/\/$/, '') + '/' + slug,
+        });
+      } else {
         error = 'Seite nicht gefunden';
       }
     } catch (e) {

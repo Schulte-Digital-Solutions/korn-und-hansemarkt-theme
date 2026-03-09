@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getFrontPage, getPosts } from '../lib/api';
+  import { updateSeo } from '../lib/seo';
   import Link from '../components/Link.svelte';
   import Loading from '../components/Loading.svelte';
   import type { WPPage, WPPost } from '../types';
@@ -20,6 +21,11 @@
       frontPage = page;
       posts = latestPosts;
       showTitle = !frontPage?.meta?.kuh_hide_title;
+      updateSeo({
+        title: '',
+        description: window.kuhData?.siteDesc,
+        canonical: window.kuhData?.homeUrl,
+      });
     } catch (e) {
       error = e instanceof Error ? e.message : 'Fehler beim Laden';
     } finally {
