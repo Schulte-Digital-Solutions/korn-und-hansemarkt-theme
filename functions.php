@@ -1,6 +1,6 @@
 <?php
 /**
- * Korn & Hansemarkt Theme Functions
+ * Korn- und Hansemarkt Theme Functions
  *
  * @package KornUndHansemarkt
  */
@@ -8,8 +8,8 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
-
-define( 'KUH_THEME_VERSION', '1.0.0' );
+$theme_data = wp_get_theme();
+define( 'KUH_THEME_VERSION', $theme_data->get( 'Version' ) );
 define( 'KUH_THEME_DIR', get_template_directory() );
 define( 'KUH_THEME_URI', get_template_directory_uri() );
 

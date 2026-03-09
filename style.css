@@ -1,12 +1,13 @@
 /*
-Theme Name: Korn & Hansemarkt
+Theme Name: Korn- und Hansemarkt Theme
 Theme URI: https://github.com/Schulte-Digital-Solutions/korn-und-hansemarkt-theme
-Author: Schulte Digital Solutions
+Author: Benedikt Schulte - Schulte Digital Solutions
 Author URI: https://schulte-digital.de
 Description: Ein modernes WordPress SPA-Theme basierend auf Svelte und TailwindCSS. Nutzt die WordPress REST API für eine Single Page Application Erfahrung.
+Tags: gutenberg, svelte, tailwindcss, spa, responsive, modern, custom-theme
 Version: 1.0.0
-License: GNU General Public License v2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
+License: MIT
+License URI: https://opensource.org/licenses/MIT
 Text Domain: korn-und-hansemarkt
 Requires at least: 6.0
 Requires PHP: 8.0
