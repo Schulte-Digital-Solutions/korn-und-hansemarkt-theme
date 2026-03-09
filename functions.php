@@ -97,6 +97,10 @@ function kuh_parse_spa_request( $wp ) {
             'post_type' => 'post',
             'name'      => sanitize_title( $matches[1] ),
         );
+    } elseif ( preg_match( '#^category/([a-zA-Z0-9_-]+)$#', $request_uri, $matches ) ) {
+        $wp->query_vars = array(
+            'category_name' => sanitize_title( $matches[1] ),
+        );
     } else {
         $slug = sanitize_title( basename( $request_uri ) );
         $page = get_page_by_path( $slug );

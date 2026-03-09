@@ -53,6 +53,44 @@ export async function getPosts(page = 1, perPage = 10): Promise<WPPost[]> {
   );
 }
 
+interface WPCategory {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  count: number;
+}
+
+export { type WPCategory };
+
+/**
+ * Alle Kategorien laden (nur mit Beiträgen)
+ */
+export async function getCategories(): Promise<WPCategory[]> {
+  return apiFetch<WPCategory[]>(
+    'wp/v2/categories?per_page=100&hide_empty=true'
+  );
+}
+
+/**
+ * Kategorie nach Slug laden
+ */
+export async function getCategoryBySlug(slug: string): Promise<WPCategory | null> {
+  const cats = await apiFetch<WPCategory[]>(
+    `wp/v2/categories?slug=${encodeURIComponent(slug)}`
+  );
+  return cats.length > 0 ? cats[0] : null;
+}
+
+/**
+ * Posts einer Kategorie laden
+ */
+export async function getPostsByCategory(categoryId: number, page = 1, perPage = 10): Promise<WPPost[]> {
+  return apiFetch<WPPost[]>(
+    `wp/v2/posts?categories=${categoryId}&page=${page}&per_page=${perPage}&_embed`
+  );
+}
+
 /**
  * Einzelnen Post laden (nach Slug)
  */
