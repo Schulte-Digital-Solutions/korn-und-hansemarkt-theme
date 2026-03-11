@@ -65,6 +65,7 @@ interface WPPage {
 declare global {
   interface Window {
     kuhData: KuhData;
+    __kuhReinitBlocks?: () => void;
   }
 }
 

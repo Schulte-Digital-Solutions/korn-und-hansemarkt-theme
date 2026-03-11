@@ -129,3 +129,4 @@ require_once KUH_THEME_DIR . '/inc/assets.php';
 require_once KUH_THEME_DIR . '/inc/customizer.php';
 require_once KUH_THEME_DIR . '/inc/rest-api.php';
 require_once KUH_THEME_DIR . '/inc/meta-fields.php';
+require_once KUH_THEME_DIR . '/inc/block-compat.php';

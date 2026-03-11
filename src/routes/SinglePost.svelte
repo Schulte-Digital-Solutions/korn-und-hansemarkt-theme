@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getPostBySlug } from '../lib/api';
   import { updateSeo } from '../lib/seo';
+  import { reinitBlocks } from '../lib/reinitBlocks';
   import Link from '../components/Link.svelte';
   import Loading from '../components/Loading.svelte';
   import type { WPPost } from '../types';
@@ -41,6 +42,12 @@
 
   $effect(() => {
     loadPost(params.slug);
+  });
+
+  $effect(() => {
+    if (!loading && post) {
+      reinitBlocks();
+    }
   });
 </script>
 

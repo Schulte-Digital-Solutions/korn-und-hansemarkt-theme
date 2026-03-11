@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getPageBySlug } from '../lib/api';
   import { updateSeo } from '../lib/seo';
+  import { reinitBlocks } from '../lib/reinitBlocks';
   import Loading from '../components/Loading.svelte';
   import type { WPPage } from '../types';
 
@@ -39,6 +40,12 @@
 
   $effect(() => {
     loadPage(params.slug);
+  });
+
+  $effect(() => {
+    if (!loading && page) {
+      reinitBlocks();
+    }
   });
 </script>
 

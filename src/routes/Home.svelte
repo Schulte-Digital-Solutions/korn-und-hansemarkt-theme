@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getFrontPage, getPosts } from '../lib/api';
   import { updateSeo } from '../lib/seo';
+  import { reinitBlocks } from '../lib/reinitBlocks';
   import Link from '../components/Link.svelte';
   import Loading from '../components/Loading.svelte';
   import type { WPPage, WPPost } from '../types';
@@ -35,6 +36,12 @@
 
   $effect(() => {
     loadData();
+  });
+
+  $effect(() => {
+    if (!loading && frontPage) {
+      reinitBlocks();
+    }
   });
 </script>
 
