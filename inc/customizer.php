@@ -80,6 +80,36 @@ function kuh_customize_register( $wp_customize ) {
         'section' => 'kuh_header',
         'type'    => 'checkbox',
     ) );
+
+    // Header transparent
+    $wp_customize->add_setting( 'kuh_header_transparent', array(
+        'default'           => false,
+        'sanitize_callback' => 'wp_validate_boolean',
+        'transport'         => 'refresh',
+    ) );
+    $wp_customize->add_control( 'kuh_header_transparent', array(
+        'label'   => __( 'Header transparent', 'korn-und-hansemarkt' ),
+        'section' => 'kuh_header',
+        'type'    => 'checkbox',
+    ) );
+
+    // Header Anzeige: Text oder Logo
+    $wp_customize->add_setting( 'kuh_header_display', array(
+        'default'           => 'text',
+        'sanitize_callback' => function( $value ) {
+            return in_array( $value, array( 'text', 'image' ), true ) ? $value : 'text';
+        },
+        'transport'         => 'refresh',
+    ) );
+    $wp_customize->add_control( 'kuh_header_display', array(
+        'label'   => __( 'Logo-Anzeige', 'korn-und-hansemarkt' ),
+        'section' => 'kuh_header',
+        'type'    => 'radio',
+        'choices' => array(
+            'text'  => __( 'Seitenname (Text)', 'korn-und-hansemarkt' ),
+            'image' => __( 'Logo (Bild)', 'korn-und-hansemarkt' ),
+        ),
+    ) );
 }
 add_action( 'customize_register', 'kuh_customize_register' );
 

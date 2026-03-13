@@ -58,9 +58,11 @@ function kuh_get_frontend_data() {
         'logo'        => kuh_get_logo_url(),
         'menus'       => kuh_get_menus(),
         'header'      => array(
-            'bg'     => get_theme_mod( 'kuh_header_bg', '#ffffff' ),
-            'text'   => get_theme_mod( 'kuh_header_text', '#111827' ),
-            'sticky' => (bool) get_theme_mod( 'kuh_header_sticky', true ),
+            'bg'          => get_theme_mod( 'kuh_header_bg', '#ffffff' ),
+            'text'        => get_theme_mod( 'kuh_header_text', '#111827' ),
+            'sticky'      => (bool) get_theme_mod( 'kuh_header_sticky', true ),
+            'transparent' => (bool) get_theme_mod( 'kuh_header_transparent', false ),
+            'display'     => get_theme_mod( 'kuh_header_display', 'text' ),
         ),
     );
 }
