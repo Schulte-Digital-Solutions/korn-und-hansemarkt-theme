@@ -69,16 +69,23 @@ function kuh_customize_register( $wp_customize ) {
         'section' => 'kuh_header',
     ) ) );
 
-    // Header fixiert (sticky)
-    $wp_customize->add_setting( 'kuh_header_sticky', array(
-        'default'           => true,
-        'sanitize_callback' => 'wp_validate_boolean',
+    // Header-Verhalten
+    $wp_customize->add_setting( 'kuh_header_behavior', array(
+        'default'           => 'sticky',
+        'sanitize_callback' => function( $value ) {
+            return in_array( $value, array( 'sticky', 'normal', 'autohide' ), true ) ? $value : 'sticky';
+        },
         'transport'         => 'refresh',
     ) );
-    $wp_customize->add_control( 'kuh_header_sticky', array(
-        'label'   => __( 'Header fixiert (sticky)', 'korn-und-hansemarkt' ),
+    $wp_customize->add_control( 'kuh_header_behavior', array(
+        'label'   => __( 'Header-Verhalten', 'korn-und-hansemarkt' ),
         'section' => 'kuh_header',
-        'type'    => 'checkbox',
+        'type'    => 'select',
+        'choices' => array(
+            'sticky'   => __( 'Immer sichtbar (sticky)', 'korn-und-hansemarkt' ),
+            'normal'   => __( 'Normal (scrollt mit)', 'korn-und-hansemarkt' ),
+            'autohide' => __( 'Beim Hochscrollen einblenden', 'korn-und-hansemarkt' ),
+        ),
     ) );
 
     // Header transparent

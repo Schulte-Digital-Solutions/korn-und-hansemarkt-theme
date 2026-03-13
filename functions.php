@@ -60,7 +60,7 @@ function kuh_get_frontend_data() {
         'header'      => array(
             'bg'          => get_theme_mod( 'kuh_header_bg', '#ffffff' ),
             'text'        => get_theme_mod( 'kuh_header_text', '#111827' ),
-            'sticky'      => (bool) get_theme_mod( 'kuh_header_sticky', true ),
+            'behavior'    => get_theme_mod( 'kuh_header_behavior', 'sticky' ),
             'transparent' => (bool) get_theme_mod( 'kuh_header_transparent', false ),
             'display'     => get_theme_mod( 'kuh_header_display', 'text' ),
         ),

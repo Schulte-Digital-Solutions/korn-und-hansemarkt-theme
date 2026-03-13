@@ -39,16 +39,40 @@
 
   const isTransparent = config.header?.transparent === true;
   const hasAdminBar = document.body.classList.contains('admin-bar');
+  const behavior = config.header?.behavior ?? 'sticky';
+
+  // Autohide: show header on scroll up, hide on scroll down (mobile only)
+  let headerVisible = $state(true);
+  let isMobile = $state(window.matchMedia('(max-width: 767px)').matches);
+  let lastScrollY = 0;
+
+  const mq = window.matchMedia('(max-width: 767px)');
+  mq.addEventListener('change', (e) => {
+    isMobile = e.matches;
+    if (!isMobile) headerVisible = true;
+  });
+
+  if (behavior === 'autohide') {
+    const onScroll = () => {
+      if (!isMobile) return;
+      const currentY = window.scrollY;
+      headerVisible = currentY < lastScrollY || currentY < 50;
+      lastScrollY = currentY;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
 </script>
 
 <header
-  class="z-50 transition-all duration-300 left-0 right-0"
-  class:fixed={isTransparent && config.header?.sticky !== false}
-  class:absolute={isTransparent && config.header?.sticky === false}
-  class:sticky={!isTransparent && config.header?.sticky !== false}
+  class="z-50 transition-transform duration-300"
+  class:fixed={isTransparent || (isMobile && (behavior === 'sticky' || behavior === 'autohide'))}
+  class:sticky={!isTransparent && !isMobile}
+  class:inset-x-0={isTransparent || (isMobile && (behavior !== 'normal'))}
   class:bg-transparent={isTransparent}
   class:backdrop-blur-md={isTransparent}
   class:shadow-sm={!isTransparent}
+  class:-translate-y-full={isMobile && behavior === 'autohide' && !headerVisible}
+  class:translate-y-0={!isMobile || behavior !== 'autohide' || headerVisible}
   style:top={hasAdminBar ? 'var(--wp-admin--admin-bar--height, 32px)' : '0'}
   style:background-color={isTransparent ? undefined : (config.header?.bg ?? '#ffffff')}
   style:color={config.header?.text ?? '#111827'}
@@ -57,11 +81,11 @@
     <div class="flex justify-between items-center h-18">
       <!-- Logo / Site Name -->
       <div class="shrink-0">
-        <Link href="/" class="flex items-center gap-3">
+        <Link href="/" class="flex items-center gap-3 no-underline">
           {#if config.header?.display === 'image' && config.logo}
             <img src={config.logo} alt={config.siteName} class="h-10 w-auto" />
           {:else}
-            <span class="text-xl font-old tracking-wide">{config.siteName}</span>
+            <span class="text-2xl font-old tracking-wide">{config.siteName}</span>
           {/if}
         </Link>
       </div>
@@ -79,7 +103,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div class="absolute left-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div class="absolute left-0 top-full pt-2 hidden group-hover:block transition-all duration-200 z-50">
                 <div class="rounded-lg shadow-xl ring-1 ring-black/10 py-2 min-w-50 backdrop-blur-lg bg-white/90 text-gray-900">
                   {#each item.children as child}
                     <Link

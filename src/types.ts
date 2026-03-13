@@ -12,7 +12,7 @@ interface KuhData {
   header: {
     bg: string;
     text: string;
-    sticky: boolean;
+    behavior: 'sticky' | 'normal' | 'autohide';
     transparent: boolean;
     display: 'text' | 'image';
   };

@@ -53,8 +53,17 @@
 }
 
 /* Basis-Styles für das Theme */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   font-family: 'Inter', sans-serif;
+}
+
+/* WP Block-Library Link-Underline im Header überschreiben */
+header a:where(:not(.wp-element-button)) {
+  text-decoration: none;
 }
 
 /* WordPress-spezifische Klassen */
@@ -65,9 +74,8 @@ body {
 .alignfull {
   width: 100vw;
   max-width: 100vw;
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
 }
 
 .aligncenter {
@@ -77,4 +85,5 @@ body {
 /* Smooth page transitions */
 #app {
   @apply min-h-screen;
+  overflow-x: clip;
 }
