@@ -12,7 +12,9 @@ interface KuhData {
   header: {
     bg: string;
     text: string;
-    sticky: boolean;
+    behavior: 'sticky' | 'normal' | 'autohide';
+    transparent: boolean;
+    display: 'text' | 'image';
   };
 }
 
@@ -23,6 +25,7 @@ interface MenuItem {
   parent: number;
   target: string;
   classes: string;
+  children?: MenuItem[];
 }
 
 interface WPPost {
