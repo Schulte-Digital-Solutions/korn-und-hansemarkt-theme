@@ -67,6 +67,39 @@ function kuh_capture_init_callbacks() {
                 old.parentNode.removeChild(old);
             });
         };
+
+        // Complianz SPA-Patch: conditionally_show_banner absichern.
+        //
+        // Complianz crasht wenn cmplz_check_cookie_policy_id() aufgerufen wird
+        // bevor show_cookie_banner() die Variable cmplz_banner gesetzt hat
+        // (TypeError: Cannot read properties of undefined).
+        // Dieser Crash verhindert, dass Cookie-Banner und Platzhalter erscheinen.
+        //
+        // Lösung: die Funktion mit try/catch wrappen und bei Fehler
+        // show_cookie_banner() nachholen, damit Banner + Platzhalter funktionieren.
+        var _realCSB;
+        Object.defineProperty(window, 'conditionally_show_banner', {
+            configurable: true,
+            enumerable: true,
+            set: function(fn) {
+                _realCSB = function() {
+                    try {
+                        fn.apply(this, arguments);
+                    } catch(e) {
+                        // Platzhalter trotzdem verarbeiten
+                        if (typeof cmplz_set_blocked_content_container === 'function') {
+                            try { cmplz_set_blocked_content_container(); } catch(e2) {}
+                        }
+                        // Cookie-Banner trotzdem anzeigen
+                        if (typeof window.show_cookie_banner === 'function') {
+                            try { window.show_cookie_banner(); } catch(e3) {}
+                        }
+                    }
+                };
+            },
+            get: function() { return _realCSB; }
+        });
+
     })();
     </script>
     <?php
@@ -206,3 +239,18 @@ function kuh_preload_spectra_assets( array $post_ids, array $block_types ) {
     }
 }
 add_action( 'kuh_preload_block_plugin_assets', 'kuh_preload_spectra_assets', 10, 2 );
+
+/**
+ * Complianz: AJAX-Content-Blocking für die SPA erzwingen.
+ *
+ * Damit Complianz das 2000ms-Intervall mit cmplz_set_blocked_content_container()
+ * startet, muss block_ajax_content==1 sein. Die setInterval-Interception in
+ * kuh_capture_init_callbacks() fängt die Referenz dann als
+ * window.__cmplzRescanBlockedContent ab, sodass reinitBlocks() den Scan
+ * sofort nach SPA-Navigation auslösen kann.
+ */
+function kuh_force_complianz_ajax_blocking( $settings, $banner ) {
+    $settings['block_ajax_content'] = 1;
+    return $settings;
+}
+add_filter( 'cmplz_cookiebanner_settings_front_end', 'kuh_force_complianz_ajax_blocking', 10, 2 );

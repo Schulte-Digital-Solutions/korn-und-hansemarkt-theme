@@ -66,3 +66,69 @@ add_action( 'rest_api_init', function() {
         return $value;
     } );
 } );
+
+/**
+ * Google-Maps-URLs in Iframes auf die Embed-Variante umschreiben.
+ *
+ * Reguläre https://www.google.com/maps?q=… URLs setzen X-Frame-Options: sameorigin
+ * und lassen sich nicht in Iframes laden. Die URL-Variante mit &output=embed
+ * ist dafür vorgesehen und liefert keinen X-Frame-Options-Header.
+ */
+function kuh_fix_google_maps_embeds( $content ) {
+    if ( strpos( $content, 'google.com/maps' ) === false ) {
+        return $content;
+    }
+
+    return preg_replace_callback(
+        '/<iframe([^>]*)\ssrc=["\']((https?:\/\/)(www\.)?google\.[a-z.]+\/maps\?[^"\']*)["\']/',
+        function ( $matches ) {
+            $url = $matches[2];
+            if ( strpos( $url, 'output=embed' ) === false ) {
+                $url .= '&output=embed';
+            }
+            return '<iframe' . $matches[1] . ' src="' . esc_url( $url ) . '"';
+        },
+        $content
+    );
+}
+add_filter( 'the_content', 'kuh_fix_google_maps_embeds', 5 );
+add_filter( 'rest_prepare_post', function( $response ) {
+    $data = $response->get_data();
+    if ( ! empty( $data['content']['rendered'] ) ) {
+        $data['content']['rendered'] = kuh_fix_google_maps_embeds( $data['content']['rendered'] );
+    }
+    return $response;
+}, 5 );
+add_filter( 'rest_prepare_page', function( $response ) {
+    $data = $response->get_data();
+    if ( ! empty( $data['content']['rendered'] ) ) {
+        $data['content']['rendered'] = kuh_fix_google_maps_embeds( $data['content']['rendered'] );
+    }
+    return $response;
+}, 5 );
+
+/**
+ * Complianz Content-Blocker auf REST-API-Responses anwenden.
+ *
+ * Complianz blockiert Iframes/Scripts nur im Output-Buffer (template_redirect),
+ * der bei REST-Requests nie feuert. Dieser Filter wendet die Tag-Replacement
+ * manuell auf content.rendered an, damit die SPA geblockten Content erhält.
+ */
+function kuh_complianz_rest_blocking( $response, $post, $request ) {
+    if ( ! class_exists( 'COMPLIANZ' ) || ! isset( COMPLIANZ::$cookie_blocker ) ) {
+        return $response;
+    }
+
+    $data = $response->get_data();
+    if ( ! empty( $data['content']['rendered'] ) ) {
+        $data['content']['rendered'] = COMPLIANZ::$cookie_blocker->replace_tags( $data['content']['rendered'] );
+    }
+    if ( ! empty( $data['excerpt']['rendered'] ) ) {
+        $data['excerpt']['rendered'] = COMPLIANZ::$cookie_blocker->replace_tags( $data['excerpt']['rendered'] );
+    }
+    $response->set_data( $data );
+
+    return $response;
+}
+add_filter( 'rest_prepare_post', 'kuh_complianz_rest_blocking', 99, 3 );
+add_filter( 'rest_prepare_page', 'kuh_complianz_rest_blocking', 99, 3 );

@@ -68,6 +68,7 @@ declare global {
   interface Window {
     kuhData: KuhData;
     __kuhReinitBlocks?: () => void;
+    cmplz_set_blocked_content_container?: () => void;
   }
 }
 

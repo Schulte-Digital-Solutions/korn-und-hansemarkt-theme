@@ -25,6 +25,26 @@ export function reinitBlocks(): void {
         requestAnimationFrame(() => {
             window.__kuhReinitBlocks!();
         });
+        // Complianz: DOM neu scannen für Content-Blocker & Platzhalter
+        reinitComplianz();
+    }
+}
+
+/**
+ * Complianz Cookie-Consent nach SPA-Navigation neu triggern.
+ *
+ * Complianz blockiert Iframes/Scripts serverseitig (rest-api.php → replace_tags),
+ * aber die clientseitige Platzhalter-Rendering (cmplz_set_blocked_content_container)
+ * läuft nur beim initialen Seitenladen und optional im 2s-Intervall.
+ *
+ * Da cmplz_set_blocked_content_container eine globale Funktion in complianz.js ist,
+ * rufen wir sie nach SPA-Navigation direkt auf. Elemente ohne die Klasse
+ * 'cmplz-processed' werden dabei erkannt, Platzhalter gerendert und
+ * bei bestehendem Consent direkt freigeschaltet.
+ */
+function reinitComplianz(): void {
+    if (typeof window.cmplz_set_blocked_content_container === 'function') {
+        window.cmplz_set_blocked_content_container();
     }
 
     // Svelte-Blöcke im neuen Content mounten
