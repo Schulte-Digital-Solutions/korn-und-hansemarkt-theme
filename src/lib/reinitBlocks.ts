@@ -11,11 +11,24 @@
  *    sofort bei Evaluation laufen).
  *
  * Beides wird über window.__kuhReinitBlocks() ausgelöst.
+ *
+ * Zusätzlich werden eigene Svelte-Blöcke (z.B. HeroCollage) in den
+ * gerenderten Content gemountet.
  */
+import { mountBlocks, unmountBlocks } from './blockMounter';
+
 export function reinitBlocks(): void {
+    // Zuerst alte Svelte-Block-Instanzen aufräumen
+    unmountBlocks();
+
     if (typeof window.__kuhReinitBlocks === 'function') {
         requestAnimationFrame(() => {
             window.__kuhReinitBlocks!();
         });
     }
+
+    // Svelte-Blöcke im neuen Content mounten
+    requestAnimationFrame(() => {
+        mountBlocks();
+    });
 }

@@ -61,7 +61,6 @@ function kuh_get_frontend_data() {
             'bg'          => get_theme_mod( 'kuh_header_bg', '#ffffff' ),
             'text'        => get_theme_mod( 'kuh_header_text', '#111827' ),
             'behavior'    => get_theme_mod( 'kuh_header_behavior', 'sticky' ),
-            'transparent' => (bool) get_theme_mod( 'kuh_header_transparent', false ),
             'display'     => get_theme_mod( 'kuh_header_display', 'text' ),
         ),
     );
@@ -132,3 +131,4 @@ require_once KUH_THEME_DIR . '/inc/customizer.php';
 require_once KUH_THEME_DIR . '/inc/rest-api.php';
 require_once KUH_THEME_DIR . '/inc/meta-fields.php';
 require_once KUH_THEME_DIR . '/inc/block-compat.php';
+require_once KUH_THEME_DIR . '/inc/blocks.php';

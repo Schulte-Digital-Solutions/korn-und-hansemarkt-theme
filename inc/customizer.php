@@ -47,16 +47,18 @@ function kuh_customize_register( $wp_customize ) {
         'priority' => 25,
     ) );
 
-    // Header Hintergrundfarbe
+    // Header Hintergrundfarbe (unterstützt Alpha: #rrggbbaa oder rgba())
     $wp_customize->add_setting( 'kuh_header_bg', array(
         'default'           => '#ffffff',
-        'sanitize_callback' => 'sanitize_hex_color',
+        'sanitize_callback' => 'kuh_sanitize_color_alpha',
         'transport'         => 'refresh',
     ) );
-    $wp_customize->add_control( new WP_Customize_Color_Control( $wp_customize, 'kuh_header_bg', array(
-        'label'   => __( 'Hintergrundfarbe', 'korn-und-hansemarkt' ),
-        'section' => 'kuh_header',
-    ) ) );
+    $wp_customize->add_control( 'kuh_header_bg', array(
+        'label'       => __( 'Hintergrundfarbe', 'korn-und-hansemarkt' ),
+        'description' => __( 'Hex (#rrggbb), mit Alpha (#rrggbbaa) oder rgba(r,g,b,a)', 'korn-und-hansemarkt' ),
+        'section'     => 'kuh_header',
+        'type'        => 'text',
+    ) );
 
     // Header Textfarbe
     $wp_customize->add_setting( 'kuh_header_text', array(
@@ -88,17 +90,6 @@ function kuh_customize_register( $wp_customize ) {
         ),
     ) );
 
-    // Header transparent
-    $wp_customize->add_setting( 'kuh_header_transparent', array(
-        'default'           => false,
-        'sanitize_callback' => 'wp_validate_boolean',
-        'transport'         => 'refresh',
-    ) );
-    $wp_customize->add_control( 'kuh_header_transparent', array(
-        'label'   => __( 'Header transparent', 'korn-und-hansemarkt' ),
-        'section' => 'kuh_header',
-        'type'    => 'checkbox',
-    ) );
 
     // Header Anzeige: Text oder Logo
     $wp_customize->add_setting( 'kuh_header_display', array(
@@ -119,6 +110,22 @@ function kuh_customize_register( $wp_customize ) {
     ) );
 }
 add_action( 'customize_register', 'kuh_customize_register' );
+
+/**
+ * Sanitize-Callback für Farbwerte mit optionalem Alpha-Kanal.
+ * Erlaubt: #rgb, #rrggbb, #rrggbbaa, rgba(r,g,b,a)
+ */
+function kuh_sanitize_color_alpha( $value ) {
+    // #rrggbb oder #rrggbbaa
+    if ( preg_match( '/^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/', $value ) ) {
+        return $value;
+    }
+    // rgba(r, g, b, a)
+    if ( preg_match( '/^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(,\s*(0|1|0?\.\d+)\s*)?\)$/', $value ) ) {
+        return $value;
+    }
+    return '#ffffff';
+}
 
 /**
  * Customizer-Farben als CSS-Variablen in den <head> ausgeben

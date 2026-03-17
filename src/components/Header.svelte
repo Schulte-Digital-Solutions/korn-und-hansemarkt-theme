@@ -37,7 +37,23 @@
     openSubmenuId = openSubmenuId === id ? null : id;
   }
 
-  const isTransparent = config.header?.transparent === true;
+  const headerBg = config.header?.bg ?? '#ffffff';
+
+  /** Prüft ob die Hintergrundfarbe Transparenz hat */
+  function hasAlpha(color: string): boolean {
+    if (color.startsWith('rgba')) {
+      const m = color.match(/,[\s]*([\.\d]+)\s*\)$/);
+      return m ? parseFloat(m[1]) < 1 : false;
+    }
+    // #rrggbbaa (8-stellig) oder #rgba (4-stellig)
+    if (color.startsWith('#') && (color.length === 9 || color.length === 5)) {
+      const alpha = color.length === 9 ? color.slice(7) : color.slice(4);
+      return alpha.toLowerCase() !== 'ff' && alpha.toLowerCase() !== 'f';
+    }
+    return false;
+  }
+
+  const isTransparent = hasAlpha(headerBg);
   const hasAdminBar = document.body.classList.contains('admin-bar');
   const behavior = config.header?.behavior ?? 'sticky';
 
@@ -68,13 +84,12 @@
   class:fixed={isTransparent || (isMobile && (behavior === 'sticky' || behavior === 'autohide'))}
   class:sticky={!isTransparent && !isMobile}
   class:inset-x-0={isTransparent || (isMobile && (behavior !== 'normal'))}
-  class:bg-transparent={isTransparent}
   class:backdrop-blur-md={isTransparent}
   class:shadow-sm={!isTransparent}
   class:-translate-y-full={isMobile && behavior === 'autohide' && !headerVisible}
   class:translate-y-0={!isMobile || behavior !== 'autohide' || headerVisible}
   style:top={hasAdminBar ? 'var(--wp-admin--admin-bar--height, 32px)' : '0'}
-  style:background-color={isTransparent ? undefined : (config.header?.bg ?? '#ffffff')}
+  style:background-color={headerBg}
   style:color={config.header?.text ?? '#111827'}
 >
   <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -85,7 +100,7 @@
           {#if config.header?.display === 'image' && config.logo}
             <img src={config.logo} alt={config.siteName} class="h-10 w-auto" />
           {:else}
-            <span class="text-2xl font-old tracking-wide">{config.siteName}</span>
+            <span class="text-4xl font-old tracking-wide">{config.siteName}</span>
           {/if}
         </Link>
       </div>
@@ -104,11 +119,11 @@
                 </svg>
               </button>
               <div class="absolute left-0 top-full pt-2 hidden group-hover:block transition-all duration-200 z-50">
-                <div class="rounded-lg shadow-xl ring-1 ring-black/10 py-2 min-w-50 backdrop-blur-lg bg-white/90 text-gray-900">
+                <div class="shadow-xl ring-1 ring-black/10 py-2 min-w-50 backdrop-blur-lg bg-black/30 text-white">
                   {#each item.children as child}
                     <Link
                       href={child.url || '/'}
-                      class="block px-4 py-2 text-sm hover:text-secondary hover:bg-black/5 transition-colors"
+                      class="block px-4 py-2 text-sm hover:text-secondary hover:bg-black/50 transition-colors"
                     >
                       {child.title}
                     </Link>
@@ -131,7 +146,7 @@
       <div class="md:hidden">
         <button
           onclick={toggleMobileMenu}
-          class="inline-flex items-center justify-center p-2 rounded-md hover:opacity-75 transition"
+          class="inline-flex items-center justify-center p-2 hover:opacity-75 transition"
           aria-label="Menü öffnen"
         >
           <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -153,7 +168,7 @@
             {#if item.children && item.children.length > 0}
               <button
                 onclick={() => toggleSubmenu(item.id)}
-                class="flex items-center justify-between w-full px-3 py-2 rounded-md hover:text-secondary hover:bg-black/5 transition-colors text-left"
+                class="flex items-center justify-between w-full px-3 py-2 hover:text-secondary hover:bg-black/5 transition-colors text-left"
               >
                 {item.title}
                 <svg class="w-4 h-4 transition-transform" class:rotate-180={openSubmenuId === item.id} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -165,7 +180,7 @@
                   {#each item.children as child}
                     <Link
                       href={child.url || '/'}
-                      class="block px-3 py-2 rounded-md hover:text-secondary hover:bg-black/5 transition-colors text-sm"
+                      class="block px-3 py-2 hover:text-secondary hover:bg-black/5 transition-colors text-sm"
                     >
                       {child.title}
                     </Link>
@@ -175,7 +190,7 @@
             {:else}
               <Link
                 href={item.url || '/'}
-                class="block px-3 py-2 rounded-md hover:text-secondary hover:bg-black/5 transition-colors"
+                class="block px-3 py-2 hover:text-secondary hover:bg-black/5 transition-colors"
               >
                 {item.title}
               </Link>

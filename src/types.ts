@@ -13,7 +13,6 @@ interface KuhData {
     bg: string;
     text: string;
     behavior: 'sticky' | 'normal' | 'autohide';
-    transparent: boolean;
     display: 'text' | 'image';
   };
 }

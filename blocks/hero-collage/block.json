@@ -1,0 +1,35 @@
+{
+  "apiVersion": 3,
+  "name": "kuh/hero-collage",
+  "version": "1.0.0",
+  "title": "Hero Image-Collage",
+  "category": "design",
+  "icon": "format-gallery",
+  "description": "Hero-Bereich mit Masonry-Bildcollage, Event-Titel, Datum und Button.",
+  "keywords": ["hero", "gallery", "collage", "masonry", "event"],
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"],
+    "anchor": true
+  },
+  "attributes": {
+    "images": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object"
+      }
+    },
+    "overlayOpacity": {
+      "type": "number",
+      "default": 40
+    },
+    "swapSpeed": {
+      "type": "number",
+      "default": 5
+    }
+  },
+  "textdomain": "korn-und-hansemarkt",
+  "editorScript": "file:./editor.js",
+  "render": "file:./render.php"
+}
