@@ -1,0 +1,31 @@
+{
+  "apiVersion": 3,
+  "name": "kuh/highlights-grid",
+  "version": "1.0.0",
+  "title": "Highlights Grid",
+  "category": "design",
+  "icon": "grid-view",
+  "description": "Bento-Grid mit Highlight-Zahlen (z.B. 4.000+ Gewandete, 200+ Marktstände).",
+  "keywords": ["highlights", "zahlen", "grid", "bento", "statistik"],
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"],
+    "anchor": true
+  },
+  "attributes": {
+    "highlights": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": [
+        { "value": "4.000+", "title": "Gewandete", "description": "Aktive Teilnehmer in authentischen Kostümen des Mittelalters." },
+        { "value": "200+", "title": "Marktstände", "description": "Traditionelles Handwerk und kulinarische Köstlichkeiten aus der Region." },
+        { "value": "Seit 1983", "title": "Tradition", "description": "Ein lebendiges Stück Stadtgeschichte, das Generationen verbindet." }
+      ]
+    }
+  },
+  "textdomain": "korn-und-hansemarkt",
+  "editorScript": "file:./editor.js",
+  "render": "file:./render.php"
+}
