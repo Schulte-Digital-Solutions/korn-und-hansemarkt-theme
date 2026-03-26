@@ -12,7 +12,7 @@
  *
  * Beides wird über window.__kuhReinitBlocks() ausgelöst.
  *
- * Zusätzlich werden eigene Svelte-Blöcke (z.B. HeroCollage) in den
+ * Zusätzlich werden eigene Svelte-Blöcke (z.B. HeroSection) in den
  * gerenderten Content gemountet.
  */
 import { mountBlocks, unmountBlocks } from './blockMounter';

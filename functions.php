@@ -38,8 +38,10 @@ function kuh_theme_setup() {
     add_filter( 'should_load_separate_core_block_assets', '__return_false' );
 
     register_nav_menus( array(
-        'primary'   => __( 'Hauptnavigation', 'korn-und-hansemarkt' ),
-        'footer'    => __( 'Footer Navigation', 'korn-und-hansemarkt' ),
+        'primary'      => __( 'Hauptnavigation', 'korn-und-hansemarkt' ),
+        'footer'       => __( 'Footer Navigation', 'korn-und-hansemarkt' ),
+        'footer_legal' => __( 'Footer Rechtliches', 'korn-und-hansemarkt' ),
+        'mobile'       => __( 'Mobile Navigation (Bottom Bar)', 'korn-und-hansemarkt' ),
     ) );
 }
 add_action( 'after_setup_theme', 'kuh_theme_setup' );
@@ -62,6 +64,14 @@ function kuh_get_frontend_data() {
             'text'        => get_theme_mod( 'kuh_header_text', '#111827' ),
             'behavior'    => get_theme_mod( 'kuh_header_behavior', 'sticky' ),
             'display'     => get_theme_mod( 'kuh_header_display', 'text' ),
+        ),
+        'footer'      => array(
+            'description'  => get_theme_mod( 'kuh_footer_description', 'Seit über 40 Jahren das kulturelle Highlight in der historischen Kornbrennerstadt Haselünne.' ),
+            'contactName'  => get_theme_mod( 'kuh_footer_contact_name', 'Stadt Haselünne' ),
+            'contactAddr'  => get_theme_mod( 'kuh_footer_contact_address', 'Rathausplatz 1' ),
+            'contactZip'   => get_theme_mod( 'kuh_footer_contact_zip', '49740' ),
+            'contactCity'  => get_theme_mod( 'kuh_footer_contact_city', 'Haselünne' ),
+            'copyright'    => get_theme_mod( 'kuh_footer_copyright', 'Korn- und Hansemarkt. Alle Rechte vorbehalten.' ),
         ),
     );
 }

@@ -5,7 +5,10 @@
  * (data-kuh-*-Attribute) und mountet die passende Svelte-Komponente.
  */
 import { mount, unmount } from 'svelte';
-import HeroCollage from '../components/HeroCollage.svelte';
+import HeroSection from '../components/HeroSection.svelte';
+import HighlightsGrid from '../components/HighlightsGrid.svelte';
+import ProgramTeaser from '../components/ProgramTeaser.svelte';
+import CtaSection from '../components/CtaSection.svelte';
 
 interface MountedBlock {
   container: HTMLElement;
@@ -16,7 +19,10 @@ const mountedBlocks: MountedBlock[] = [];
 
 /** Registry: data-Attribut → Svelte-Komponente */
 const blockRegistry: Record<string, any> = {
-  'kuh-hero-collage': HeroCollage,
+  'kuh-hero-section': HeroSection,
+  'kuh-highlights-grid': HighlightsGrid,
+  'kuh-program-teaser': ProgramTeaser,
+  'kuh-cta-section': CtaSection,
 };
 
 /**

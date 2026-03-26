@@ -15,6 +15,14 @@ interface KuhData {
     behavior: 'sticky' | 'normal' | 'autohide';
     display: 'text' | 'image';
   };
+  footer: {
+    description: string;
+    contactName: string;
+    contactAddr: string;
+    contactZip: string;
+    contactCity: string;
+    copyright: string;
+  };
 }
 
 interface MenuItem {
