@@ -1,0 +1,36 @@
+{
+  "apiVersion": 3,
+  "name": "kuh/hero-section",
+  "version": "2.0.0",
+  "title": "Hero Section",
+  "category": "design",
+  "icon": "cover-image",
+  "description": "Hero-Bereich mit Hintergrundbild, Farbverlauf-Overlay, Event-Titel, Datum und Button.",
+  "keywords": ["hero", "banner", "header", "event"],
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"],
+    "anchor": true
+  },
+  "attributes": {
+    "imageId": {
+      "type": "number",
+      "default": 0
+    },
+    "imageUrl": {
+      "type": "string",
+      "default": ""
+    },
+    "imageAlt": {
+      "type": "string",
+      "default": ""
+    },
+    "overlayOpacity": {
+      "type": "number",
+      "default": 40
+    }
+  },
+  "textdomain": "korn-und-hansemarkt",
+  "editorScript": "file:./editor.js",
+  "render": "file:./render.php"
+}
