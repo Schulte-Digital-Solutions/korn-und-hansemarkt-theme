@@ -5,53 +5,82 @@
 
   const config = getConfig();
   const footerMenuItems: MenuItem[] = config.menus?.footer ?? [];
+  const legalMenuItems: MenuItem[] = config.menus?.footer_legal ?? [];
+  const footer = config.footer;
   const currentYear = new Date().getFullYear();
 </script>
 
-<footer class="bg-gray-900 text-gray-300 mt-auto">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <!-- Info -->
-      <div>
-        <h3 class="text-white text-lg font-semibold mb-4">{config.siteName}</h3>
-        {#if config.siteDesc}
-          <p class="text-gray-400 text-sm">{config.siteDesc}</p>
-        {/if}
-      </div>
-
-      <!-- Navigation -->
-      {#if footerMenuItems.length > 0}
-        <div>
-          <h3 class="text-white text-lg font-semibold mb-4">Navigation</h3>
-          <ul class="space-y-2">
-            {#each footerMenuItems as item}
-              <li>
-                <Link
-                  href={item.url || '/'}
-                  class="text-gray-400 hover:text-white transition-colors text-sm"
-                >
-                  {item.title}
-                </Link>
-              </li>
-            {/each}
-          </ul>
-        </div>
+<footer class="bg-stone-100 w-full relative mt-auto">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-12 px-8 py-16 max-w-7xl mx-auto">
+    <!-- Über uns -->
+    <div class="space-y-6">
+      <h3 class="text-xl font-headline text-emerald-900">{config.siteName}</h3>
+      {#if footer?.description}
+        <p class="text-sm opacity-70 leading-relaxed">{footer.description}</p>
       {/if}
-
-      <!-- Kontakt -->
-      <div>
-        <h3 class="text-white text-lg font-semibold mb-4">Kontakt</h3>
-        <p class="text-gray-400 text-sm">
-          Besuchen Sie uns gerne vor Ort oder kontaktieren Sie uns online.
-        </p>
-      </div>
     </div>
 
-    <!-- Copyright -->
-    <div class="border-t border-gray-800 mt-8 pt-8 text-center">
-      <p class="text-gray-500 text-sm">
-        &copy; {currentYear} {config.siteName}. Alle Rechte vorbehalten.
+    <!-- Navigation -->
+    {#if footerMenuItems.length > 0}
+    <div>
+      <h4 class="font-bold text-emerald-900 mb-6 text-sm uppercase tracking-widest">Navigation</h4>
+      <ul class="space-y-4">
+        {#each footerMenuItems as item}
+          <li>
+            <Link
+              href={item.url || '/'}
+              class="text-stone-700 hover:text-secondary transition-colors text-sm"
+            >
+              {item.title}
+            </Link>
+          </li>
+        {/each}
+      </ul>
+    </div>
+    {/if}
+
+    <!-- Rechtliches -->
+    {#if legalMenuItems.length > 0}
+    <div>
+      <h4 class="font-bold text-emerald-900 mb-6 text-sm uppercase tracking-widest">Rechtliches</h4>
+      <ul class="space-y-4">
+        {#each legalMenuItems as item}
+          <li>
+            <Link
+              href={item.url || '/'}
+              class="text-stone-700 hover:text-secondary transition-colors text-sm"
+            >
+              {item.title}
+            </Link>
+          </li>
+        {/each}
+      </ul>
+    </div>
+    {/if}
+
+    <!-- Kontakt -->
+    {#if footer?.contactName}
+    <div>
+      <h4 class="font-bold text-emerald-900 mb-6 text-sm uppercase tracking-widest">Kontakt</h4>
+      <p class="text-sm text-stone-700">
+        {footer.contactName}<br />
+        {footer.contactAddr}<br />
+        {footer.contactZip} {footer.contactCity}
       </p>
     </div>
+    {/if}
+  </div>
+
+  <!-- Copyright -->
+  <div class="max-w-7xl mx-auto px-8 py-8 border-t border-outline/5 flex flex-col md:flex-row items-center md:justify-between gap-2 text-xs opacity-70">
+    {#if footer?.copyright}
+      <p>&copy; {currentYear} {footer.copyright}</p>
+    {/if}
+    <p>
+      Made with <span class="text-red-500">&hearts;</span> by
+      <a href="https://schultedigital.de" target="_blank" rel="noopener noreferrer" class="hover:text-secondary transition-colors underline underline-offset-2">
+        Schulte Digital Solutions
+      </a>
+    </p>
   </div>
 </footer>

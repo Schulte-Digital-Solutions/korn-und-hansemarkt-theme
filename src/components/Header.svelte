@@ -37,167 +37,107 @@
     openSubmenuId = openSubmenuId === id ? null : id;
   }
 
-  const headerBg = config.header?.bg ?? '#ffffff';
-
-  /** Prüft ob die Hintergrundfarbe Transparenz hat */
-  function hasAlpha(color: string): boolean {
-    if (color.startsWith('rgba')) {
-      const m = color.match(/,[\s]*([\.\d]+)\s*\)$/);
-      return m ? parseFloat(m[1]) < 1 : false;
-    }
-    // #rrggbbaa (8-stellig) oder #rgba (4-stellig)
-    if (color.startsWith('#') && (color.length === 9 || color.length === 5)) {
-      const alpha = color.length === 9 ? color.slice(7) : color.slice(4);
-      return alpha.toLowerCase() !== 'ff' && alpha.toLowerCase() !== 'f';
-    }
-    return false;
-  }
-
-  const isTransparent = hasAlpha(headerBg);
   const hasAdminBar = document.body.classList.contains('admin-bar');
-  const behavior = config.header?.behavior ?? 'sticky';
-
-  // Autohide: show header on scroll up, hide on scroll down (mobile only)
-  let headerVisible = $state(true);
-  let isMobile = $state(window.matchMedia('(max-width: 767px)').matches);
-  let lastScrollY = 0;
-
-  const mq = window.matchMedia('(max-width: 767px)');
-  mq.addEventListener('change', (e) => {
-    isMobile = e.matches;
-    if (!isMobile) headerVisible = true;
-  });
-
-  if (behavior === 'autohide') {
-    const onScroll = () => {
-      if (!isMobile) return;
-      const currentY = window.scrollY;
-      headerVisible = currentY < lastScrollY || currentY < 50;
-      lastScrollY = currentY;
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-  }
 </script>
 
 <header
-  class="z-50 transition-transform duration-300"
-  class:fixed={isTransparent || (isMobile && (behavior === 'sticky' || behavior === 'autohide'))}
-  class:sticky={!isTransparent && !isMobile}
-  class:inset-x-0={isTransparent || (isMobile && (behavior !== 'normal'))}
-  class:backdrop-blur-md={isTransparent}
-  class:shadow-sm={!isTransparent}
-  class:-translate-y-full={isMobile && behavior === 'autohide' && !headerVisible}
-  class:translate-y-0={!isMobile || behavior !== 'autohide' || headerVisible}
+  class="sticky top-0 w-full z-50 bg-stone-50/80 backdrop-blur-xl shadow-sm transition-colors duration-300"
   style:top={hasAdminBar ? 'var(--wp-admin--admin-bar--height, 32px)' : '0'}
-  style:background-color={headerBg}
-  style:color={config.header?.text ?? '#111827'}
 >
-  <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center h-18">
-      <!-- Logo / Site Name -->
-      <div class="shrink-0">
-        <Link href="/" class="flex items-center gap-3 no-underline">
-          {#if config.header?.display === 'image' && config.logo}
-            <img src={config.logo} alt={config.siteName} class="h-10 w-auto" />
-          {:else}
-            <span class="text-4xl font-old tracking-wide">{config.siteName}</span>
-          {/if}
-        </Link>
-      </div>
+  <div class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
+    <div class="flex items-center gap-4">
+      <!-- Hamburger (sichtbar auf mobil, unsichtbar auf desktop) -->
+      <button
+        onclick={toggleMobileMenu}
+        class="md:hidden material-symbols-outlined text-stone-600 cursor-pointer"
+        aria-label="Menü öffnen"
+      >menu</button>
 
-      <!-- Desktop Navigation -->
-      <div class="hidden md:flex md:items-center md:space-x-8">
-        {#each menuItems as item}
-          {#if item.children && item.children.length > 0}
-            <div class="relative group">
-              <button
-                class="hover:text-secondary transition-colors duration-200 text-sm font-medium inline-flex items-center gap-1"
-              >
-                {item.title}
-                <svg class="w-3 h-3 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              <div class="absolute left-0 top-full pt-2 hidden group-hover:block transition-all duration-200 z-50">
-                <div class="shadow-xl ring-1 ring-black/10 py-2 min-w-50 backdrop-blur-lg bg-black/30 text-white">
-                  {#each item.children as child}
-                    <Link
-                      href={child.url || '/'}
-                      class="block px-4 py-2 text-sm hover:text-secondary hover:bg-black/50 transition-colors"
-                    >
-                      {child.title}
-                    </Link>
-                  {/each}
-                </div>
+      <Link href="/" class="no-underline">
+        {#if config.header?.display === 'image' && config.logo}
+          <img src={config.logo} alt={config.siteName} class="h-10 w-auto" />
+        {:else}
+          <h1 class="text-2xl font-black text-emerald-900 font-headline tracking-tight">
+            Korn- und Hansemarkt
+          </h1>
+        {/if}
+      </Link>
+    </div>
+
+    <!-- Desktop Navigation -->
+    <nav class="hidden md:flex items-center gap-8">
+      {#each menuItems as item, i}
+        {#if item.children && item.children.length > 0}
+          <div class="relative group">
+            <button
+              class="text-stone-600 hover:bg-stone-200/50 transition-colors px-2 py-1 text-sm uppercase tracking-widest"
+            >
+              {item.title}
+            </button>
+            <div class="absolute left-0 top-full pt-2 hidden group-hover:block z-50">
+              <div class="bg-white/90 backdrop-blur-lg shadow-xl ring-1 ring-black/5 py-2 min-w-[12rem]">
+                {#each item.children as child}
+                  <Link
+                    href={child.url || '/'}
+                    class="block px-4 py-2 text-sm text-stone-600 hover:bg-stone-100 hover:text-emerald-900 transition-colors"
+                  >
+                    {child.title}
+                  </Link>
+                {/each}
               </div>
             </div>
+          </div>
+        {:else}
+          <Link
+            href={item.url || '/'}
+            class="{i === 0
+              ? 'text-emerald-900 font-bold'
+              : 'text-stone-600 hover:bg-stone-200/50'} transition-colors px-2 py-1 text-sm uppercase tracking-widest"
+          >
+            {item.title}
+          </Link>
+        {/if}
+      {/each}
+    </nav>
+  </div>
+
+  <!-- Mobile Navigation Drawer -->
+  {#if mobileMenuOpen}
+    <div class="md:hidden border-t border-stone-200/50 bg-stone-50/95 backdrop-blur-xl">
+      <div class="flex flex-col px-6 py-4 space-y-1">
+        {#each menuItems as item}
+          {#if item.children && item.children.length > 0}
+            <button
+              onclick={() => toggleSubmenu(item.id)}
+              class="flex items-center justify-between w-full px-3 py-2 text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50 transition-colors text-left text-sm uppercase tracking-widest"
+            >
+              {item.title}
+              <span class="material-symbols-outlined text-sm transition-transform {openSubmenuId === item.id ? 'rotate-180' : ''}">
+                expand_more
+              </span>
+            </button>
+            {#if openSubmenuId === item.id}
+              <div class="flex flex-col space-y-1 pl-4">
+                {#each item.children as child}
+                  <Link
+                    href={child.url || '/'}
+                    class="block px-3 py-2 text-sm text-stone-500 hover:text-emerald-900 hover:bg-stone-200/50 transition-colors"
+                  >
+                    {child.title}
+                  </Link>
+                {/each}
+              </div>
+            {/if}
           {:else}
             <Link
               href={item.url || '/'}
-              class="hover:text-secondary transition-colors duration-200 text-sm font-medium"
+              class="block px-3 py-2 text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50 transition-colors text-sm uppercase tracking-widest"
             >
               {item.title}
             </Link>
           {/if}
         {/each}
       </div>
-
-      <!-- Mobile Menu Hamburger -->
-      <div class="md:hidden">
-        <button
-          onclick={toggleMobileMenu}
-          class="inline-flex items-center justify-center p-2 hover:opacity-75 transition"
-          aria-label="Menü öffnen"
-        >
-          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            {#if mobileMenuOpen}
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            {:else}
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            {/if}
-          </svg>
-        </button>
-      </div>
     </div>
-
-    <!-- Mobile Navigation -->
-    {#if mobileMenuOpen}
-      <div class="md:hidden pb-4">
-        <div class="flex flex-col space-y-1">
-          {#each menuItems as item}
-            {#if item.children && item.children.length > 0}
-              <button
-                onclick={() => toggleSubmenu(item.id)}
-                class="flex items-center justify-between w-full px-3 py-2 hover:text-secondary hover:bg-black/5 transition-colors text-left"
-              >
-                {item.title}
-                <svg class="w-4 h-4 transition-transform" class:rotate-180={openSubmenuId === item.id} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {#if openSubmenuId === item.id}
-                <div class="flex flex-col space-y-1 pl-4">
-                  {#each item.children as child}
-                    <Link
-                      href={child.url || '/'}
-                      class="block px-3 py-2 hover:text-secondary hover:bg-black/5 transition-colors text-sm"
-                    >
-                      {child.title}
-                    </Link>
-                  {/each}
-                </div>
-              {/if}
-            {:else}
-              <Link
-                href={item.url || '/'}
-                class="block px-3 py-2 hover:text-secondary hover:bg-black/5 transition-colors"
-              >
-                {item.title}
-              </Link>
-            {/if}
-          {/each}
-        </div>
-      </div>
-    {/if}
-  </nav>
+  {/if}
 </header>
