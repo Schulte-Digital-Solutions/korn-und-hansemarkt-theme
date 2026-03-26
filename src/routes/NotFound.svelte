@@ -10,7 +10,7 @@
   </p>
   <Link
     href="/"
-    class="inline-block px-6 py-3 bg-[var(--color-secondary)] text-white rounded-lg hover:bg-[var(--color-accent)] transition-colors font-medium"
+    class="inline-block px-6 py-3 bg-secondary text-white rounded-lg hover:bg-primary-container transition-colors font-medium"
   >
     Zur Startseite
   </Link>

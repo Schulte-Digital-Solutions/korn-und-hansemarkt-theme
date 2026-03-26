@@ -75,7 +75,7 @@
             </div>
             <Link
               href="/post/{post.slug}"
-              class="inline-block mt-4 text-[var(--color-secondary)] hover:text-[var(--color-accent)] text-sm font-medium transition-colors"
+              class="inline-block mt-4 text-secondary hover:text-primary text-sm font-medium transition-colors"
             >
               Weiterlesen →
             </Link>
@@ -93,7 +93,7 @@
     <div class="text-center mt-8">
       <button
         onclick={loadMore}
-        class="px-6 py-3 bg-[var(--color-secondary)] text-white rounded-lg hover:bg-[var(--color-accent)] transition-colors font-medium"
+        class="px-6 py-3 bg-secondary text-white rounded-lg hover:bg-primary-container transition-colors font-medium"
       >
         Mehr laden
       </button>
