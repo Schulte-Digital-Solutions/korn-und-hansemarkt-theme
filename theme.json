@@ -13,39 +13,99 @@
 			"palette": [
 				{
 					"slug": "primary",
-					"color": "#2c3e50",
+					"color": "#011e08",
 					"name": "Primärfarbe"
 				},
 				{
+					"slug": "primary-container",
+					"color": "#15331b",
+					"name": "Primär Container"
+				},
+				{
+					"slug": "on-primary",
+					"color": "#ffffff",
+					"name": "Text auf Primär"
+				},
+				{
 					"slug": "secondary",
-					"color": "#c0862a",
+					"color": "#725c0c",
 					"name": "Sekundärfarbe"
 				},
 				{
-					"slug": "accent",
-					"color": "#e67e22",
-					"name": "Akzentfarbe"
+					"slug": "secondary-container",
+					"color": "#fcdd83",
+					"name": "Sekundär Container"
 				},
 				{
-					"slug": "background",
+					"slug": "on-secondary",
 					"color": "#ffffff",
-					"name": "Hintergrund"
+					"name": "Text auf Sekundär"
 				},
 				{
-					"slug": "text",
-					"color": "#333333",
+					"slug": "surface",
+					"color": "#fbf9f9",
+					"name": "Oberfläche"
+				},
+				{
+					"slug": "surface-container-lowest",
+					"color": "#ffffff",
+					"name": "Oberfläche (weiß)"
+				},
+				{
+					"slug": "surface-container-low",
+					"color": "#f5f3f3",
+					"name": "Oberfläche (hell)"
+				},
+				{
+					"slug": "surface-container",
+					"color": "#efeded",
+					"name": "Oberfläche (mittel)"
+				},
+				{
+					"slug": "surface-container-high",
+					"color": "#e9e8e8",
+					"name": "Oberfläche (dunkel)"
+				},
+				{
+					"slug": "surface-container-highest",
+					"color": "#e4e2e2",
+					"name": "Oberfläche (am dunkelsten)"
+				},
+				{
+					"slug": "on-surface",
+					"color": "#1b1c1c",
 					"name": "Textfarbe"
 				},
 				{
-					"slug": "muted",
-					"color": "#6b7280",
-					"name": "Gedämpft"
+					"slug": "outline",
+					"color": "#737971",
+					"name": "Rahmenfarbe"
+				},
+				{
+					"slug": "outline-variant",
+					"color": "#c2c8bf",
+					"name": "Rahmenfarbe (dezent)"
 				}
 			]
 		},
 		"typography": {
 			"customFontSize": false,
 			"fontFamilies": [
+				{
+					"fontFamily": "'Plus Jakarta Sans', 'Inter', sans-serif",
+					"slug": "body",
+					"name": "Body (Plus Jakarta Sans)"
+				},
+				{
+					"fontFamily": "'UnifrakturMaguntia', 'Manuskript Gotisch', serif",
+					"slug": "headline",
+					"name": "Headline (Fraktur)"
+				},
+				{
+					"fontFamily": "'Newsreader', Georgia, serif",
+					"slug": "serif-italic",
+					"name": "Serif Italic (Newsreader)"
+				},
 				{
 					"fontFamily": "'Inter', sans-serif",
 					"slug": "inter",
@@ -55,26 +115,6 @@
 					"fontFamily": "'Manuskript Gotisch', serif",
 					"slug": "manuskript-gotisch",
 					"name": "Manuskript Gotisch"
-				},
-				{
-					"fontFamily": "Georgia, serif",
-					"slug": "georgia",
-					"name": "Georgia"
-				},
-				{
-					"fontFamily": "'Times New Roman', Times, serif",
-					"slug": "times-new-roman",
-					"name": "Times New Roman"
-				},
-				{
-					"fontFamily": "Arial, Helvetica, sans-serif",
-					"slug": "arial",
-					"name": "Arial"
-				},
-				{
-					"fontFamily": "Verdana, Geneva, sans-serif",
-					"slug": "verdana",
-					"name": "Verdana"
 				},
 				{
 					"fontFamily": "system-ui, sans-serif",

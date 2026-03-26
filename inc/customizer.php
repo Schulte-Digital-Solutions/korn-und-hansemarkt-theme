@@ -108,6 +108,77 @@ function kuh_customize_register( $wp_customize ) {
             'image' => __( 'Logo (Bild)', 'korn-und-hansemarkt' ),
         ),
     ) );
+    // === Abschnitt: Footer ===
+    $wp_customize->add_section( 'kuh_footer', array(
+        'title'    => __( 'Footer', 'korn-und-hansemarkt' ),
+        'priority' => 35,
+    ) );
+
+    $wp_customize->add_setting( 'kuh_footer_description', array(
+        'default'           => 'Seit über 40 Jahren das kulturelle Highlight in der historischen Kornbrennerstadt Haselünne.',
+        'sanitize_callback' => 'sanitize_text_field',
+        'transport'         => 'refresh',
+    ) );
+    $wp_customize->add_control( 'kuh_footer_description', array(
+        'label'   => __( 'Beschreibung', 'korn-und-hansemarkt' ),
+        'section' => 'kuh_footer',
+        'type'    => 'textarea',
+    ) );
+
+    $wp_customize->add_setting( 'kuh_footer_contact_name', array(
+        'default'           => 'Stadt Haselünne',
+        'sanitize_callback' => 'sanitize_text_field',
+        'transport'         => 'refresh',
+    ) );
+    $wp_customize->add_control( 'kuh_footer_contact_name', array(
+        'label'   => __( 'Kontakt: Name', 'korn-und-hansemarkt' ),
+        'section' => 'kuh_footer',
+        'type'    => 'text',
+    ) );
+
+    $wp_customize->add_setting( 'kuh_footer_contact_address', array(
+        'default'           => 'Rathausplatz 1',
+        'sanitize_callback' => 'sanitize_text_field',
+        'transport'         => 'refresh',
+    ) );
+    $wp_customize->add_control( 'kuh_footer_contact_address', array(
+        'label'   => __( 'Kontakt: Straße', 'korn-und-hansemarkt' ),
+        'section' => 'kuh_footer',
+        'type'    => 'text',
+    ) );
+
+    $wp_customize->add_setting( 'kuh_footer_contact_zip', array(
+        'default'           => '49740',
+        'sanitize_callback' => 'sanitize_text_field',
+        'transport'         => 'refresh',
+    ) );
+    $wp_customize->add_control( 'kuh_footer_contact_zip', array(
+        'label'   => __( 'Kontakt: PLZ', 'korn-und-hansemarkt' ),
+        'section' => 'kuh_footer',
+        'type'    => 'text',
+    ) );
+
+    $wp_customize->add_setting( 'kuh_footer_contact_city', array(
+        'default'           => 'Haselünne',
+        'sanitize_callback' => 'sanitize_text_field',
+        'transport'         => 'refresh',
+    ) );
+    $wp_customize->add_control( 'kuh_footer_contact_city', array(
+        'label'   => __( 'Kontakt: Ort', 'korn-und-hansemarkt' ),
+        'section' => 'kuh_footer',
+        'type'    => 'text',
+    ) );
+
+    $wp_customize->add_setting( 'kuh_footer_copyright', array(
+        'default'           => 'Korn- und Hansemarkt. Alle Rechte vorbehalten.',
+        'sanitize_callback' => 'sanitize_text_field',
+        'transport'         => 'refresh',
+    ) );
+    $wp_customize->add_control( 'kuh_footer_copyright', array(
+        'label'   => __( 'Copyright-Text', 'korn-und-hansemarkt' ),
+        'section' => 'kuh_footer',
+        'type'    => 'text',
+    ) );
 }
 add_action( 'customize_register', 'kuh_customize_register' );
 
