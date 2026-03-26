@@ -31,8 +31,8 @@
     {/if}
     <!-- Gradient Overlay -->
     <div
-      class="absolute inset-0 bg-linear-to-r from-[--color-primary]/80 via-[--color-primary]/40 to-transparent"
-      style:--overlay-opacity="{overlayOpacity / 100}"
+      class="absolute inset-0"
+      style="background: linear-gradient(to right, var(--color-primary) 0%, color-mix(in srgb, var(--color-primary) 50%, transparent) 50%, transparent 100%); opacity: {overlayOpacity / 100};"
     ></div>
   </div>
 
