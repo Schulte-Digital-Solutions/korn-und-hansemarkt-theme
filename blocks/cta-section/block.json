@@ -1,0 +1,19 @@
+{
+  "apiVersion": 3,
+  "name": "kuh/cta-section",
+  "version": "1.0.0",
+  "title": "CTA-Sektion",
+  "category": "design",
+  "icon": "megaphone",
+  "description": "Call-to-Action Sektion mit dunkelgrünem Hintergrund, Headline und Button.",
+  "keywords": ["cta", "call-to-action", "mitmachen", "aktion"],
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"],
+    "anchor": true
+  },
+  "attributes": {},
+  "textdomain": "korn-und-hansemarkt",
+  "editorScript": "file:./editor.js",
+  "render": "file:./render.php"
+}
