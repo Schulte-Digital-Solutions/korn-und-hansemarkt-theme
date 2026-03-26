@@ -1,0 +1,52 @@
+{
+  "apiVersion": 3,
+  "name": "kuh/program-teaser",
+  "version": "1.0.0",
+  "title": "Programm-Teaser",
+  "category": "design",
+  "icon": "calendar-alt",
+  "description": "Programmvorschau mit interaktiven Tages-Tabs und Veranstaltungsliste.",
+  "keywords": ["programm", "schedule", "teaser", "kalender", "event"],
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"],
+    "anchor": true
+  },
+  "attributes": {
+    "days": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": [
+        {
+          "label": "Freitag",
+          "date": "11. September",
+          "events": [
+            { "time": "17:00", "title": "Feierliche Eröffnung", "description": "Der Markt wird mit dem traditionellen Fassanstich und Salutschüssen der Stadtwache eröffnet." },
+            { "time": "19:30", "title": "Abendliches Spektakel", "description": "Feuershows und mittelalterliche Klänge auf dem gesamten Marktgelände bis tief in die Nacht." }
+          ]
+        },
+        {
+          "label": "Samstag",
+          "date": "12. September",
+          "events": [
+            { "time": "10:00", "title": "Marktbetrieb", "description": "Ganztägiger Marktbetrieb mit Kunsthandwerk, Musik und Gauklern auf dem gesamten Gelände." },
+            { "time": "14:00", "title": "Großer Festumzug", "description": "Über 4.000 Gewandete ziehen durch die historische Altstadt von Haselünne." }
+          ]
+        },
+        {
+          "label": "Sonntag",
+          "date": "13. September",
+          "events": [
+            { "time": "10:00", "title": "Gottesdienst", "description": "Historischer Gottesdienst in der Klosterkirche mit anschließendem Markttag." },
+            { "time": "15:00", "title": "Musikalischer Ausklang", "description": "Gemeinsamer Abschluss des Marktes mit mittelalterlicher Musik und Tanz." }
+          ]
+        }
+      ]
+    }
+  },
+  "textdomain": "korn-und-hansemarkt",
+  "editorScript": "file:./editor.js",
+  "render": "file:./render.php"
+}
