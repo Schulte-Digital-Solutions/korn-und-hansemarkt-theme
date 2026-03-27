@@ -14,7 +14,7 @@ function kuh_enqueue_assets() {
     wp_enqueue_style( 'wp-block-library' );
 
     $manifest_path = KUH_THEME_DIR . '/dist/.vite/manifest.json';
-    $is_dev = defined( 'WP_DEBUG' ) && WP_DEBUG;
+    $is_dev = str_ends_with( wp_parse_url( home_url(), PHP_URL_HOST ), '.test' );
     $use_dev_server = false;
 
     if ( $is_dev ) {

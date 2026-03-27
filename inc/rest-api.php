@@ -52,7 +52,7 @@ add_action( 'rest_api_init', 'kuh_register_menu_endpoint' );
  * CORS-Header für REST API (Development)
  */
 function kuh_cors_headers() {
-    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+    if ( str_ends_with( wp_parse_url( home_url(), PHP_URL_HOST ), '.test' ) ) {
         header( 'Access-Control-Allow-Origin: http://localhost:5173' );
         header( 'Access-Control-Allow-Methods: GET, POST, OPTIONS' );
         header( 'Access-Control-Allow-Headers: Content-Type, Authorization, X-WP-Nonce' );
