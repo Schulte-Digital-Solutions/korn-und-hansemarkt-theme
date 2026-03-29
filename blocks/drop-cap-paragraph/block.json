@@ -1,0 +1,34 @@
+{
+  "apiVersion": 3,
+  "name": "kuh/drop-cap-paragraph",
+  "version": "1.0.0",
+  "title": "Initial-Absatz",
+  "category": "text",
+  "icon": "editor-textcolor",
+  "description": "Absatz mit dekorativem Großbuchstaben (Initial / Drop Cap) am Anfang.",
+  "keywords": ["initial", "drop cap", "großbuchstabe", "absatz", "paragraph"],
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"],
+    "anchor": true
+  },
+  "attributes": {
+    "text": {
+      "type": "string",
+      "source": "html",
+      "default": ""
+    },
+    "dropCapColor": {
+      "type": "string",
+      "default": ""
+    },
+    "dropCapFont": {
+      "type": "string",
+      "default": "gothic",
+      "enum": ["gothic", "serif", "inherit"]
+    }
+  },
+  "textdomain": "korn-und-hansemarkt",
+  "editorScript": "file:./editor.js",
+  "render": "file:./render.php"
+}
