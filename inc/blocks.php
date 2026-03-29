@@ -18,6 +18,7 @@ function kuh_register_blocks() {
     register_block_type( KUH_THEME_DIR . '/blocks/program-teaser' );
     register_block_type( KUH_THEME_DIR . '/blocks/cta-section' );
     register_block_type( KUH_THEME_DIR . '/blocks/drop-cap-paragraph' );
+    register_block_type( KUH_THEME_DIR . '/blocks/partner-carousel' );
 
     // Alten Block-Namen als Alias registrieren (Rückwärtskompatibilität)
     register_block_type( 'kuh/hero-collage', array(

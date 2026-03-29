@@ -10,6 +10,7 @@ import HighlightsGrid from '../components/HighlightsGrid.svelte';
 import ProgramTeaser from '../components/ProgramTeaser.svelte';
 import CtaSection from '../components/CtaSection.svelte';
 import DropCapParagraph from '../components/DropCapParagraph.svelte';
+import PartnerCarousel from '../components/PartnerCarousel.svelte';
 
 interface MountedBlock {
   container: HTMLElement;
@@ -25,6 +26,7 @@ const blockRegistry: Record<string, any> = {
   'kuh-program-teaser': ProgramTeaser,
   'kuh-cta-section': CtaSection,
   'kuh-drop-cap-paragraph': DropCapParagraph,
+  'kuh-partner-carousel': PartnerCarousel,
 };
 
 /**

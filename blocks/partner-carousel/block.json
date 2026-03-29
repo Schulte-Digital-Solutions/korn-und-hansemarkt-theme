@@ -1,0 +1,42 @@
+{
+  "apiVersion": 3,
+  "name": "kuh/partner-carousel",
+  "version": "1.0.0",
+  "title": "Partner-Karussell",
+  "category": "design",
+  "icon": "groups",
+  "description": "Endlos scrollende Logo-Leiste mit allen Partnern und Unterstützern.",
+  "keywords": ["partner", "sponsor", "logo", "karussell", "carousel", "unterstützer"],
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"],
+    "anchor": true,
+    "multiple": true
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "default": "Unsere Partner & Unterstützer"
+    },
+    "showTitle": {
+      "type": "boolean",
+      "default": true
+    },
+    "logoHeight": {
+      "type": "number",
+      "default": 48
+    },
+    "speed": {
+      "type": "number",
+      "default": 30
+    },
+    "variant": {
+      "type": "string",
+      "default": "carousel",
+      "enum": ["carousel", "grid"]
+    }
+  },
+  "textdomain": "korn-und-hansemarkt",
+  "editorScript": "file:./editor.js",
+  "render": "file:./render.php"
+}
