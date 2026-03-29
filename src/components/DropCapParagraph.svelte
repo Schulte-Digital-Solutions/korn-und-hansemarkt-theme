@@ -43,7 +43,7 @@
     line-height: 0.8;
     margin-right: 0.1em;
     margin-top: 0.05em;
-    font-weight: 700;
+    font-weight: normal;
     font-family: var(--kuh-dc-font);
     color: var(--kuh-dc-color);
   }

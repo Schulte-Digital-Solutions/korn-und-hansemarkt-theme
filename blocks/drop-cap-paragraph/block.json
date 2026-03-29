@@ -16,6 +16,7 @@
     "text": {
       "type": "string",
       "source": "html",
+      "selector": "p",
       "default": ""
     },
     "dropCapColor": {

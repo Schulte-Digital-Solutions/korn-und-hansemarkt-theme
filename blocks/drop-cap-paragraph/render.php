@@ -15,6 +15,14 @@ $text           = $attributes['text'] ?? '';
 $drop_cap_color = $attributes['dropCapColor'] ?? '';
 $drop_cap_font  = $attributes['dropCapFont'] ?? 'gothic';
 
+// source:"html"-Attribute werden nur clientseitig geparst.
+// Serverseitig den Text aus dem gespeicherten $content extrahieren.
+if ( empty( $text ) && ! empty( $content ) ) {
+    if ( preg_match( '/<p[^>]*>(.*)<\/p>/s', $content, $m ) ) {
+        $text = $m[1];
+    }
+}
+
 $block_data = array(
     'text'         => $text,
     'dropCapColor' => $drop_cap_color,
