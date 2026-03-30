@@ -28,6 +28,12 @@
 
   const menuItems = buildMenuTree(flatItems);
 
+  function decodeHtml(html: string): string {
+    const el = document.createElement('textarea');
+    el.innerHTML = html;
+    return el.value;
+  }
+
   function toggleMobileMenu() {
     mobileMenuOpen = !mobileMenuOpen;
     openSubmenuId = null;
@@ -41,8 +47,10 @@
 </script>
 
 <header
-  class="sticky top-0 w-full z-50 bg-stone-50/80 backdrop-blur-xl shadow-sm transition-colors duration-300"
+  class="sticky top-0 w-full z-50 shadow-sm transition-colors duration-300"
   style:top={hasAdminBar ? 'var(--wp-admin--admin-bar--height, 32px)' : '0'}
+  style:background-color={config.header?.bg || '#ffffff'}
+  style:color={config.header?.text || '#111827'}
 >
   <div class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
     <div class="flex items-center gap-4">
@@ -72,7 +80,7 @@
             <button
               class="text-stone-600 hover:bg-stone-200/50 transition-colors px-2 py-1 text-sm uppercase tracking-widest"
             >
-              {item.title}
+              {decodeHtml(item.title)}
             </button>
             <div class="absolute left-0 top-full pt-2 hidden group-hover:block z-50">
               <div class="bg-white/90 backdrop-blur-lg shadow-xl ring-1 ring-black/5 py-2 min-w-[12rem]">
@@ -81,7 +89,7 @@
                     href={child.url || '/'}
                     class="block px-4 py-2 text-sm text-stone-600 hover:bg-stone-100 hover:text-emerald-900 transition-colors"
                   >
-                    {child.title}
+                    {decodeHtml(child.title)}
                   </Link>
                 {/each}
               </div>
@@ -94,7 +102,7 @@
               ? 'text-emerald-900 font-bold'
               : 'text-stone-600 hover:bg-stone-200/50'} transition-colors px-2 py-1 text-sm uppercase tracking-widest"
           >
-            {item.title}
+            {decodeHtml(item.title)}
           </Link>
         {/if}
       {/each}
@@ -103,7 +111,7 @@
 
   <!-- Mobile Navigation Drawer -->
   {#if mobileMenuOpen}
-    <div class="md:hidden border-t border-stone-200/50 bg-stone-50/95 backdrop-blur-xl">
+    <div class="md:hidden border-t border-stone-200/50" style:background-color={config.header?.bg || '#ffffff'}>
       <div class="flex flex-col px-6 py-4 space-y-1">
         {#each menuItems as item}
           {#if item.children && item.children.length > 0}
@@ -111,7 +119,7 @@
               onclick={() => toggleSubmenu(item.id)}
               class="flex items-center justify-between w-full px-3 py-2 text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50 transition-colors text-left text-sm uppercase tracking-widest"
             >
-              {item.title}
+              {decodeHtml(item.title)}
               <span class="material-symbols-outlined text-sm transition-transform {openSubmenuId === item.id ? 'rotate-180' : ''}">
                 expand_more
               </span>
@@ -123,7 +131,7 @@
                     href={child.url || '/'}
                     class="block px-3 py-2 text-sm text-stone-500 hover:text-emerald-900 hover:bg-stone-200/50 transition-colors"
                   >
-                    {child.title}
+                    {decodeHtml(child.title)}
                   </Link>
                 {/each}
               </div>
@@ -133,7 +141,7 @@
               href={item.url || '/'}
               class="block px-3 py-2 text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50 transition-colors text-sm uppercase tracking-widest"
             >
-              {item.title}
+              {decodeHtml(item.title)}
             </Link>
           {/if}
         {/each}
