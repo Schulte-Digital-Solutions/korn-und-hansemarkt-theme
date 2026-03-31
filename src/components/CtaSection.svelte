@@ -2,13 +2,35 @@
   interface Props {
     /** Gerenderter InnerBlocks-HTML-Content (Headline, Text, Button) */
     contentHtml: string;
+    /** Bild-URL für das optionale Hintergrundbild */
+    imageUrl?: string;
+    /** Alt-Text für das Hintergrundbild */
+    imageAlt?: string;
+    /** Overlay-Deckkraft (0–100) */
+    overlayOpacity?: number;
   }
 
-  let { contentHtml }: Props = $props();
+  let {
+    contentHtml,
+    imageUrl = '',
+    imageAlt = '',
+    overlayOpacity = 85,
+  }: Props = $props();
 </script>
 
 <section class="mx-6 mb-24 max-w-7xl lg:mx-auto bg-primary rounded-xl overflow-hidden relative">
-  <div class="absolute inset-0 opacity-10 pointer-events-none bg-linear-to-br from-primary-container to-primary"></div>
+  {#if imageUrl}
+    <img
+      src={imageUrl}
+      alt={imageAlt}
+      class="absolute inset-0 w-full h-full object-cover"
+      loading="lazy"
+    />
+  {/if}
+  <div
+    class="absolute inset-0 pointer-events-none"
+    style="background-color: var(--color-primary); opacity: {overlayOpacity / 100};"
+  ></div>
   <div class="relative z-10 py-20 px-12 text-center flex flex-col items-center cta-section-content">
     {@html contentHtml}
   </div>

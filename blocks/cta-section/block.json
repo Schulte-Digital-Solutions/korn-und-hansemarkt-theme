@@ -12,7 +12,24 @@
     "align": ["wide", "full"],
     "anchor": true
   },
-  "attributes": {},
+  "attributes": {
+    "imageId": {
+      "type": "number",
+      "default": 0
+    },
+    "imageUrl": {
+      "type": "string",
+      "default": ""
+    },
+    "imageAlt": {
+      "type": "string",
+      "default": ""
+    },
+    "overlayOpacity": {
+      "type": "number",
+      "default": 85
+    }
+  },
   "textdomain": "korn-und-hansemarkt",
   "editorScript": "file:./editor.js",
   "render": "file:./render.php"
