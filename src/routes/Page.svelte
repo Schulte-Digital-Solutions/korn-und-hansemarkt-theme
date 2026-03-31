@@ -2,6 +2,7 @@
   import { getPageBySlug } from '../lib/api';
   import { updateSeo } from '../lib/seo';
   import { reinitBlocks } from '../lib/reinitBlocks';
+  import { updateAdminBar } from '../lib/adminBar';
   import Loading from '../components/Loading.svelte';
   import type { WPPage } from '../types';
 
@@ -21,6 +22,7 @@
       error = null;
       page = await getPageBySlug(slug);
       showTitle = !page?.meta?.kuh_hide_title;
+      updateAdminBar(page?.id ?? null);
       if (page) {
         updateSeo({
           title: page.title.rendered.replace(/<[^>]*>/g, ''),

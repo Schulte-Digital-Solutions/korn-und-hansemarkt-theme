@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getPosts } from '../lib/api';
   import { updateSeo } from '../lib/seo';
+  import { updateAdminBar } from '../lib/adminBar';
   import Link from '../components/Link.svelte';
   import Loading from '../components/Loading.svelte';
   import type { WPPost } from '../types';
@@ -18,6 +19,7 @@
       posts = pageNum === 1 ? newPosts : [...posts, ...newPosts];
       hasMore = newPosts.length === 10;
       if (pageNum === 1) {
+        updateAdminBar(null);
         updateSeo({
           title: 'Blog',
           description: 'Aktuelle Beiträge und Neuigkeiten',

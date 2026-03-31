@@ -2,6 +2,7 @@
   import { getPostBySlug } from '../lib/api';
   import { updateSeo } from '../lib/seo';
   import { reinitBlocks } from '../lib/reinitBlocks';
+  import { updateAdminBar } from '../lib/adminBar';
   import Link from '../components/Link.svelte';
   import Loading from '../components/Loading.svelte';
   import type { WPPost } from '../types';
@@ -22,6 +23,7 @@
       error = null;
       post = await getPostBySlug(slug);
       showTitle = !post?.meta?.kuh_hide_title;
+      updateAdminBar(post?.id ?? null);
       if (post) {
         updateSeo({
           title: post.title.rendered.replace(/<[^>]*>/g, ''),

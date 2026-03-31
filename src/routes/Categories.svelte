@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getCategories, type WPCategory } from '../lib/api';
   import { updateSeo } from '../lib/seo';
+  import { updateAdminBar } from '../lib/adminBar';
   import Link from '../components/Link.svelte';
   import Loading from '../components/Loading.svelte';
 
@@ -12,6 +13,7 @@
     try {
       loading = true;
       categories = await getCategories();
+      updateAdminBar(null);
       updateSeo({
         title: 'Kategorien',
         description: 'Alle Beitragskategorien im Überblick',

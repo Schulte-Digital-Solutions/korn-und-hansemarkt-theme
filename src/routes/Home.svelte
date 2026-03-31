@@ -2,6 +2,7 @@
   import { getFrontPage, getPosts } from '../lib/api';
   import { updateSeo } from '../lib/seo';
   import { reinitBlocks } from '../lib/reinitBlocks';
+  import { updateAdminBar } from '../lib/adminBar';
   import Loading from '../components/Loading.svelte';
   import type { WPPage, WPPost } from '../types';
 
@@ -19,6 +20,7 @@
       ]);
       frontPage = page;
       posts = latestPosts;
+      updateAdminBar(page?.id ?? null);
       updateSeo({
         title: '',
         description: window.kuhData?.siteDesc,

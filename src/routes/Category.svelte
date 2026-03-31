@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getCategoryBySlug, getPostsByCategory } from '../lib/api';
   import { updateSeo } from '../lib/seo';
+  import { updateAdminBar } from '../lib/adminBar';
   import Link from '../components/Link.svelte';
   import Loading from '../components/Loading.svelte';
   import type { WPPost } from '../types';
@@ -30,6 +31,7 @@
       }
 
       categoryName = category.name;
+      updateAdminBar(null);
       const newPosts = await getPostsByCategory(category.id, 1, 10);
       posts = newPosts;
       hasMore = newPosts.length === 10;
