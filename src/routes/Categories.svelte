@@ -2,6 +2,7 @@
   import { getCategories, type WPCategory } from '../lib/api';
   import { updateSeo } from '../lib/seo';
   import { updateAdminBar } from '../lib/adminBar';
+  import { restoreScrollPosition } from '../lib/router';
   import Link from '../components/Link.svelte';
   import Loading from '../components/Loading.svelte';
 
@@ -28,6 +29,12 @@
 
   $effect(() => {
     loadCategories();
+  });
+
+  $effect(() => {
+    if (!loading && categories.length > 0) {
+      restoreScrollPosition();
+    }
   });
 </script>
 

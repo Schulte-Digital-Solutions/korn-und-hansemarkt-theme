@@ -84,7 +84,9 @@ export function getCurrentPath(): string {
 export function navigate(path: string) {
   const base = getBasePath();
   const target = path.startsWith('/') ? path : '/' + path;
-  window.history.pushState({}, '', base + target);
+  window.history.pushState({ scrollY: 0 }, '', base + target);
+  _pendingScrollY = 0;
+  window.scrollTo(0, 0);
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
@@ -99,4 +101,72 @@ export function resolveRoute(routes: Route[], path: string): RouteMatch | null {
     }
   }
   return null;
+}
+
+// --- Scroll-Wiederherstellung ---
+
+let _pendingScrollY = 0;
+let _scrollTimer: ReturnType<typeof setTimeout> | null = null;
+const SCROLL_KEY = 'kuh_scroll';
+
+/**
+ * Scrollposition laufend im history.state speichern (debounced).
+ * So ist der Wert bei Back/Forward immer aktuell.
+ */
+function onScroll() {
+  if (_scrollTimer) clearTimeout(_scrollTimer);
+  _scrollTimer = setTimeout(() => {
+    history.replaceState({ ...history.state, scrollY: window.scrollY }, '');
+  }, 100);
+}
+
+/**
+ * Wird vom Router bei popstate aufgerufen (Back/Forward-Navigation)
+ */
+export function handlePopState() {
+  _pendingScrollY = history.state?.scrollY ?? 0;
+}
+
+/**
+ * Scrollposition wiederherstellen (nach dem Laden des Inhalts aufrufen)
+ */
+export function restoreScrollPosition() {
+  // Back/Forward-Navigation
+  if (_pendingScrollY > 0) {
+    requestAnimationFrame(() => window.scrollTo(0, _pendingScrollY));
+    _pendingScrollY = 0;
+    return;
+  }
+  // Seite wurde neu geladen (F5)
+  try {
+    const raw = sessionStorage.getItem(SCROLL_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (saved.path === getCurrentPath()) {
+      requestAnimationFrame(() => window.scrollTo(0, saved.y));
+    }
+    sessionStorage.removeItem(SCROLL_KEY);
+  } catch {
+    // ignorieren
+  }
+}
+
+/**
+ * Scroll-Wiederherstellung initialisieren
+ */
+export function initScrollRestoration() {
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('beforeunload', () => {
+    try {
+      sessionStorage.setItem(SCROLL_KEY, JSON.stringify({
+        path: getCurrentPath(),
+        y: window.scrollY,
+      }));
+    } catch {
+      // sessionStorage nicht verfügbar
+    }
+  });
 }

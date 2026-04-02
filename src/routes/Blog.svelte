@@ -2,6 +2,7 @@
   import { getPosts } from '../lib/api';
   import { updateSeo } from '../lib/seo';
   import { updateAdminBar } from '../lib/adminBar';
+  import { restoreScrollPosition } from '../lib/router';
   import Link from '../components/Link.svelte';
   import Loading from '../components/Loading.svelte';
   import type { WPPost } from '../types';
@@ -40,6 +41,12 @@
 
   $effect(() => {
     loadPosts(1);
+  });
+
+  $effect(() => {
+    if (!loading && posts.length > 0) {
+      restoreScrollPosition();
+    }
   });
 </script>
 

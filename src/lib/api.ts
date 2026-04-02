@@ -1,5 +1,9 @@
 import type { KuhData, WPPost, WPPage } from './types';
 
+// --- In-Memory API-Cache (1 Stunde TTL) ---
+const apiCache = new Map<string, { data: unknown; ts: number }>();
+const CACHE_TTL = 60 * 60 * 1000;
+
 /**
  * WordPress-Konfiguration aus dem globalen Objekt laden
  */
@@ -12,8 +16,15 @@ export function getConfig(): KuhData {
  *
  * Unterstützt sowohl Pretty Permalinks (/wp-json/) als auch
  * Plain Permalinks (?rest_route=/).
+ * Ergebnisse werden für 1 Stunde gecacht.
  */
 async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  // Cache prüfen
+  const cached = apiCache.get(endpoint);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) {
+    return cached.data as T;
+  }
+
   const config = getConfig();
   let url: string;
 
@@ -41,7 +52,9 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
     throw new Error(`API Error: ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  const data: T = await response.json();
+  apiCache.set(endpoint, { data, ts: Date.now() });
+  return data;
 }
 
 /**

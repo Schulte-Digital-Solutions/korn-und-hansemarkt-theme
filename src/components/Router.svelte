@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { getCurrentPath, resolveRoute, type Route, type RouteMatch } from '../lib/router';
+  import { getCurrentPath, resolveRoute, handlePopState, initScrollRestoration, type Route, type RouteMatch } from '../lib/router';
 
   interface Props {
     routes: Route[];
@@ -12,6 +12,7 @@
   let match: RouteMatch | null = $state(null);
 
   function onNavChange() {
+    handlePopState();
     currentPath = getCurrentPath();
     match = resolveRoute(routes, currentPath);
   }
@@ -19,6 +20,7 @@
   $effect(() => {
     // Initial
     match = resolveRoute(routes, currentPath);
+    initScrollRestoration();
 
     window.addEventListener('popstate', onNavChange);
     return () => window.removeEventListener('popstate', onNavChange);

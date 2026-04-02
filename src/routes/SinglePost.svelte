@@ -3,6 +3,7 @@
   import { updateSeo } from '../lib/seo';
   import { reinitBlocks } from '../lib/reinitBlocks';
   import { updateAdminBar } from '../lib/adminBar';
+  import { restoreScrollPosition } from '../lib/router';
   import Link from '../components/Link.svelte';
   import Loading from '../components/Loading.svelte';
   import type { WPPost } from '../types';
@@ -49,6 +50,7 @@
   $effect(() => {
     if (!loading && post) {
       reinitBlocks();
+      restoreScrollPosition();
     }
   });
 </script>

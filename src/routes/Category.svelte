@@ -2,6 +2,7 @@
   import { getCategoryBySlug, getPostsByCategory } from '../lib/api';
   import { updateSeo } from '../lib/seo';
   import { updateAdminBar } from '../lib/adminBar';
+  import { restoreScrollPosition } from '../lib/router';
   import Link from '../components/Link.svelte';
   import Loading from '../components/Loading.svelte';
   import type { WPPost } from '../types';
@@ -59,6 +60,12 @@
 
   $effect(() => {
     loadCategory(params.slug);
+  });
+
+  $effect(() => {
+    if (!loading && posts.length > 0) {
+      restoreScrollPosition();
+    }
   });
 </script>
 
