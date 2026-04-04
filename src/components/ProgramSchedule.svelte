@@ -18,7 +18,6 @@
 
   interface ScheduleDay {
     label: string;
-    subtitle?: string;
     date: string;
     events: ScheduleEvent[];
   }
@@ -29,7 +28,45 @@
   }
 
   let { days, titleFont = 'headline' }: Props = $props();
-  let activeDay = $state(0);
+
+  function parseDate(dateStr: string): Date | null {
+    if (!dateStr) return null;
+    const d = new Date(dateStr + 'T00:00:00');
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function formatDate(dateStr: string): string {
+    const d = parseDate(dateStr);
+    if (!d) return dateStr;
+    return d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
+  }
+
+  function getInitialDay(): number {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    // Exakter Treffer
+    for (let i = 0; i < days.length; i++) {
+      const d = parseDate(days[i].date);
+      if (d && d.getTime() === today.getTime()) return i;
+    }
+    // Nächster kommender Tag
+    let closest = -1;
+    let closestDiff = Infinity;
+    for (let i = 0; i < days.length; i++) {
+      const d = parseDate(days[i].date);
+      if (!d) continue;
+      const diff = d.getTime() - today.getTime();
+      if (diff > 0 && diff < closestDiff) {
+        closest = i;
+        closestDiff = diff;
+      }
+    }
+    if (closest >= 0) return closest;
+    // Alle Tage vorbei → letzter Tag
+    return days.length - 1;
+  }
+
+  let activeDay = $state(getInitialDay());
 
   const fontClass: Record<string, string> = {
     headline: 'font-headline',
@@ -49,11 +86,8 @@
             ? 'bg-surface-container-highest text-primary font-bold shadow-sm'
             : 'bg-surface-container-low text-on-surface/60'}"
       >
-        {#if day.subtitle}
-          <div class="text-[0.6rem] uppercase tracking-[0.15em] opacity-70">{day.subtitle}</div>
-        {/if}
         <div class="text-[0.7rem] uppercase tracking-tighter opacity-70">{day.label}</div>
-        <div class="text-sm">{day.date}</div>
+        <div class="text-sm">{formatDate(day.date)}</div>
       </button>
     {/each}
   </div>

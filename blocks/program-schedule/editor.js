@@ -5,7 +5,7 @@
 (function () {
 const { registerBlockType } = wp.blocks;
 const { useBlockProps, InspectorControls } = wp.blockEditor;
-const { PanelBody, TextControl, TextareaControl, SelectControl, Button } = wp.components;
+const { PanelBody, TextControl, TextareaControl, SelectControl, Button, BaseControl } = wp.components;
 const { createElement: el, Fragment, useState } = wp.element;
 
 const EVENT_TYPES = [
@@ -36,6 +36,12 @@ function toSlug(text) {
   return text.toLowerCase()
     .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
     .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function formatDateDE(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr + 'T00:00:00');
+  return d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
 }
 
 function newEvent(type) {
@@ -100,7 +106,7 @@ registerBlockType('kuh/program-schedule', {
 
     function addDay() {
       setAttributes({
-        days: [...days, { label: 'Neuer Tag', subtitle: '', date: '', events: [] }],
+        days: [...days, { label: 'Neuer Tag', date: '', events: [] }],
       });
     }
 
@@ -182,8 +188,9 @@ registerBlockType('kuh/program-schedule', {
             PanelBody,
             { key: di, title: day.label || 'Tag ' + (di + 1), initialOpen: di === activeDay },
             el(TextControl, { label: 'Bezeichnung', value: day.label, onChange: (v) => updateDay(di, 'label', v) }),
-            el(TextControl, { label: 'Untertitel', value: day.subtitle || '', onChange: (v) => updateDay(di, 'subtitle', v) }),
-            el(TextControl, { label: 'Datum', value: day.date, onChange: (v) => updateDay(di, 'date', v) }),
+            el(BaseControl, { label: 'Datum', __nextHasNoMarginBottom: true },
+              el('input', { type: 'date', value: day.date || '', onChange: (e) => updateDay(di, 'date', e.target.value), style: { width: '100%', padding: '6px 8px', border: '1px solid #8c8f94', borderRadius: '4px' } })
+            ),
             el('hr'),
             el('h4', { style: { fontWeight: 'bold', marginBottom: '8px' } }, 'Events (' + day.events.length + ')'),
             day.events.map((ev, ei) => {
@@ -255,11 +262,8 @@ registerBlockType('kuh/program-schedule', {
                   flexShrink: 0,
                 },
               },
-              day.subtitle
-                ? el('span', { style: { fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.15em', opacity: 0.6 } }, day.subtitle)
-                : null,
               el('span', { style: { fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.7 } }, day.label),
-              el('span', { style: { fontSize: '13px', marginTop: '2px' } }, day.date)
+              el('span', { style: { fontSize: '13px', marginTop: '2px' } }, formatDateDE(day.date) || day.date)
             )
           )
         ),

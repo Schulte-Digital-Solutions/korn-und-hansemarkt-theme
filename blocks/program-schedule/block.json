@@ -23,8 +23,7 @@
       "default": [
         {
           "label": "Freitag",
-          "subtitle": "Eröffnung",
-          "date": "11. September",
+          "date": "2026-09-11",
           "events": [
             {
               "type": "main",
@@ -66,8 +65,7 @@
         },
         {
           "label": "Samstag",
-          "subtitle": "Markttreiben",
-          "date": "12. September",
+          "date": "2026-09-12",
           "events": [
             {
               "type": "recurring",
@@ -118,8 +116,7 @@
         },
         {
           "label": "Sonntag",
-          "subtitle": "Großes Finale",
-          "date": "13. September",
+          "date": "2026-09-13",
           "events": [
             {
               "type": "side",

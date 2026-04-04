@@ -30,13 +30,17 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
             <?php foreach ( $days as $day ) : ?>
                 <div style="margin-bottom:2.5rem;">
                     <h3 style="font-size:1.25rem;font-weight:bold;color:#011e08;margin-bottom:0.25rem;">
-                        <?php echo esc_html( $day['label'] ?? '' ); ?> – <?php echo esc_html( $day['date'] ?? '' ); ?>
+                        <?php
+                            $date_display = $day['date'] ?? '';
+                            if ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date_display ) ) {
+                                $ts = strtotime( $date_display );
+                                if ( $ts ) {
+                                    $date_display = date_i18n( 'j. F', $ts );
+                                }
+                            }
+                        ?>
+                        <?php echo esc_html( $day['label'] ?? '' ); ?> – <?php echo esc_html( $date_display ); ?>
                     </h3>
-                    <?php if ( ! empty( $day['subtitle'] ) ) : ?>
-                        <p style="font-size:0.75rem;color:#725c0c;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:1rem;">
-                            <?php echo esc_html( $day['subtitle'] ); ?>
-                        </p>
-                    <?php endif; ?>
                     <?php foreach ( $day['events'] ?? array() as $event ) :
                         $ev_type = $event['type'] ?? 'main';
                     ?>
