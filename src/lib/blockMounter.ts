@@ -11,6 +11,7 @@ import ProgramTeaser from '../components/ProgramTeaser.svelte';
 import CtaSection from '../components/CtaSection.svelte';
 import DropCapParagraph from '../components/DropCapParagraph.svelte';
 import PartnerCarousel from '../components/PartnerCarousel.svelte';
+import ProgramSchedule from '../components/ProgramSchedule.svelte';
 
 interface MountedBlock {
   container: HTMLElement;
@@ -27,6 +28,7 @@ const blockRegistry: Record<string, any> = {
   'kuh-cta-section': CtaSection,
   'kuh-drop-cap-paragraph': DropCapParagraph,
   'kuh-partner-carousel': PartnerCarousel,
+  'kuh-program-schedule': ProgramSchedule,
 };
 
 /**

@@ -1,0 +1,159 @@
+{
+  "apiVersion": 3,
+  "name": "kuh/program-schedule",
+  "version": "2.0.0",
+  "title": "Programm-Zeitplan",
+  "category": "design",
+  "icon": "schedule",
+  "description": "Vollständiger Programm-Zeitplan mit Tages-Tabs und drei Event-Typen: Haupt-, Neben- und wiederkehrende Events.",
+  "keywords": ["programm", "schedule", "zeitplan", "kalender", "event", "timeline"],
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"],
+    "anchor": true
+  },
+  "attributes": {
+    "titleFont": {
+      "type": "string",
+      "default": "headline"
+    },
+    "days": {
+      "type": "array",
+      "items": { "type": "object" },
+      "default": [
+        {
+          "label": "Freitag",
+          "subtitle": "Eröffnung",
+          "date": "11. September",
+          "events": [
+            {
+              "type": "main",
+              "time": "17:00",
+              "title": "Feierliche Eröffnung",
+              "description": "Beginn des Markttreibens mit dem Einmarsch der Gilden und Ehrengäste auf dem Marktplatz.",
+              "location": "Marktplatz",
+              "locationSlug": "marktplatz",
+              "icon": "location_on"
+            },
+            {
+              "type": "recurring",
+              "time": "10:00",
+              "timeEnd": "22:00",
+              "title": "Marktbetrieb & Handwerksvorführungen",
+              "location": "Gesamtes Gelände",
+              "locationSlug": "gesamtes-gelaende",
+              "icon": "storefront"
+            },
+            {
+              "type": "side",
+              "time": "18:30",
+              "title": "Gaukler-Spektakel",
+              "description": "Akrobatik, Jonglage und derber Humor.",
+              "location": "Bühne West",
+              "locationSlug": "buehne-west",
+              "icon": "theater_comedy"
+            },
+            {
+              "type": "recurring",
+              "times": "11:00, 14:00, 17:00",
+              "interval": "3× täglich",
+              "title": "Schmiedevorführung",
+              "location": "Schmiedezelt",
+              "locationSlug": "schmiedezelt",
+              "icon": "hardware"
+            }
+          ]
+        },
+        {
+          "label": "Samstag",
+          "subtitle": "Markttreiben",
+          "date": "12. September",
+          "events": [
+            {
+              "type": "recurring",
+              "time": "10:00",
+              "timeEnd": "22:00",
+              "title": "Marktbetrieb & Handwerksvorführungen",
+              "location": "Gesamtes Gelände",
+              "locationSlug": "gesamtes-gelaende",
+              "icon": "storefront"
+            },
+            {
+              "type": "main",
+              "time": "14:00",
+              "title": "Großer Festumzug",
+              "description": "Über 4.000 Gewandete ziehen durch die historische Altstadt von Haselünne. Ein beeindruckendes Schauspiel mittelalterlicher Pracht.",
+              "location": "Altstadt",
+              "locationSlug": "altstadt",
+              "icon": "location_on"
+            },
+            {
+              "type": "side",
+              "time": "15:30",
+              "title": "Gauklerspiel & Schabernack",
+              "description": "Akrobatik und lose Sprüche auf den Gassen.",
+              "location": "Historische Altstadt",
+              "locationSlug": "historische-altstadt",
+              "icon": "location_on"
+            },
+            {
+              "type": "main",
+              "time": "17:00",
+              "title": "Ritterturnier zu Pferde",
+              "description": "Mutige Recken messen sich im Tjost. Ein beeindruckendes Schauspiel aus Lanzenbrechen, Mut und Geschicklichkeit vor den Toren der Stadt.",
+              "location": "Turnierwiese",
+              "locationSlug": "turnierwiese",
+              "icon": "location_on"
+            },
+            {
+              "type": "main",
+              "time": "20:00",
+              "title": "Abendliches Feuerspektakel",
+              "description": "Wenn die Dämmerung einbricht, übernehmen die Feuertänzer die Bühne. Ein magisches Lichtspiel aus Flammen und Schatten.",
+              "location": "Marktplatz",
+              "locationSlug": "marktplatz",
+              "icon": "location_on"
+            }
+          ]
+        },
+        {
+          "label": "Sonntag",
+          "subtitle": "Großes Finale",
+          "date": "13. September",
+          "events": [
+            {
+              "type": "side",
+              "time": "10:00",
+              "title": "Historischer Gottesdienst",
+              "description": "Gottesdienst in der Klosterkirche mit anschließendem Markttag.",
+              "location": "Klosterkirche",
+              "locationSlug": "klosterkirche",
+              "icon": "church"
+            },
+            {
+              "type": "recurring",
+              "time": "10:00",
+              "timeEnd": "18:00",
+              "title": "Marktbetrieb",
+              "location": "Gesamtes Gelände",
+              "locationSlug": "gesamtes-gelaende",
+              "icon": "storefront"
+            },
+            {
+              "type": "main",
+              "time": "15:00",
+              "title": "Großes Finale & Verabschiedung",
+              "description": "Gemeinsamer Abschluss des Marktes mit mittelalterlicher Musik, Tanz und dem feierlichen Ausklang.",
+              "location": "Marktplatz",
+              "locationSlug": "marktplatz",
+              "icon": "location_on"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "textdomain": "korn-und-hansemarkt",
+  "editorScript": "file:./editor.js",
+  "render": "file:./render.php"
+}

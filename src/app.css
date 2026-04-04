@@ -64,8 +64,28 @@
   font-display: swap;
 }
 
-/* Material Symbols */
+/* Material Symbols (lokal gehostet) */
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  src: url('./assets/fonts/material-symbols-outlined.woff2') format('woff2');
+  font-weight: 100 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 .material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
@@ -90,6 +110,11 @@ body {
 /* WP Block-Library Link-Underline im Header überschreiben */
 header a:where(:not(.wp-element-button)) {
   text-decoration: none;
+}
+
+/* Material Symbols Icons in Links nie unterstreichen */
+a:has(.material-symbols-outlined) {
+  text-decoration: none !important;
 }
 
 /* WordPress-spezifische Klassen */
