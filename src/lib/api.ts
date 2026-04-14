@@ -1,4 +1,4 @@
-import type { KuhData, WPPost, WPPage } from './types';
+import type { KuhData, WPPost, WPPage } from '../types';
 
 // --- In-Memory API-Cache (1 Stunde TTL) ---
 const apiCache = new Map<string, { data: unknown; ts: number }>();

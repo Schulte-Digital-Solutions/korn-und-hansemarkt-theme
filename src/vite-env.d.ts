@@ -1,4 +1,5 @@
 /// <reference types="svelte" />
+/// <reference types="svelte/svelte-html" />
 /// <reference types="vite/client" />
 
 declare module '*.svelte' {
