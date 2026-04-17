@@ -37,6 +37,7 @@
     title: string;
     subtitle: string;
     mapHeight: number;
+    mobileMapHeight: number;
     useMinimalBaseMap: boolean;
     showStreetLabels: boolean;
     customMapImageUrl: string;
@@ -65,6 +66,7 @@
     title = 'Geländeplan',
     subtitle = '',
     mapHeight = 580,
+    mobileMapHeight = 420,
     useMinimalBaseMap = true,
     showStreetLabels = false,
     customMapImageUrl = '',
@@ -859,7 +861,10 @@
 
   <div class="kuh-event-map-frame">
     <!-- Karten-Wrapper mit Vintage-Filter -->
-    <div class="kuh-event-map-wrapper" style="height: {mapHeight}px;">
+    <div
+      class="kuh-event-map-wrapper"
+      style="height: {mapHeight}px; --kuh-event-map-mobile-height: {mobileMapHeight}px;"
+    >
       <div
         bind:this={mapContainer}
         class="kuh-event-map-canvas"
@@ -1088,6 +1093,10 @@
 
   /* ── Responsiv ───────────────────────────────────────────────────── */
   @media (max-width: 640px) {
+    .kuh-event-map-wrapper {
+      height: var(--kuh-event-map-mobile-height, 420px) !important;
+    }
+
     .kuh-event-map-frame {
       box-shadow:
         0 0 0 2px var(--color-secondary, #725c0c),

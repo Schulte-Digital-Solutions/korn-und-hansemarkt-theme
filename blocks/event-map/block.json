@@ -25,6 +25,10 @@
       "type": "number",
       "default": 580
     },
+    "mobileMapHeight": {
+      "type": "number",
+      "default": 420
+    },
     "useMinimalBaseMap": {
       "type": "boolean",
       "default": true

@@ -18,6 +18,7 @@ registerBlockType('kuh/event-map', {
       title,
       subtitle,
       mapHeight,
+      mobileMapHeight,
       useMinimalBaseMap,
       showStreetLabels,
       areaFillColor,
@@ -80,6 +81,14 @@ registerBlockType('kuh/event-map', {
             onChange: (v) => setAttributes({ mapHeight: v }),
             min: 300,
             max: 900,
+            step: 20,
+          }),
+          el(RangeControl, {
+            label: 'Kartenhöhe mobil (px)',
+            value: mobileMapHeight,
+            onChange: (v) => setAttributes({ mobileMapHeight: v }),
+            min: 220,
+            max: 800,
             step: 20,
           })
         ),
