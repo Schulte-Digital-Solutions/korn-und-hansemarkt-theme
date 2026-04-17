@@ -60,7 +60,7 @@
     <p class="text-red-600">{error}</p>
   </div>
 {:else if page}
-  <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
     {#if page.featured_image_url}
       <img
         src={page.featured_image_url.large}
