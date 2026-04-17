@@ -144,3 +144,4 @@ require_once KUH_THEME_DIR . '/inc/meta-fields.php';
 require_once KUH_THEME_DIR . '/inc/block-compat.php';
 require_once KUH_THEME_DIR . '/inc/blocks.php';
 require_once KUH_THEME_DIR . '/inc/media-enhancements.php';
+require_once KUH_THEME_DIR . '/inc/event-map-data.php';

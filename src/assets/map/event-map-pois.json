@@ -1,0 +1,431 @@
+{
+    "type": "FeatureCollection",
+    "meta": {
+        "event": "Korn- und Hansemarkt Haselünne",
+        "center": [
+            7.487858,
+            52.674525
+        ],
+        "zoom": 16
+    },
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "schule",
+                "category": "location",
+                "name": "Bödiker Oberschule",
+                "description": "",
+                "icon": "building"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.485530558930151,
+                    52.67601219663027
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "berenzen",
+                "category": "location",
+                "name": "Berenzen Hof",
+                "description": "",
+                "icon": "building"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.4866293591177,
+                    52.674760210076954
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "rosche",
+                "category": "location",
+                "name": "Rosche Hof",
+                "description": "",
+                "icon": "building"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.488524605641771,
+                    52.674330949223844
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "heydt",
+                "category": "location",
+                "name": "Heydt Hof",
+                "description": "",
+                "icon": "building"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.4897436633201835,
+                    52.674622972100366
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "berenzen-buehne",
+                "category": "stage",
+                "name": "Berenzen Bühne",
+                "description": "",
+                "icon": "stage"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.489640420318864,
+                    52.674877844536695
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "heydt-buehne",
+                "category": "stage",
+                "name": "Heydt Bühne",
+                "description": "",
+                "icon": "stage"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.4867643652822835,
+                    52.674868901669555
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "toiletten-nord",
+                "category": "toilet",
+                "name": "Toiletten Nord",
+                "description": "",
+                "icon": "toilet"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.485053481260849,
+                    52.67492255884608
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "toiletten-sued",
+                "category": "toilet",
+                "name": "Toiletten Süd",
+                "description": "",
+                "icon": "toilet"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.486203903275708,
+                    52.673509564547345
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "toiletten-westen",
+                "category": "toilet",
+                "name": "Toiletten Westen",
+                "description": "",
+                "icon": "toilet"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.490060766824797,
+                    52.6745111854747
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "markt",
+                "category": "location",
+                "name": "Markt",
+                "description": "",
+                "icon": "building"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.4871478392879,
+                    52.6737555003842
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "eingang-osten",
+                "category": "entrance",
+                "name": "Eingang Osten",
+                "description": "",
+                "icon": "entrance"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.490208256826122,
+                    52.674622972100366
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "eingang-sued-1",
+                "category": "entrance",
+                "name": "Eingang Süd 1",
+                "description": "",
+                "icon": "entrance"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.488180269301068,
+                    52.67380915892818
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "eingang-süd-2",
+                "category": "entrance",
+                "name": "Eingang Süd 2",
+                "description": "",
+                "icon": "entrance"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.486638998780933,
+                    52.67340224665725
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "eingang-westen",
+                "category": "entrance",
+                "name": "Eingang Westen",
+                "description": "",
+                "icon": "entrance"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.4844708957532475,
+                    52.67393436194135
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "eingang-nord",
+                "category": "entrance",
+                "name": "Eingang Nord",
+                "description": "",
+                "icon": "entrance"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.4850313577608745,
+                    52.67536075665481
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "parkplatz-plesse",
+                "category": "parking",
+                "name": "Plesse Parkplatz",
+                "description": "",
+                "icon": "parking"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.489330679789447,
+                    52.672521339979426
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "parkplatz-schroeder",
+                "category": "parking",
+                "name": "Schröder Parkplatz",
+                "description": "",
+                "icon": "parking"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.489161066288176,
+                    52.673536398276354
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "info",
+                "category": "location",
+                "name": "Info",
+                "description": "",
+                "icon": "building"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    7.485665553243621,
+                    52.67451118977263
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": [],
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            7.485019492290746,
+                            52.67526819084185
+                        ],
+                        [
+                            7.485421160937932,
+                            52.67442023225311
+                        ],
+                        [
+                            7.485018992591705,
+                            52.674324433087094
+                        ],
+                        [
+                            7.484631187398577,
+                            52.67387736753457
+                        ],
+                        [
+                            7.485732362635531,
+                            52.6736857666117
+                        ],
+                        [
+                            7.486445732680636,
+                            52.673546419957916
+                        ],
+                        [
+                            7.488092583993961,
+                            52.67386136258867
+                        ],
+                        [
+                            7.4882649418575795,
+                            52.67402683549727
+                        ],
+                        [
+                            7.489931067868099,
+                            52.67452615345832
+                        ],
+                        [
+                            7.48988797840218,
+                            52.67458421331614
+                        ],
+                        [
+                            7.489600715297939,
+                            52.67491515303098
+                        ],
+                        [
+                            7.489452296026343,
+                            52.67487741441843
+                        ],
+                        [
+                            7.489710832820464,
+                            52.6745435714239
+                        ],
+                        [
+                            7.488743716141727,
+                            52.67425284897942
+                        ],
+                        [
+                            7.4884373021623105,
+                            52.674676686817605
+                        ],
+                        [
+                            7.487170068444215,
+                            52.674560688617476
+                        ],
+                        [
+                            7.487033794313078,
+                            52.67494800877171
+                        ],
+                        [
+                            7.486373716484479,
+                            52.674873127143144
+                        ],
+                        [
+                            7.486454629250375,
+                            52.67461233150328
+                        ],
+                        [
+                            7.486241700919692,
+                            52.67459425650026
+                        ],
+                        [
+                            7.4855773645247154,
+                            52.67453486715186
+                        ],
+                        [
+                            7.485304816261191,
+                            52.67523720558114
+                        ],
+                        [
+                            7.486978432946614,
+                            52.6754592661176
+                        ],
+                        [
+                            7.486969915812665,
+                            52.675513490030625
+                        ],
+                        [
+                            7.485019492290746,
+                            52.67526819084185
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "id": 0
+        }
+    ]
+}

@@ -15,6 +15,11 @@ export default defineConfig(({ command }) => ({
     manifest: true,
     rollupOptions: {
       input: 'src/main.ts',
+      output: {
+        manualChunks: {
+          maplibre: ['maplibre-gl'],
+        },
+      },
     },
   },
   server: {

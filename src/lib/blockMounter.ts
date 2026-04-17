@@ -12,6 +12,7 @@ import CtaSection from '../components/CtaSection.svelte';
 import DropCapParagraph from '../components/DropCapParagraph.svelte';
 import PartnerCarousel from '../components/PartnerCarousel.svelte';
 import ProgramSchedule from '../components/ProgramSchedule.svelte';
+import EventMap from '../components/EventMap.svelte';
 
 interface MountedBlock {
   container: HTMLElement;
@@ -29,6 +30,7 @@ const blockRegistry: Record<string, any> = {
   'kuh-drop-cap-paragraph': DropCapParagraph,
   'kuh-partner-carousel': PartnerCarousel,
   'kuh-program-schedule': ProgramSchedule,
+  'kuh-event-map': EventMap,
 };
 
 /**

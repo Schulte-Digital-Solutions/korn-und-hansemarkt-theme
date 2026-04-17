@@ -1,0 +1,120 @@
+{
+  "apiVersion": 3,
+  "name": "kuh/event-map",
+  "version": "1.0.0",
+  "title": "Geländeplan / Veranstaltungskarte",
+  "category": "design",
+  "icon": "location-alt",
+  "description": "Interaktive Veranstaltungskarte mit Eingängen, Bühnen, Parkplätzen und weiteren wichtigen Orten.",
+  "keywords": ["karte", "map", "gelände", "orientierung", "plan", "veranstaltung"],
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"],
+    "anchor": true
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "default": "Geländeplan"
+    },
+    "subtitle": {
+      "type": "string",
+      "default": "Finden Sie sich auf dem Veranstaltungsgelände zurecht"
+    },
+    "mapHeight": {
+      "type": "number",
+      "default": 580
+    },
+    "useMinimalBaseMap": {
+      "type": "boolean",
+      "default": true
+    },
+    "showStreetLabels": {
+      "type": "boolean",
+      "default": false
+    },
+    "customMapImageId": {
+      "type": "number",
+      "default": 0
+    },
+    "customMapImageUrl": {
+      "type": "string",
+      "default": ""
+    },
+    "customMapImageAlt": {
+      "type": "string",
+      "default": ""
+    },
+    "customMapImageOpacity": {
+      "type": "number",
+      "default": 30
+    },
+    "areaFillColor": {
+      "type": "string",
+      "default": "#9ccf9c"
+    },
+    "areaFillOpacity": {
+      "type": "number",
+      "default": 28
+    },
+    "areaLineColor": {
+      "type": "string",
+      "default": "#4a8a4a"
+    },
+    "locationColor": {
+      "type": "string",
+      "default": "#15331b"
+    },
+    "entranceColor": {
+      "type": "string",
+      "default": "#725c0c"
+    },
+    "stageColor": {
+      "type": "string",
+      "default": "#8b1a1a"
+    },
+    "parkingColor": {
+      "type": "string",
+      "default": "#1a4a6b"
+    },
+    "toiletColor": {
+      "type": "string",
+      "default": "#4a4a6b"
+    },
+    "infoColor": {
+      "type": "string",
+      "default": "#2d6b4a"
+    },
+    "showLocations": {
+      "type": "boolean",
+      "default": true
+    },
+    "showEntrances": {
+      "type": "boolean",
+      "default": true
+    },
+    "showStages": {
+      "type": "boolean",
+      "default": true
+    },
+    "showParking": {
+      "type": "boolean",
+      "default": true
+    },
+    "showToilets": {
+      "type": "boolean",
+      "default": true
+    },
+    "showInfo": {
+      "type": "boolean",
+      "default": true
+    },
+    "showLegend": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "textdomain": "korn-und-hansemarkt",
+  "editorScript": "file:./editor.js",
+  "render": "file:./render.php"
+}
