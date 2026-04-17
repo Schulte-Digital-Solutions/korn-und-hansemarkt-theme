@@ -6,7 +6,27 @@
             7.487858,
             52.674525
         ],
-        "zoom": 16
+        "zoom": 16,
+        "customMapImageUrl": "https://korn-und-hansemarkt.test/wp-content/uploads/2026/03/cropped-K_u_H_Imageflyer-2018_final_2-2-rgb-1.jpg",
+        "customMapImageOpacity": 30,
+        "imageBounds": {
+            "topLeft": [
+                7.4844311873985765,
+                52.675713490030624
+            ],
+            "topRight": [
+                7.4901310678680995,
+                52.675713490030624
+            ],
+            "bottomRight": [
+                7.4901310678680995,
+                52.673346419957916
+            ],
+            "bottomLeft": [
+                7.4844311873985765,
+                52.673346419957916
+            ]
+        }
     },
     "features": [
         {

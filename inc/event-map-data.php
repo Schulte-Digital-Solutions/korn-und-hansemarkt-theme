@@ -82,6 +82,27 @@ function kuh_get_event_map_geojson() {
     if ( kuh_is_valid_geojson_string( $raw, $error_message ) ) {
         $decoded = json_decode( $raw, true );
         if ( is_array( $decoded ) ) {
+            // Fehlende Bild-Meta aus Datei-Fallback ergänzen,
+            // damit ältere DB-JSON-Versionen weiterhin das Hintergrundbild zeigen.
+            $default_raw = kuh_get_event_map_default_geojson_raw();
+            if ( kuh_is_valid_geojson_string( $default_raw, $error_message ) ) {
+                $default_decoded = json_decode( $default_raw, true );
+                if ( is_array( $default_decoded ) ) {
+                    $decoded_meta         = isset( $decoded['meta'] ) && is_array( $decoded['meta'] ) ? $decoded['meta'] : array();
+                    $default_decoded_meta = isset( $default_decoded['meta'] ) && is_array( $default_decoded['meta'] ) ? $default_decoded['meta'] : array();
+
+                    foreach ( array( 'customMapImageUrl', 'customMapImageOpacity', 'imageBounds' ) as $meta_key ) {
+                        if ( ( ! isset( $decoded_meta[ $meta_key ] ) || '' === $decoded_meta[ $meta_key ] )
+                            && isset( $default_decoded_meta[ $meta_key ] )
+                        ) {
+                            $decoded_meta[ $meta_key ] = $default_decoded_meta[ $meta_key ];
+                        }
+                    }
+
+                    $decoded['meta'] = $decoded_meta;
+                }
+            }
+
             return $decoded;
         }
     }

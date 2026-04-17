@@ -20,6 +20,14 @@
     meta?: {
       center?: [number, number];
       zoom?: number;
+      customMapImageUrl?: string;
+      customMapImageOpacity?: number;
+      imageBounds?: {
+        topLeft?: [number, number];
+        topRight?: [number, number];
+        bottomRight?: [number, number];
+        bottomLeft?: [number, number];
+      };
     };
     features?: PoiFeature[];
   }
@@ -182,7 +190,37 @@
     ];
   }
 
+  function isLngLatPair(value: unknown): value is [number, number] {
+    return Array.isArray(value)
+      && value.length >= 2
+      && Number.isFinite(value[0])
+      && Number.isFinite(value[1]);
+  }
+
+  function getCustomImageCoordinatesFromMeta(): [[number, number], [number, number], [number, number], [number, number]] | null {
+    const bounds = poisData?.meta?.imageBounds;
+    if (!bounds) return null;
+
+    const { topLeft, topRight, bottomRight, bottomLeft } = bounds;
+    if (!isLngLatPair(topLeft) || !isLngLatPair(topRight) || !isLngLatPair(bottomRight) || !isLngLatPair(bottomLeft)) {
+      return null;
+    }
+
+    return [
+      [topLeft[0], topLeft[1]],
+      [topRight[0], topRight[1]],
+      [bottomRight[0], bottomRight[1]],
+      [bottomLeft[0], bottomLeft[1]],
+    ];
+  }
+
   function getImageCoordinatesFromData(): [[number, number], [number, number], [number, number], [number, number]] {
+    // Vorrang: explizite Bildkoordinaten aus der JSON-Meta.
+    const customBounds = getCustomImageCoordinatesFromMeta();
+    if (customBounds) {
+      return customBounds;
+    }
+
     const areaCoords: Array<[number, number]> = [];
     const features = Array.isArray(poisData?.features) ? poisData.features : [];
 
@@ -232,6 +270,16 @@
       [center[0] - deltaLng, center[1] - deltaLat],
     ];
   }
+
+  const effectiveCustomMapImageUrl = $derived(
+    (poisData?.meta?.customMapImageUrl ?? '').trim() || (customMapImageUrl ?? '').trim()
+  );
+
+  const effectiveCustomMapImageOpacity = $derived(
+    typeof poisData?.meta?.customMapImageOpacity === 'number' && Number.isFinite(poisData.meta.customMapImageOpacity)
+      ? clamp(poisData.meta.customMapImageOpacity, 0, 100)
+      : clamp(customMapImageOpacity, 0, 100)
+  );
 
   async function prepareCustomImageUrl(url: string): Promise<string | null> {
     if (!url) return null;
@@ -368,7 +416,7 @@
     customImageRendering = true;
 
     try {
-      const effectiveImageUrl = normalizeCustomImageUrl(customMapImageUrl);
+      const effectiveImageUrl = normalizeCustomImageUrl(effectiveCustomMapImageUrl);
       if (!effectiveImageUrl) {
         customImageRendered = false;
         return;
@@ -416,7 +464,7 @@
         type: 'raster',
         source: customImageSourceId,
         paint: {
-          'raster-opacity': clamp(customMapImageOpacity, 0, 100) / 100,
+          'raster-opacity': effectiveCustomMapImageOpacity / 100,
         },
       }, beforeLayerId);
       customImageRendered = true;
@@ -578,9 +626,15 @@
       if (!cat || !cat.show || !legendVisibility[category as keyof typeof legendVisibility]) continue;
 
       const coords = feature?.geometry?.coordinates;
-      if (!coords || coords.length < 2) continue;
+      if (
+        !Array.isArray(coords)
+        || coords.length < 2
+        || typeof coords[0] !== 'number'
+        || typeof coords[1] !== 'number'
+      ) continue;
 
-      const [lng, lat] = coords;
+      const lng = coords[0];
+      const lat = coords[1];
       const isLocation = category === 'location';
       const el = isLocation ? createTextLabelEl(name, cat.color) : createMarkerEl(category);
 
@@ -752,7 +806,8 @@
     // Reaktivität auf alle show-Props
     void showLocations; void showEntrances; void showStages;
     void showParking; void showToilets; void showInfo;
-    void customMapImageUrl; void customMapImageOpacity;
+    void effectiveCustomMapImageUrl; void effectiveCustomMapImageOpacity;
+    void poisData?.meta?.imageBounds;
     if (map?.loaded()) {
       void renderCustomImageLayer();
       renderAreas();
@@ -824,7 +879,9 @@
             onclick={() => toggleLegendItem(item.key as keyof typeof legendVisibility)}
             aria-pressed={legendVisibility[item.key as keyof typeof legendVisibility]}
           >
-            <span class="kuh-legend-dot" style="background:{item.color};">{item.emoji}</span>
+            <span class="kuh-legend-dot" style="background:{item.color};">
+              <span class="kuh-legend-dot-icon">{item.emoji}</span>
+            </span>
             {item.label}
           </button>
         {/each}
@@ -949,6 +1006,12 @@
     transform: rotate(-45deg);
     font-size: 11px;
     flex-shrink: 0;
+  }
+
+  .kuh-legend-dot-icon {
+    display: inline-block;
+    transform: rotate(45deg);
+    line-height: 1;
   }
 
   /* ── MapLibre Popup-Overrides ────────────────────────────────────── */

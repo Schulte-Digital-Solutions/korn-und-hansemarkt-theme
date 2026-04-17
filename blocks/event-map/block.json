@@ -33,22 +33,6 @@
       "type": "boolean",
       "default": false
     },
-    "customMapImageId": {
-      "type": "number",
-      "default": 0
-    },
-    "customMapImageUrl": {
-      "type": "string",
-      "default": ""
-    },
-    "customMapImageAlt": {
-      "type": "string",
-      "default": ""
-    },
-    "customMapImageOpacity": {
-      "type": "number",
-      "default": 30
-    },
     "areaFillColor": {
       "type": "string",
       "default": "#9ccf9c"

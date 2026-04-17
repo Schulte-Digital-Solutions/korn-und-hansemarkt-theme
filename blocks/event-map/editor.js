@@ -7,8 +7,8 @@
 /* global wp */
 (function () {
 const { registerBlockType } = wp.blocks;
-const { useBlockProps, InspectorControls, MediaUpload, MediaUploadCheck } = wp.blockEditor;
-const { PanelBody, TextControl, ToggleControl, RangeControl, Button } = wp.components;
+const { useBlockProps, InspectorControls } = wp.blockEditor;
+const { PanelBody, TextControl, ToggleControl, RangeControl } = wp.components;
 const { createElement: el, Fragment } = wp.element;
 
 registerBlockType('kuh/event-map', {
@@ -20,10 +20,6 @@ registerBlockType('kuh/event-map', {
       mapHeight,
       useMinimalBaseMap,
       showStreetLabels,
-      customMapImageId,
-      customMapImageUrl,
-      customMapImageAlt,
-      customMapImageOpacity,
       areaFillColor,
       areaFillOpacity,
       areaLineColor,
@@ -85,55 +81,6 @@ registerBlockType('kuh/event-map', {
             min: 300,
             max: 900,
             step: 20,
-          }),
-          el(MediaUploadCheck, null,
-            el(MediaUpload, {
-              onSelect: (media) => setAttributes({
-                customMapImageId: media?.id || 0,
-                customMapImageUrl: media?.url || '',
-                customMapImageAlt: media?.alt || '',
-              }),
-              allowedTypes: ['image'],
-              value: customMapImageId,
-              render: ({ open }) =>
-                el(
-                  'div',
-                  { style: { marginTop: '8px' } },
-                  customMapImageUrl
-                    ? el(
-                        'div',
-                        null,
-                        el('img', {
-                          src: customMapImageUrl,
-                          alt: customMapImageAlt,
-                          style: { width: '100%', height: 'auto', borderRadius: '4px', display: 'block', marginBottom: '8px' },
-                        }),
-                        el(
-                          'div',
-                          { style: { display: 'flex', gap: '8px' } },
-                          el(Button, { variant: 'secondary', onClick: open }, 'Hintergrundbild ändern'),
-                          el(Button, {
-                            isDestructive: true,
-                            variant: 'link',
-                            onClick: () => setAttributes({
-                              customMapImageId: 0,
-                              customMapImageUrl: '',
-                              customMapImageAlt: '',
-                            }),
-                          }, 'Entfernen')
-                        )
-                      )
-                    : el(Button, { variant: 'secondary', onClick: open }, 'Karten-Hintergrundbild auswählen')
-                ),
-            })
-          ),
-          el(RangeControl, {
-            label: 'Hintergrundbild Deckkraft (%)',
-            value: customMapImageOpacity,
-            onChange: (v) => setAttributes({ customMapImageOpacity: v }),
-            min: 0,
-            max: 100,
-            step: 5,
           })
         ),
         el(
@@ -270,7 +217,6 @@ registerBlockType('kuh/event-map', {
             { style: { fontSize: '0.75rem', color: '#888', margin: 0 } },
             [
               useMinimalBaseMap && 'No-POI-Karte',
-              customMapImageUrl && 'Custom-Bild',
               showLocations && 'Orte',
               showEntrances && 'Eingänge',
               showStages && 'Bühnen',

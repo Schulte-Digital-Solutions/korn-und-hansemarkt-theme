@@ -15,20 +15,17 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-$custom_map_image_url = esc_url_raw( $attributes['customMapImageUrl'] ?? '' );
-if ( is_ssl() && ! empty( $custom_map_image_url ) ) {
-    $custom_map_image_url = set_url_scheme( $custom_map_image_url, 'https' );
-}
-
 $block_data = array(
     'title'          => sanitize_text_field( $attributes['title'] ?? 'Geländeplan' ),
     'subtitle'       => sanitize_text_field( $attributes['subtitle'] ?? '' ),
     'mapHeight'      => absint( $attributes['mapHeight'] ?? 580 ),
     'useMinimalBaseMap' => (bool) ( $attributes['useMinimalBaseMap'] ?? true ),
     'showStreetLabels' => (bool) ( $attributes['showStreetLabels'] ?? false ),
-    'customMapImageUrl' => $custom_map_image_url,
-    'customMapImageAlt' => sanitize_text_field( $attributes['customMapImageAlt'] ?? '' ),
-    'customMapImageOpacity' => absint( $attributes['customMapImageOpacity'] ?? 30 ),
+    // Hintergrundbild-Einstellungen kommen aus der GeoJSON-Meta,
+    // Gutenberg-Attribute werden dafür nicht mehr genutzt.
+    'customMapImageUrl' => '',
+    'customMapImageAlt' => '',
+    'customMapImageOpacity' => 30,
     'areaFillColor'  => sanitize_hex_color( $attributes['areaFillColor'] ?? '#9ccf9c' ) ?: '#9ccf9c',
     'areaFillOpacity' => min( 100, max( 0, absint( $attributes['areaFillOpacity'] ?? 28 ) ) ),
     'areaLineColor'  => sanitize_hex_color( $attributes['areaLineColor'] ?? '#4a8a4a' ) ?: '#4a8a4a',
