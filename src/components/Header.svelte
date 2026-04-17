@@ -37,6 +37,24 @@
     return el.value;
   }
 
+  function getHeaderSiteTitle(): string {
+    const decoded = decodeHtml(config.siteName || 'Korn- und Hansemarkt');
+    return decoded.replace(/[\u2011\u2013\u2014\u2212]/g, '-');
+  }
+
+  function getHeaderTitleParts(): { left: string; right: string } | null {
+    const title = getHeaderSiteTitle();
+    const separatorIndex = title.indexOf('-');
+    if (separatorIndex === -1) return null;
+
+    return {
+      left: title.slice(0, separatorIndex),
+      right: title.slice(separatorIndex + 1),
+    };
+  }
+
+  const headerTitleParts = $derived(getHeaderTitleParts());
+
   function toggleMobileMenu() {
     const willOpen = !mobileMenuOpen;
     mobileMenuOpen = willOpen;
@@ -146,7 +164,11 @@
           <img src={config.logo} alt={config.siteName} class="h-10 w-auto" />
         {:else}
           <h1 class="text-2xl font-black text-emerald-900 font-headline tracking-tight">
-            Korn- und Hansemarkt
+            {#if headerTitleParts}
+              <span>{headerTitleParts.left}</span><span class="font-body">-</span><span>{headerTitleParts.right}</span>
+            {:else}
+              {getHeaderSiteTitle()}
+            {/if}
           </h1>
         {/if}
       </Link>
