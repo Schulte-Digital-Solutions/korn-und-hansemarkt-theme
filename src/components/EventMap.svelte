@@ -848,44 +848,52 @@
   ]);
 </script>
 
-<section class="kuh-event-map-section">
+<section class="w-full" style="font-family: var(--font-body, 'Inter', sans-serif);">
   <!-- Kopfzeile -->
   {#if title}
-    <div class="kuh-event-map-header">
-      <h2 class="kuh-event-map-title">{title}</h2>
+    <div class="pb-2 text-center">
+      <h2
+        class="m-0 mb-2 text-[clamp(2rem,5vw,3rem)] leading-[1.1]"
+        style="font-family: var(--font-headline, serif); color: var(--color-primary, #011e08);"
+      >{title}</h2>
       {#if subtitle}
-        <p class="kuh-event-map-subtitle">{subtitle}</p>
+        <p
+          class="m-0 text-base italic"
+          style="font-family: var(--font-serif-italic, serif); color: var(--color-outline, #737971);"
+        >{subtitle}</p>
       {/if}
     </div>
   {/if}
 
-  <div class="kuh-event-map-frame">
+  <div class="w-full shadow-[0_0_0_2px_var(--color-secondary,#725c0c),0_4px_16px_rgba(0,0,0,0.25)] sm:shadow-[0_0_0_3px_var(--color-secondary,#725c0c),0_0_0_6px_var(--color-primary,#011e08),0_8px_32px_rgba(0,0,0,0.35)]">
     <!-- Karten-Wrapper mit Vintage-Filter -->
     <div
-      class="kuh-event-map-wrapper"
+      class="kuh-event-map-wrapper relative w-full overflow-hidden rounded-none"
       style="height: {mapHeight}px; --kuh-event-map-mobile-height: {mobileMapHeight}px;"
     >
       <div
         bind:this={mapContainer}
-        class="kuh-event-map-canvas"
+        class="kuh-event-map-canvas relative z-1 h-full w-full filter-none"
         class:kuh-event-map-canvas--minimal={useMinimalBaseMap}
       ></div>
     </div>
 
     <!-- Legende -->
     {#if showLegend && legendItems.length > 0}
-      <div class="kuh-event-map-legend" aria-label="Kartenlegende">
-        <span class="kuh-legend-label">Legende:</span>
+      <div
+        class="flex flex-wrap items-center gap-y-2 gap-x-5 border border-outline-variant border-t-0 bg-surface-container-low px-4 py-3 text-[0.75rem] text-on-surface sm:gap-y-2 sm:gap-x-3 sm:px-6 sm:py-4 sm:text-[0.8rem]"
+        aria-label="Kartenlegende"
+      >
+        <span class="mr-1 text-[0.7rem] font-bold uppercase tracking-[0.08em] text-outline">Legende:</span>
         {#each legendItems as item}
           <button
             type="button"
-            class="kuh-legend-item"
-            class:kuh-legend-item--off={!legendVisibility[item.key as keyof typeof legendVisibility]}
+            class="flex items-center gap-1.5 rounded-full border border-outline-variant bg-surface-container-lowest px-2.5 py-1 font-inherit text-on-surface transition-[opacity,filter,transform] duration-200 ease-in-out hover:brightness-[0.98] active:scale-[0.98] {legendVisibility[item.key as keyof typeof legendVisibility] ? 'opacity-100' : 'opacity-45'}"
             onclick={() => toggleLegendItem(item.key as keyof typeof legendVisibility)}
             aria-pressed={legendVisibility[item.key as keyof typeof legendVisibility]}
           >
-            <span class="kuh-legend-dot" style="background:{item.color};">
-              <span class="kuh-legend-dot-icon">{item.emoji}</span>
+            <span class="inline-flex h-6 w-6 shrink-0 -rotate-45 items-center justify-center rounded-[50%_50%_50%_0] text-[11px]" style="background:{item.color};">
+              <span class="inline-block rotate-45 leading-none">{item.emoji}</span>
             </span>
             {item.label}
           </button>
@@ -896,127 +904,9 @@
 </section>
 
 <style>
-  /* ── Layout ─────────────────────────────────────────────────────── */
-  .kuh-event-map-section {
-    width: 100%;
-    font-family: var(--font-body, 'Inter', sans-serif);
-  }
-
-  .kuh-event-map-header {
-    text-align: center;
-    padding: 2.5rem 1.5rem 1.5rem;
-  }
-
-  .kuh-event-map-title {
-    font-family: var(--font-headline, serif);
-    font-size: clamp(2rem, 5vw, 3rem);
-    color: var(--color-primary, #011e08);
-    margin: 0 0 0.5rem;
-    line-height: 1.1;
-  }
-
-  .kuh-event-map-subtitle {
-    font-family: var(--font-serif-italic, serif);
-    font-style: italic;
-    color: var(--color-outline, #737971);
-    font-size: 1rem;
-    margin: 0;
-  }
-
-  /* ── Karten-Container ────────────────────────────────────────────── */
-  .kuh-event-map-frame {
-    width: 100%;
-    box-shadow:
-      0 0 0 3px var(--color-secondary, #725c0c),
-      0 0 0 6px var(--color-primary, #011e08),
-      0 8px 32px rgba(0, 0, 0, 0.35);
-  }
-
-  .kuh-event-map-wrapper {
-    position: relative;
-    width: 100%;
-    border-radius: 0;
-    overflow: hidden;
-  }
-
-  .kuh-event-map-canvas {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    height: 100%;
-    filter: none;
-  }
-
   .kuh-event-map-canvas--minimal {
     /* No-Labels-Basiskarte kontrastreicher statt ausgewaschen */
     filter: saturate(1.08) contrast(1.1) brightness(0.92);
-  }
-
-  /* ── Legende ─────────────────────────────────────────────────────── */
-  .kuh-event-map-legend {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem 1.25rem;
-    padding: 1rem 1.5rem;
-    background: var(--color-surface-container-low, #f5f3f3);
-    border: 1px solid var(--color-outline-variant, #c2c8bf);
-    border-top: none;
-    font-size: 0.8rem;
-    color: var(--color-on-surface, #1b1c1c);
-  }
-
-  .kuh-legend-label {
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.7rem;
-    color: var(--color-outline, #737971);
-    margin-right: 0.25rem;
-  }
-
-  .kuh-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    border: 1px solid var(--color-outline-variant, #c2c8bf);
-    border-radius: 999px;
-    background: var(--color-surface-container-lowest, #fff);
-    color: var(--color-on-surface, #1b1c1c);
-    padding: 0.35rem 0.65rem;
-    cursor: pointer;
-    transition: opacity 0.2s ease, filter 0.2s ease, transform 0.1s ease;
-    font: inherit;
-  }
-
-  .kuh-legend-item:hover {
-    filter: brightness(0.98);
-  }
-
-  .kuh-legend-item:active {
-    transform: scale(0.98);
-  }
-
-  .kuh-legend-item--off {
-    opacity: 0.45;
-  }
-
-  .kuh-legend-dot {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 50% 50% 50% 0;
-    transform: rotate(-45deg);
-    font-size: 11px;
-    flex-shrink: 0;
-  }
-
-  .kuh-legend-dot-icon {
-    display: inline-block;
-    transform: rotate(45deg);
-    line-height: 1;
   }
 
   /* ── MapLibre Popup-Overrides ────────────────────────────────────── */
@@ -1095,18 +985,6 @@
   @media (max-width: 640px) {
     .kuh-event-map-wrapper {
       height: var(--kuh-event-map-mobile-height, 420px) !important;
-    }
-
-    .kuh-event-map-frame {
-      box-shadow:
-        0 0 0 2px var(--color-secondary, #725c0c),
-        0 4px 16px rgba(0, 0, 0, 0.25);
-    }
-
-    .kuh-event-map-legend {
-      font-size: 0.75rem;
-      gap: 0.4rem 0.8rem;
-      padding: 0.75rem 1rem;
     }
   }
 </style>
