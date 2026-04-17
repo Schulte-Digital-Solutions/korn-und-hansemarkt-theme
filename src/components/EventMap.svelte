@@ -106,6 +106,7 @@
 
   let legendVisibility = $state({
     area: true,
+    userLocation: false,
     location: true,
     entrance: true,
     stage: true,
@@ -128,6 +129,7 @@
     if (map?.loaded()) {
       renderAreas();
       renderMarkers();
+      renderUserLocation();
     }
   }
 
@@ -135,6 +137,11 @@
   let mapContainer: HTMLDivElement;
   let map: Map | null = null;
   const markers: Marker[] = [];
+  let userLocationMarker: Marker | null = null;
+  let userLocationPending = false;
+  let customImageObjectUrl: string | null = null;
+  let customImageRendering = false;
+  let customImageRendered = false;
   let activePopup: Popup | null = null;
   const areaSourceId = 'kuh-area-source';
   const areaFillLayerId = 'kuh-area-fill';
@@ -163,38 +170,7 @@
     }
   }
 
-  function getImageCoordinatesFromData(): [[number, number], [number, number], [number, number], [number, number]] {
-    const coords: Array<[number, number]> = [];
-    const features = Array.isArray(poisData?.features) ? poisData.features : [];
-
-    for (const feature of features) {
-      collectLngLatPairs(feature?.geometry?.coordinates, coords);
-    }
-
-    if (coords.length === 0) {
-      const center = Array.isArray(poisData?.meta?.center) ? poisData.meta.center : [7.4836, 52.6742];
-      const deltaLng = 0.002;
-      const deltaLat = 0.0015;
-      return [
-        [center[0] - deltaLng, center[1] + deltaLat],
-        [center[0] + deltaLng, center[1] + deltaLat],
-        [center[0] + deltaLng, center[1] - deltaLat],
-        [center[0] - deltaLng, center[1] - deltaLat],
-      ];
-    }
-
-    let minLng = Number.POSITIVE_INFINITY;
-    let maxLng = Number.NEGATIVE_INFINITY;
-    let minLat = Number.POSITIVE_INFINITY;
-    let maxLat = Number.NEGATIVE_INFINITY;
-
-    for (const [lng, lat] of coords) {
-      minLng = Math.min(minLng, lng);
-      maxLng = Math.max(maxLng, lng);
-      minLat = Math.min(minLat, lat);
-      maxLat = Math.max(maxLat, lat);
-    }
-
+  function toImageCoordinates(minLng: number, maxLng: number, minLat: number, maxLat: number): [[number, number], [number, number], [number, number], [number, number]] {
     const lngPad = Math.max((maxLng - minLng) * 0.02, 0.0002);
     const latPad = Math.max((maxLat - minLat) * 0.02, 0.0002);
 
@@ -206,37 +182,250 @@
     ];
   }
 
-  function renderCustomImageLayer() {
-    if (!map || !map.loaded()) return;
+  function getImageCoordinatesFromData(): [[number, number], [number, number], [number, number], [number, number]] {
+    const areaCoords: Array<[number, number]> = [];
+    const features = Array.isArray(poisData?.features) ? poisData.features : [];
 
-    const existingLayer = map.getLayer(customImageLayerId);
-    if (existingLayer) {
-      map.removeLayer(customImageLayerId);
+    for (const feature of features) {
+      const type = feature?.geometry?.type;
+      if (type === 'Polygon' || type === 'MultiPolygon') {
+        collectLngLatPairs(feature?.geometry?.coordinates, areaCoords);
+      }
     }
 
-    const existingSource = map.getSource(customImageSourceId);
-    if (existingSource) {
-      map.removeSource(customImageSourceId);
+    // Beste Positionierung: Fläche aus GeoJSON verwenden, falls vorhanden.
+    if (areaCoords.length > 0) {
+      let minLng = Number.POSITIVE_INFINITY;
+      let maxLng = Number.NEGATIVE_INFINITY;
+      let minLat = Number.POSITIVE_INFINITY;
+      let maxLat = Number.NEGATIVE_INFINITY;
+
+      for (const [lng, lat] of areaCoords) {
+        minLng = Math.min(minLng, lng);
+        maxLng = Math.max(maxLng, lng);
+        minLat = Math.min(minLat, lat);
+        maxLat = Math.max(maxLat, lat);
+      }
+
+      return toImageCoordinates(minLng, maxLng, minLat, maxLat);
     }
 
-    if (!customMapImageUrl) {
+    // Wenn keine Fläche definiert ist: aktuelle Kartenansicht nutzen.
+    if (map) {
+      const bounds = map.getBounds();
+      return [
+        [bounds.getWest(), bounds.getNorth()],
+        [bounds.getEast(), bounds.getNorth()],
+        [bounds.getEast(), bounds.getSouth()],
+        [bounds.getWest(), bounds.getSouth()],
+      ];
+    }
+
+    // Letzter Fallback über Center-Metadaten.
+    const center = Array.isArray(poisData?.meta?.center) ? poisData.meta.center : [7.4836, 52.6742];
+    const deltaLng = 0.002;
+    const deltaLat = 0.0015;
+    return [
+      [center[0] - deltaLng, center[1] + deltaLat],
+      [center[0] + deltaLng, center[1] + deltaLat],
+      [center[0] + deltaLng, center[1] - deltaLat],
+      [center[0] - deltaLng, center[1] - deltaLat],
+    ];
+  }
+
+  async function prepareCustomImageUrl(url: string): Promise<string | null> {
+    if (!url) return null;
+
+    // Rasterbilder direkt verwenden.
+    if (!/\.svg(?:$|[?#])/i.test(url)) {
+      return url;
+    }
+
+    try {
+      const response = await fetch(url, { credentials: 'same-origin' });
+      if (!response.ok) {
+        console.warn('[EventMap] SVG konnte nicht geladen werden:', response.status, url);
+        return url;
+      }
+
+      const svgText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(svgText, 'image/svg+xml');
+      const svg = doc.documentElement;
+
+      if (!svg || svg.tagName.toLowerCase() !== 'svg') {
+        return url;
+      }
+
+      const hasWidth = !!svg.getAttribute('width');
+      const hasHeight = !!svg.getAttribute('height');
+
+      // Viele exportierte SVGs haben nur viewBox. MapLibre braucht verlässliche Dimensionen.
+      if (!hasWidth || !hasHeight) {
+        const viewBox = (svg.getAttribute('viewBox') ?? '').trim();
+        const parts = viewBox.split(/[\s,]+/).map((n) => Number.parseFloat(n));
+        const vbWidth = Number.isFinite(parts[2]) && parts[2] > 0 ? parts[2] : 2000;
+        const vbHeight = Number.isFinite(parts[3]) && parts[3] > 0 ? parts[3] : 2000;
+
+        if (!hasWidth) svg.setAttribute('width', String(vbWidth));
+        if (!hasHeight) svg.setAttribute('height', String(vbHeight));
+      }
+
+      const serialized = new XMLSerializer().serializeToString(svg);
+      const blob = new Blob([serialized], { type: 'image/svg+xml;charset=utf-8' });
+
+      if (customImageObjectUrl) {
+        URL.revokeObjectURL(customImageObjectUrl);
+      }
+      customImageObjectUrl = URL.createObjectURL(blob);
+      return customImageObjectUrl;
+    } catch (error) {
+      console.warn('[EventMap] SVG-Aufbereitung fehlgeschlagen, Original-URL wird verwendet.', error);
+      return url;
+    }
+  }
+
+  function normalizeCustomImageUrl(url: string): string {
+    if (!url) return '';
+
+    try {
+      const normalized = new URL(url, window.location.origin);
+      if (window.location.protocol === 'https:' && normalized.protocol === 'http:') {
+        normalized.protocol = 'https:';
+      }
+      return normalized.toString();
+    } catch {
+      // Fallback bei nicht vollständig parsebaren URLs.
+      if (window.location.protocol === 'https:') {
+        return url.replace(/^http:\/\//i, 'https://');
+      }
+      return url;
+    }
+  }
+
+  function createUserLocationEl(): HTMLElement {
+    const el = document.createElement('div');
+    el.className = 'kuh-map-user-location';
+    el.style.cssText = `
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #2c7efc;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 4px rgba(44,126,252,0.35), 0 1px 6px rgba(0,0,0,0.35);
+    `;
+    return el;
+  }
+
+  function renderUserLocation() {
+    if (!map) return;
+
+    if (!legendVisibility.userLocation) {
+      userLocationMarker?.remove();
+      userLocationMarker = null;
+      userLocationPending = false;
       return;
     }
 
-    map.addSource(customImageSourceId, {
-      type: 'image',
-      url: customMapImageUrl,
-      coordinates: getImageCoordinatesFromData(),
-    });
+    if (userLocationMarker || userLocationPending) {
+      return;
+    }
 
-    map.addLayer({
-      id: customImageLayerId,
-      type: 'raster',
-      source: customImageSourceId,
-      paint: {
-        'raster-opacity': clamp(customMapImageOpacity, 0, 100) / 100,
+    if (!navigator.geolocation) {
+      legendVisibility.userLocation = false;
+      return;
+    }
+
+    userLocationPending = true;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        userLocationPending = false;
+
+        const lng = position.coords.longitude;
+        const lat = position.coords.latitude;
+
+        userLocationMarker?.remove();
+        userLocationMarker = new maplibregl.Marker({ element: createUserLocationEl(), anchor: 'center' })
+          .setLngLat([lng, lat])
+          .addTo(map as Map);
       },
-    });
+      () => {
+        userLocationPending = false;
+        legendVisibility.userLocation = false;
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      }
+    );
+  }
+
+  async function renderCustomImageLayer() {
+    if (!map || !map.loaded()) return;
+    if (customImageRendering) return;
+
+    customImageRendering = true;
+
+    try {
+      const effectiveImageUrl = normalizeCustomImageUrl(customMapImageUrl);
+      if (!effectiveImageUrl) {
+        customImageRendered = false;
+        return;
+      }
+
+      // await VOR dem Entfernen des alten Layers, damit bei Abbruch der Layer erhalten bleibt.
+      const preparedUrl = await prepareCustomImageUrl(effectiveImageUrl);
+      if (!preparedUrl) {
+        customImageRendered = false;
+        return;
+      }
+
+      // Karte muss noch existieren; loaded()-Check weglassen: MapLibre kann kurz
+      // false zurückgeben während eines internen Style-Updates.
+      if (!map) {
+        customImageRendered = false;
+        return;
+      }
+
+      // Erst jetzt alten Layer/Source entfernen – so bleibt bei Abbruch was da war.
+      const existingLayer = map.getLayer(customImageLayerId);
+      if (existingLayer) {
+        map.removeLayer(customImageLayerId);
+      }
+
+      const existingSource = map.getSource(customImageSourceId);
+      if (existingSource) {
+        map.removeSource(customImageSourceId);
+      }
+
+      const coordinates = getImageCoordinatesFromData();
+
+      map.addSource(customImageSourceId, {
+        type: 'image',
+        url: preparedUrl,
+        coordinates,
+      });
+
+      // Image-Layer unterhalb der Area- und Marker-Layer einfügen.
+      const beforeLayerId = map.getLayer(areaFillLayerId)
+        ? areaFillLayerId
+        : undefined;
+      map.addLayer({
+        id: customImageLayerId,
+        type: 'raster',
+        source: customImageSourceId,
+        paint: {
+          'raster-opacity': clamp(customMapImageOpacity, 0, 100) / 100,
+        },
+      }, beforeLayerId);
+      customImageRendered = true;
+    } catch (error) {
+      console.warn('[EventMap] Hintergrundbild konnte nicht als Layer hinzugefügt werden.', error);
+      customImageRendered = false;
+    } finally {
+      customImageRendering = false;
+    }
   }
 
   function renderAreas() {
@@ -526,15 +715,34 @@
       'bottom-left'
     );
 
-    map.on('load', () => {
-      renderCustomImageLayer();
+    const renderAllMapOverlays = () => {
+      void renderCustomImageLayer();
       renderAreas();
       renderMarkers();
-    });
+      renderUserLocation();
+    };
+
+    const scheduleImageRenderFallback = () => {
+      window.setTimeout(() => { void renderCustomImageLayer(); }, 0);
+      window.setTimeout(() => { void renderCustomImageLayer(); }, 500);
+      window.setTimeout(() => { void renderCustomImageLayer(); }, 1500);
+    };
+
+    // Robustes Initialisieren: je nach Timing kann 'load' bereits vorbei sein.
+    renderAllMapOverlays();
+    scheduleImageRenderFallback();
+    map.on('load', renderAllMapOverlays);
+    map.once('idle', renderAllMapOverlays);
   });
 
   onDestroy(() => {
     markers.forEach((m) => m.remove());
+    userLocationMarker?.remove();
+    userLocationMarker = null;
+    if (customImageObjectUrl) {
+      URL.revokeObjectURL(customImageObjectUrl);
+      customImageObjectUrl = null;
+    }
     map?.remove();
     map = null;
   });
@@ -544,10 +752,12 @@
     // Reaktivität auf alle show-Props
     void showLocations; void showEntrances; void showStages;
     void showParking; void showToilets; void showInfo;
+    void customMapImageUrl; void customMapImageOpacity;
     if (map?.loaded()) {
-      renderCustomImageLayer();
+      void renderCustomImageLayer();
       renderAreas();
       renderMarkers();
+      renderUserLocation();
     }
   });
 
@@ -562,6 +772,13 @@
       label: 'Marktfläche',
       emoji: '🌿',
       color: '#9ccf9c',
+      isVisible: true,
+    },
+    {
+      key: 'userLocation',
+      label: 'Meine Position',
+      emoji: '📍',
+      color: '#2c7efc',
       isVisible: true,
     },
     ...visibleCategories.map(([key, cat]) => ({
