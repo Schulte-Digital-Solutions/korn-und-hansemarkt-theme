@@ -38,8 +38,9 @@
   }
 
   function toggleMobileMenu() {
-    mobileMenuOpen = !mobileMenuOpen;
-    openSubmenuId = null;
+    const willOpen = !mobileMenuOpen;
+    mobileMenuOpen = willOpen;
+    openSubmenuId = willOpen ? getActiveSubmenuParentId() : null;
   }
 
   function toggleSubmenu(id: number) {
@@ -83,15 +84,25 @@
     return normalizePath(currentPath) === toAppPath(url);
   }
 
-  function isItemActive(item: MenuItem): boolean {
-    if (isUrlActive(item.url)) return true;
+  function hasActiveChild(item: MenuItem): boolean {
     if (!item.children || item.children.length === 0) return false;
     return item.children.some((child) => isUrlActive(child.url));
+  }
+
+  function getActiveSubmenuParentId(): number | null {
+    for (const item of menuItems) {
+      if (hasActiveChild(item)) {
+        return item.id;
+      }
+    }
+    return null;
   }
 
   onMount(() => {
     const onNavChange = () => {
       currentPath = getCurrentPath();
+      mobileMenuOpen = false;
+      openSubmenuId = null;
     };
 
     const closeMobileMenuOnDesktop = () => {
@@ -145,18 +156,21 @@
     <nav class="hidden md:flex! items-center gap-2">
       {#each menuItems as item}
         {#if item.children && item.children.length > 0}
-          {@const parentActive = isItemActive(item)}
+          {@const parentDirectActive = isUrlActive(item.url)}
+          {@const parentHasActiveChild = hasActiveChild(item)}
           <div class="relative group">
             <button
               type="button"
-              class="{parentActive
+              class="{parentDirectActive
                 ? 'border-emerald-900/20 bg-emerald-50/70 text-emerald-900'
-                : 'border-transparent text-stone-600 hover:border-stone-300/80 hover:bg-stone-100/90 hover:text-emerald-900'} flex items-center gap-1 rounded-md px-3 py-2 text-sm uppercase tracking-widest transition-colors"
+                : parentHasActiveChild
+                  ? 'border-stone-300/80 bg-stone-100/80 text-stone-700'
+                  : 'border-transparent text-stone-600 hover:border-stone-300/80 hover:bg-stone-100/90 hover:text-emerald-900'} flex items-center gap-1 rounded-md px-3 py-2 text-sm uppercase tracking-widest transition-colors"
             >
               {decodeHtml(item.title)}
               <span class="material-symbols-outlined text-base!">expand_more</span>
             </button>
-            <div class="absolute left-1/2 top-full z-50 hidden -translate-x-1/2 pt-3 group-hover:block group-focus-within:block">
+            <div class="absolute left-1/2 top-full z-50 hidden -translate-x-1/2 pt-3 group-hover:block group-focus-within:block {parentHasActiveChild ? 'md:block' : ''}">
               <div class="min-w-56 overflow-hidden rounded-2xl border border-stone-200/70 bg-white/95 p-1 shadow-[0_18px_35px_-22px_rgba(0,0,0,0.45)] backdrop-blur-md">
                 {#each item.children as child}
                   {@const childActive = isUrlActive(child.url)}
@@ -173,7 +187,7 @@
             </div>
           </div>
         {:else}
-          {@const itemActive = isItemActive(item)}
+          {@const itemActive = isUrlActive(item.url)}
           <Link
             href={item.url || '/'}
             class="{itemActive
@@ -193,21 +207,44 @@
       <div class="flex flex-col px-6 py-4 space-y-1">
         {#each menuItems as item}
           {#if item.children && item.children.length > 0}
-            <button
-              onclick={() => toggleSubmenu(item.id)}
-              class="flex items-center justify-between w-full px-3 py-2 text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50 transition-colors text-left text-sm uppercase tracking-widest"
-            >
-              {decodeHtml(item.title)}
-              <span class="material-symbols-outlined text-sm transition-transform {openSubmenuId === item.id ? 'rotate-180' : ''}">
-                expand_more
-              </span>
-            </button>
-            {#if openSubmenuId === item.id}
+            {@const mobileParentHasActiveChild = hasActiveChild(item)}
+            <div class="flex items-center gap-1">
+              {#if item.url}
+                {@const mobileParentDirectActive = isUrlActive(item.url)}
+                <Link
+                  href={item.url}
+                  class="{mobileParentDirectActive
+                    ? 'bg-emerald-50/80 text-emerald-900 font-semibold'
+                    : 'text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50'} min-w-0 flex-1 rounded-md px-3 py-2 transition-colors text-sm uppercase tracking-widest"
+                >
+                  {decodeHtml(item.title)}
+                </Link>
+              {:else}
+                <span class="min-w-0 flex-1 px-3 py-2 text-sm uppercase tracking-widest text-stone-600">
+                  {decodeHtml(item.title)}
+                </span>
+              {/if}
+              <button
+                type="button"
+                onclick={() => toggleSubmenu(item.id)}
+                class="shrink-0 rounded-md p-2 text-stone-600 transition-colors hover:bg-stone-200/50 hover:text-emerald-900"
+                aria-label="Untermenü umschalten"
+                aria-expanded={openSubmenuId === item.id || (mobileParentHasActiveChild && openSubmenuId === null)}
+              >
+                <span class="material-symbols-outlined text-sm transition-transform {openSubmenuId === item.id || (mobileParentHasActiveChild && openSubmenuId === null) ? 'rotate-180' : ''}">
+                  expand_more
+                </span>
+              </button>
+            </div>
+            {#if openSubmenuId === item.id || (mobileParentHasActiveChild && openSubmenuId === null)}
               <div class="flex flex-col space-y-1 pl-4">
                 {#each item.children as child}
+                  {@const mobileChildActive = isUrlActive(child.url)}
                   <Link
                     href={child.url || '/'}
-                    class="block px-3 py-2 text-sm text-stone-500 hover:text-emerald-900 hover:bg-stone-200/50 transition-colors"
+                    class="{mobileChildActive
+                      ? 'bg-emerald-50/80 text-emerald-900'
+                      : 'text-stone-500 hover:text-emerald-900 hover:bg-stone-200/50'} block rounded-md px-3 py-2 text-sm transition-colors"
                   >
                     {decodeHtml(child.title)}
                   </Link>
@@ -215,9 +252,12 @@
               </div>
             {/if}
           {:else}
+            {@const mobileItemActive = isUrlActive(item.url)}
             <Link
               href={item.url || '/'}
-              class="block px-3 py-2 text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50 transition-colors text-sm uppercase tracking-widest"
+              class="{mobileItemActive
+                ? 'bg-emerald-50/80 text-emerald-900 font-semibold'
+                : 'text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50'} block rounded-md px-3 py-2 transition-colors text-sm uppercase tracking-widest"
             >
               {decodeHtml(item.title)}
             </Link>
