@@ -59,6 +59,17 @@
     showToilets: boolean;
     showInfo: boolean;
     showLegend: boolean;
+    loadBaseTiles: boolean;
+    mapBackgroundColor: string;
+    enableExternalContentBlocker: boolean;
+    externalContentBlockerTitle: string;
+    externalContentBlockerText: string;
+    externalContentButtonLabel: string;
+    rememberExternalContentConsent: boolean;
+    externalContentConsentStorageKey: string;
+    privacyPolicyUrl: string;
+    privacyPolicyLabel: string;
+    cookieConsentCategory: string;
     poisData?: PoiData;
   }
 
@@ -88,6 +99,17 @@
     showToilets = true,
     showInfo = true,
     showLegend = true,
+    loadBaseTiles = true,
+    mapBackgroundColor = '#f3efe6',
+    enableExternalContentBlocker = true,
+    externalContentBlockerTitle = 'Externe Karteninhalte laden?',
+    externalContentBlockerText = 'Beim Laden der Karte werden Daten von externen Anbietern (z. B. OpenStreetMap/CARTO) nachgeladen. Erst nach Zustimmung wird die Verbindung aufgebaut.',
+    externalContentButtonLabel = 'Karte laden',
+    rememberExternalContentConsent = true,
+    externalContentConsentStorageKey = 'kuh-event-map-external-consent',
+    privacyPolicyUrl = '',
+    privacyPolicyLabel = 'Datenschutzerklärung',
+    cookieConsentCategory = 'marketing',
     poisData = {
       meta: {
         center: [7.4836, 52.6742],
@@ -144,7 +166,7 @@
   }
 
   // ─── State ────────────────────────────────────────────────────────────────
-  let mapContainer: HTMLDivElement;
+  let mapContainer: HTMLDivElement | null = null;
   let map: Map | null = null;
   const markers: Marker[] = [];
   let userLocationMarker: Marker | null = null;
@@ -153,6 +175,8 @@
   let customImageRendering = false;
   let customImageRendered = false;
   let activePopup: Popup | null = null;
+  let hasExternalContentConsent = $state(false);
+  let initialConsentChecked = $state(false);
   const areaSourceId = 'kuh-area-source';
   const areaFillLayerId = 'kuh-area-fill';
   const areaLineLayerId = 'kuh-area-line';
@@ -282,6 +306,84 @@
       ? clamp(poisData.meta.customMapImageOpacity, 0, 100)
       : clamp(customMapImageOpacity, 0, 100)
   );
+
+  function isExternalUrl(url: string): boolean {
+    const candidate = (url ?? '').trim();
+    if (!candidate) return false;
+
+    try {
+      const baseOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+      const resolved = new URL(candidate, baseOrigin);
+      if (resolved.protocol === 'data:' || resolved.protocol === 'blob:') {
+        return false;
+      }
+
+      if (typeof window === 'undefined') {
+        return /^https?:\/\//i.test(candidate);
+      }
+
+      return resolved.origin !== window.location.origin;
+    } catch {
+      return /^https?:\/\//i.test(candidate);
+    }
+  }
+
+  const usesExternalTileSources = $derived(loadBaseTiles);
+  const usesExternalCustomImage = $derived(isExternalUrl(effectiveCustomMapImageUrl));
+  const requiresExternalContentConsent = $derived(
+    enableExternalContentBlocker && (usesExternalTileSources || usesExternalCustomImage)
+  );
+  const canLoadExternalMapContent = $derived(!requiresExternalContentConsent || hasExternalContentConsent);
+  const localManualConsentValue = 'manual-allow-v2';
+
+  function grantExternalContentConsent(): void {
+    hasExternalContentConsent = true;
+
+    if (!rememberExternalContentConsent) return;
+
+    try {
+      window.localStorage.setItem(externalContentConsentStorageKey, localManualConsentValue);
+    } catch {
+      // Ignorieren (z. B. Storage im Browser deaktiviert)
+    }
+  }
+
+  function grantExternalContentConsentFromBanner(): void {
+    // Banner-Consent darf die aktuelle Session freischalten,
+    // aber keinen dauerhaften manuellen Override setzen.
+    hasExternalContentConsent = true;
+  }
+
+  // ─── Complianz-Integration ────────────────────────────────────────────────
+  function hasComplianzContext(): boolean {
+    return typeof window.cmplz_has_consent === 'function'
+      || document.cookie.includes('cmplz_');
+  }
+
+  function readCookieValue(name: string): string | null {
+    const prefix = `${name}=`;
+    for (const part of document.cookie.split(';')) {
+      const cookie = part.trim();
+      if (cookie.startsWith(prefix)) {
+        return decodeURIComponent(cookie.slice(prefix.length));
+      }
+    }
+    return null;
+  }
+
+  function checkComplianzConsent(): boolean {
+    // Ohne Complianz-Kontext keine Freigabe durch diese Prüfung.
+    if (!hasComplianzContext()) return false;
+
+    // 1. Offizielle JS-API, falls verfügbar.
+    if (typeof window.cmplz_has_consent === 'function') {
+      return window.cmplz_has_consent(cookieConsentCategory);
+    }
+
+    // 2. Fallback: Complianz-Cookie direkt lesen.
+    const cookieName = `cmplz_${cookieConsentCategory}`;
+    return readCookieValue(cookieName) === 'allow';
+  }
 
   async function prepareCustomImageUrl(url: string): Promise<string | null> {
     if (!url) return null;
@@ -680,7 +782,9 @@
   }
 
   // ─── Map initialisieren ───────────────────────────────────────────────────
-  onMount(() => {
+  function initializeMap() {
+    if (map || !mapContainer) return;
+
     const center =
       Array.isArray(poisData?.meta?.center) && poisData.meta.center.length >= 2
         ? poisData.meta.center
@@ -708,27 +812,36 @@
       ? '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende, © <a href="https://carto.com/attributions">CARTO</a>'
       : '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende';
 
-    const styleSources: Record<string, any> = {
-      base: {
+    const styleSources: Record<string, any> = {};
+    const styleLayers: any[] = [
+      {
+        id: 'kuh-map-background',
+        type: 'background',
+        paint: {
+          'background-color': mapBackgroundColor,
+        },
+      },
+    ];
+
+    if (loadBaseTiles) {
+      styleSources.base = {
         type: 'raster',
         tiles: baseTileUrls,
         tileSize: 256,
         attribution: tileAttribution,
         maxzoom: 19,
-      },
-    };
+      };
 
-    const styleLayers: any[] = [
-      {
+      styleLayers.push({
         id: 'base-tiles',
         type: 'raster',
         source: 'base',
         minzoom: 0,
         maxzoom: 22,
-      },
-    ];
+      });
+    }
 
-    if ( useMinimalBaseMap && showStreetLabels ) {
+    if (loadBaseTiles && useMinimalBaseMap && showStreetLabels) {
       styleSources.labels = {
         type: 'raster',
         tiles: labelTileUrls,
@@ -758,10 +871,13 @@
       attributionControl: false,
     });
 
-    map.addControl(
-      new maplibregl.AttributionControl({ compact: true }),
-      'bottom-right'
-    );
+    if (loadBaseTiles) {
+      map.addControl(
+        new maplibregl.AttributionControl({ compact: true }),
+        'bottom-right'
+      );
+    }
+
     map.addControl(
       new maplibregl.NavigationControl({ showCompass: false }),
       'top-right'
@@ -789,18 +905,68 @@
     scheduleImageRenderFallback();
     map.on('load', renderAllMapOverlays);
     map.once('idle', renderAllMapOverlays);
+  }
+
+  onMount(() => {
+    const hasComplianz = hasComplianzContext();
+    let hasManualLocalOverride = false;
+
+    if (rememberExternalContentConsent && typeof window !== 'undefined') {
+      try {
+        hasManualLocalOverride = window.localStorage.getItem(externalContentConsentStorageKey) === localManualConsentValue;
+      } catch {
+        hasManualLocalOverride = false;
+      }
+    }
+
+    // 1. Complianz hat Vorrang: vorhandene lokale Karte-Freigaben sollen die
+    //    Banner-Entscheidung nicht überschreiben.
+    //    Ausnahme: expliziter manueller Karten-Override (Button "Karte laden").
+    if (requiresExternalContentConsent && hasComplianz) {
+      hasExternalContentConsent = checkComplianzConsent() || hasManualLocalOverride;
+    } else if (hasManualLocalOverride) {
+      // 2. Ohne Complianz-Kontext auf lokale Freigabe zurückfallen.
+      hasExternalContentConsent = true;
+    }
+
+    // 3. Complianz-Event abhören – Fallback für den Fall, dass die Seite nach
+    //    Zustimmung nicht neu geladen wird (z. B. Banner ohne Reload-Option).
+    function onCmplzSetCookie() {
+      if (!hasExternalContentConsent && checkComplianzConsent()) {
+        grantExternalContentConsentFromBanner();
+      }
+    }
+    document.addEventListener('cmplz_set_cookie', onCmplzSetCookie);
+
+    initialConsentChecked = true;
+
+    if (canLoadExternalMapContent) {
+      initializeMap();
+    }
+
+    return () => {
+      document.removeEventListener('cmplz_set_cookie', onCmplzSetCookie);
+      markers.forEach((m) => m.remove());
+      userLocationMarker?.remove();
+      userLocationMarker = null;
+      if (customImageObjectUrl) {
+        URL.revokeObjectURL(customImageObjectUrl);
+        customImageObjectUrl = null;
+      }
+      map?.remove();
+      map = null;
+    };
+  });
+
+  $effect(() => {
+    if (!initialConsentChecked) return;
+    if (canLoadExternalMapContent && !map) {
+      initializeMap();
+    }
   });
 
   onDestroy(() => {
-    markers.forEach((m) => m.remove());
-    userLocationMarker?.remove();
-    userLocationMarker = null;
-    if (customImageObjectUrl) {
-      URL.revokeObjectURL(customImageObjectUrl);
-      customImageObjectUrl = null;
-    }
-    map?.remove();
-    map = null;
+    // Cleanup erfolgt über den onMount-Rückgabewert.
   });
 
   // Marker neu rendern wenn Sichtbarkeits-Props sich ändern
@@ -876,6 +1042,49 @@
         class="kuh-event-map-canvas relative z-1 h-full w-full filter-none"
         class:kuh-event-map-canvas--minimal={useMinimalBaseMap}
       ></div>
+
+      {#if requiresExternalContentConsent && !hasExternalContentConsent}
+        <div class="absolute inset-0 z-20 flex items-center justify-center bg-[rgba(11,22,13,0.78)] p-4 text-center text-white backdrop-blur-[1px]">
+          <div class="max-w-136 rounded-md border border-[rgba(255,255,255,0.3)] bg-[rgba(0,0,0,0.35)] px-5 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+            <h3 class="m-0 text-lg font-bold">{externalContentBlockerTitle}</h3>
+            <p class="mb-3 mt-2 text-sm leading-6 text-[rgba(255,255,255,0.92)]">{externalContentBlockerText}</p>
+
+            <!-- Datenschutz-Hinweise -->
+            <p class="mb-4 text-xs leading-5 text-[rgba(255,255,255,0.7)]">
+              {#if loadBaseTiles}
+                Externe Anbieter:
+                <a
+                  href="https://wiki.osmfoundation.org/wiki/Privacy_Policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="underline hover:text-white"
+                >OpenStreetMap</a>{#if useMinimalBaseMap},
+                <a
+                  href="https://carto.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="underline hover:text-white"
+                >CARTO</a>{/if}.
+              {/if}
+              {#if privacyPolicyUrl}
+                {' '}Unsere
+                <a
+                  href={privacyPolicyUrl}
+                  class="underline hover:text-white"
+                >{privacyPolicyLabel}</a>.
+              {/if}
+            </p>
+
+            <button
+              type="button"
+              class="rounded-sm border border-[rgba(255,255,255,0.7)] bg-white/95 px-4 py-2 text-sm font-semibold text-[#0b2313] transition-colors duration-200 hover:bg-white"
+              onclick={grantExternalContentConsent}
+            >
+              {externalContentButtonLabel}
+            </button>
+          </div>
+        </div>
+      {/if}
     </div>
 
     <!-- Legende -->

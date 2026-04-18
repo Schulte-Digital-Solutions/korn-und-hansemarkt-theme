@@ -77,6 +77,7 @@ declare global {
     kuhData: KuhData;
     __kuhReinitBlocks?: () => void;
     cmplz_set_blocked_content_container?: () => void;
+    cmplz_has_consent?: (category: string) => boolean;
   }
 }
 
