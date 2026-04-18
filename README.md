@@ -58,20 +58,19 @@ Neue Website für den Korn- und Hansemarkt Haselünne. Ziel ist eine moderne, sc
 
 ### Voraussetzungen
 
-- Node.js >= 18
-- npm
+- Bun >= 1.1
 - Lokale WordPress-Installation
 
 ### Installation
 
 ```bash
-npm install
+bun install
 ```
 
 ### Development Server starten
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 Der Vite Dev-Server läuft auf `http://localhost:5173`. In der `wp-config.php` muss `WP_DEBUG` auf `true` stehen, damit das Theme den Dev-Server nutzt.
@@ -79,7 +78,7 @@ Der Vite Dev-Server läuft auf `http://localhost:5173`. In der `wp-config.php` m
 ### Produktion Build
 
 ```bash
-npm run build
+bun run build
 ```
 
 Erstellt optimierte Assets im `dist/` Ordner. Das Theme liest automatisch das Vite-Manifest und bindet die Build-Dateien ein.
@@ -87,9 +86,9 @@ Erstellt optimierte Assets im `dist/` Ordner. Das Theme liest automatisch das Vi
 ### Theme installieren (Entwicklung)
 
 1. Repository klonen nach `wp-content/themes/korn-und-hansemarkt-theme/`
-2. `npm install` ausführen
+2. `bun install` ausführen
 3. Theme in WordPress aktivieren
-4. `npm run dev` starten
+4. `bun run dev` starten
 5. Menüs unter *Design → Menüs* zuweisen (Hauptnavigation & Footer)
 6. Optional: Statische Frontpage unter *Einstellungen → Lesen* festlegen
 
@@ -126,7 +125,7 @@ Im Repository unter *Settings → Secrets and variables → Actions* folgende Se
 
 1. Tag pushen (`git tag v1.0.0 && git push --tags`) triggert den Workflow
 2. Version in `style.css` wird automatisch aus dem Tag aktualisiert
-3. GitHub Actions baut das Projekt (`npm ci && npm run build`)
+3. GitHub Actions baut das Projekt (`bun install --frozen-lockfile && bun run build`)
 4. Nur produktionsrelevante Dateien werden per rsync auf den Server kopiert
 5. Ein GitHub Release mit ZIP-Archiv wird erstellt
 6. `WP_DEBUG` in `wp-config.php` sollte auf dem Server auf `false` stehen

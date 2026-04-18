@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "WordPress SPA Theme mit Svelte und TailwindCSS",
+  "packageManager": "bun@1.2.17",
   "type": "module",
   "scripts": {
     "dev": "vite",
