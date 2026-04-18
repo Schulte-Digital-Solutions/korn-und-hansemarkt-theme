@@ -99,6 +99,29 @@ function kuh_enqueue_assets() {
 add_action( 'wp_enqueue_scripts', 'kuh_enqueue_assets' );
 
 /**
+ * Material Symbols Font per <link rel="preload"> vorladen,
+ * damit keine Icon-Texte vor dem Font-Laden sichtbar werden.
+ */
+function kuh_preload_material_symbols_font() {
+    $manifest_path = KUH_THEME_DIR . '/dist/.vite/manifest.json';
+    if ( ! file_exists( $manifest_path ) ) {
+        return;
+    }
+
+    $manifest = json_decode( file_get_contents( $manifest_path ), true );
+    $font_key = 'src/assets/fonts/material-symbols-outlined.woff2';
+
+    if ( isset( $manifest[ $font_key ]['file'] ) ) {
+        $font_url = esc_url( KUH_THEME_URI . '/dist/' . $manifest[ $font_key ]['file'] );
+        printf(
+            '<link rel="preload" href="%s" as="font" type="font/woff2" crossorigin="anonymous">' . "\n",
+            $font_url
+        );
+    }
+}
+add_action( 'wp_head', 'kuh_preload_material_symbols_font', 1 );
+
+/**
  * WordPress Emoji-Skript deaktivieren.
  * Emojis werden im Theme als native Unicode-Zeichen gerendert (Browser-intern).
  */
