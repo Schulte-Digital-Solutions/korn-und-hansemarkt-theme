@@ -85,6 +85,11 @@
 					"slug": "outline-variant",
 					"color": "#c2c8bf",
 					"name": "Rahmenfarbe (dezent)"
+				},
+				{
+					"slug": "text",
+					"color": "#1b1c1c",
+					"name": "Textfarbe (Standard)"
 				}
 			]
 		},
