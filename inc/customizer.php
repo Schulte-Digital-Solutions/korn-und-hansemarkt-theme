@@ -199,79 +199,26 @@ function kuh_sanitize_color_alpha( $value ) {
 }
 
 /**
- * Customizer-Farben als CSS-Variablen in den <head> ausgeben
+ * Customizer-Farben als CSS-Variablen in den <head> ausgeben.
+ *
+ * Gibt nur Variablen aus, für die im Customizer explizit ein Wert gesetzt
+ * wurde. Ohne gesetzten Wert greift die Palette aus theme.json als Default.
  */
 function kuh_customizer_css() {
-    $colors = array(
-        'primary'   => '#2c3e50',
-        'secondary' => '#c0862a',
-        'accent'    => '#e67e22',
-        'bg'        => '#ffffff',
-        'text'      => '#333333',
-        'muted'     => '#6b7280',
-    );
+    $keys = array( 'primary', 'secondary', 'accent', 'bg', 'text', 'muted' );
 
-    echo '<style>:root {';
-    foreach ( $colors as $key => $default ) {
-        $value = get_theme_mod( 'kuh_color_' . $key, $default );
-        echo '--color-' . esc_attr( $key ) . ':' . esc_attr( $value ) . ';';
+    $declarations = array();
+    foreach ( $keys as $key ) {
+        $value = get_theme_mod( 'kuh_color_' . $key, null );
+        if ( $value ) {
+            $declarations[] = '--color-' . $key . ':' . $value . ';';
+        }
     }
-    echo '}</style>' . "\n";
+
+    if ( empty( $declarations ) ) {
+        return;
+    }
+
+    echo '<style>:root {' . esc_html( implode( '', $declarations ) ) . '}</style>' . "\n";
 }
 add_action( 'wp_head', 'kuh_customizer_css', 5 );
-
-/**
- * theme.json-Farbpalette dynamisch mit Customizer-Werten überschreiben,
- * damit der Block-Editor immer die aktuellen Farben zeigt.
- */
-function kuh_override_theme_json_colors( $theme_json ) {
-    $color_map = array(
-        'primary'    => '#2c3e50',
-        'secondary'  => '#c0862a',
-        'accent'     => '#e67e22',
-        'background' => '#ffffff',
-        'text'       => '#333333',
-        'muted'      => '#6b7280',
-    );
-
-    // Customizer-Schlüssel auf theme.json-Slugs mappen
-    $customizer_to_slug = array(
-        'primary'   => 'primary',
-        'secondary' => 'secondary',
-        'accent'    => 'accent',
-        'bg'        => 'background',
-        'text'      => 'text',
-        'muted'     => 'muted',
-    );
-
-    $palette = array();
-    $labels = array(
-        'primary'    => 'Primärfarbe',
-        'secondary'  => 'Sekundärfarbe',
-        'accent'     => 'Akzentfarbe',
-        'background' => 'Hintergrund',
-        'text'       => 'Textfarbe',
-        'muted'      => 'Gedämpft',
-    );
-
-    foreach ( $customizer_to_slug as $mod_key => $slug ) {
-        $default = $color_map[ $slug ];
-        $palette[] = array(
-            'slug'  => $slug,
-            'color' => get_theme_mod( 'kuh_color_' . $mod_key, $default ),
-            'name'  => $labels[ $slug ],
-        );
-    }
-
-    $new_data = array(
-        'version'  => 3,
-        'settings' => array(
-            'color' => array(
-                'palette' => $palette,
-            ),
-        ),
-    );
-
-    return $theme_json->update_with( $new_data );
-}
-add_filter( 'wp_theme_json_data_theme', 'kuh_override_theme_json_colors' );
