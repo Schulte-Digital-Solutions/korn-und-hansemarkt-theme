@@ -40,23 +40,65 @@ function kuh_get_theme_json_palette() {
 }
 
 /**
+ * Liefert die 4 Material-3-Key-Colors (mit Defaults aus theme.json).
+ *
+ * @return array<string,array{name:string,default:string}>
+ */
+function kuh_material_key_colors() {
+    $palette = kuh_get_theme_json_palette();
+
+    return array(
+        'primary' => array(
+            'name'    => __( 'Primärfarbe', 'korn-und-hansemarkt' ),
+            'default' => $palette['primary']['color']   ?? '#004f3b',
+        ),
+        'secondary' => array(
+            'name'    => __( 'Sekundärfarbe', 'korn-und-hansemarkt' ),
+            'default' => $palette['secondary']['color'] ?? '#c0862a',
+        ),
+        'tertiary' => array(
+            'name'    => __( 'Tertiärfarbe', 'korn-und-hansemarkt' ),
+            'default' => $palette['tertiary']['color']  ?? '#6b4a2b',
+        ),
+        'error' => array(
+            'name'    => __( 'Fehlerfarbe', 'korn-und-hansemarkt' ),
+            'default' => $palette['error']['color']     ?? '#ba1a1a',
+        ),
+    );
+}
+
+/**
+ * Liefert das aktuelle Key-Color-Set unter Berücksichtigung der Customizer-Werte.
+ *
+ * @return array<string,string> slug => hex
+ */
+function kuh_current_key_colors() {
+    $keys = array();
+    foreach ( kuh_material_key_colors() as $slug => $entry ) {
+        $keys[ $slug ] = get_theme_mod( 'kuh_key_color_' . $slug, $entry['default'] );
+    }
+    return $keys;
+}
+
+/**
  * Customizer-Einstellungen registrieren
  */
 function kuh_customize_register( $wp_customize ) {
-    // === Abschnitt: Farben ===
+    // === Abschnitt: Material-3 Key Colors ===
     $wp_customize->add_section( 'kuh_colors', array(
-        'title'       => __( 'Theme-Farben', 'korn-und-hansemarkt' ),
-        'description' => __( 'Alle Farben der Theme-Palette. Standardwerte stammen aus theme.json.', 'korn-und-hansemarkt' ),
+        'title'       => __( 'Theme-Farben (Material 3)', 'korn-und-hansemarkt' ),
+        'description' => __(
+            'Nach Material Design 3 werden aus vier Key Colors automatisch alle Token der Palette berechnet (Text-, Container-, Surface- und Outline-Farben inkl. garantierter Kontraste).',
+            'korn-und-hansemarkt'
+        ),
         'priority'    => 30,
     ) );
 
-    $palette = kuh_get_theme_json_palette();
-
-    foreach ( $palette as $slug => $entry ) {
-        $setting_id = 'kuh_color_' . $slug;
+    foreach ( kuh_material_key_colors() as $slug => $entry ) {
+        $setting_id = 'kuh_key_color_' . $slug;
 
         $wp_customize->add_setting( $setting_id, array(
-            'default'           => $entry['color'],
+            'default'           => $entry['default'],
             'sanitize_callback' => 'sanitize_hex_color',
             'transport'         => 'refresh',
         ) );
@@ -225,38 +267,27 @@ function kuh_sanitize_color_alpha( $value ) {
 }
 
 /**
- * Customizer-Werte in die theme.json-Palette einspiegeln.
- *
- * WordPress schreibt daraus automatisch die `--wp--preset--color--<slug>`-
- * CSS-Variablen, die vom Theme-CSS (app.css → `--color-<slug>`) und vom
- * Block-Editor (Palette + `.has-<slug>-color`-Regeln) verwendet werden.
- * Es werden nur Slugs überschrieben, deren Wert vom theme.json-Default
- * abweicht; so bleibt die Palette als robuster Fallback erhalten.
+ * Generiert die komplette Material-3-Palette aus den Customizer-Key-Colors
+ * und spiegelt sie in die theme.json-Daten ein. Dadurch erzeugt WordPress
+ * automatisch `--wp--preset--color--<slug>`-Variablen sowie die zugehörigen
+ * Editor-Palette-Einträge.
  */
 function kuh_apply_customizer_palette( $theme_json ) {
-    $palette = kuh_get_theme_json_palette();
-    if ( empty( $palette ) ) {
+    $base_palette = kuh_get_theme_json_palette();
+    if ( empty( $base_palette ) ) {
         return $theme_json;
     }
 
-    $new_palette = array();
-    $changed     = false;
+    $generated = kuh_material_palette_light( kuh_current_key_colors() );
 
-    foreach ( $palette as $slug => $entry ) {
-        $default = $entry['color'];
-        $value   = get_theme_mod( 'kuh_color_' . $slug, $default );
-        if ( $value !== $default ) {
-            $changed = true;
-        }
+    // Namen aus theme.json wiederverwenden, Farben aus Generator.
+    $new_palette = array();
+    foreach ( $base_palette as $slug => $entry ) {
         $new_palette[] = array(
             'slug'  => $slug,
             'name'  => $entry['name'],
-            'color' => $value,
+            'color' => $generated[ $slug ] ?? $entry['color'],
         );
-    }
-
-    if ( ! $changed ) {
-        return $theme_json;
     }
 
     return $theme_json->update_with( array(

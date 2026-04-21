@@ -13,12 +13,12 @@
 			"palette": [
 				{
 					"slug": "primary",
-					"color": "#011e08",
+					"color": "#004f3b",
 					"name": "Primärfarbe"
 				},
 				{
 					"slug": "primary-container",
-					"color": "#15331b",
+					"color": "#acefd5",
 					"name": "Primär Container"
 				},
 				{
@@ -27,24 +27,84 @@
 					"name": "Text auf Primär"
 				},
 				{
+					"slug": "on-primary-container",
+					"color": "#000000",
+					"name": "Text auf Primär Container"
+				},
+				{
 					"slug": "secondary",
-					"color": "#725c0c",
+					"color": "#c0862a",
 					"name": "Sekundärfarbe"
 				},
 				{
 					"slug": "secondary-container",
-					"color": "#fcdd83",
+					"color": "#f7d9b1",
 					"name": "Sekundär Container"
 				},
 				{
 					"slug": "on-secondary",
-					"color": "#ffffff",
+					"color": "#000000",
 					"name": "Text auf Sekundär"
 				},
 				{
+					"slug": "on-secondary-container",
+					"color": "#000000",
+					"name": "Text auf Sekundär Container"
+				},
+				{
+					"slug": "tertiary",
+					"color": "#6b4a2b",
+					"name": "Tertiärfarbe"
+				},
+				{
+					"slug": "tertiary-container",
+					"color": "#fdd6b3",
+					"name": "Tertiär Container"
+				},
+				{
+					"slug": "on-tertiary",
+					"color": "#ffffff",
+					"name": "Text auf Tertiär"
+				},
+				{
+					"slug": "on-tertiary-container",
+					"color": "#000000",
+					"name": "Text auf Tertiär Container"
+				},
+				{
+					"slug": "error",
+					"color": "#ba1a1a",
+					"name": "Fehlerfarbe"
+				},
+				{
+					"slug": "error-container",
+					"color": "#fdd3cd",
+					"name": "Fehler Container"
+				},
+				{
+					"slug": "on-error",
+					"color": "#ffffff",
+					"name": "Text auf Fehler"
+				},
+				{
+					"slug": "on-error-container",
+					"color": "#000000",
+					"name": "Text auf Fehler Container"
+				},
+				{
 					"slug": "surface",
-					"color": "#fbf9f9",
+					"color": "#f6f9f8",
 					"name": "Oberfläche"
+				},
+				{
+					"slug": "surface-dim",
+					"color": "#d2d5d4",
+					"name": "Oberfläche (dim)"
+				},
+				{
+					"slug": "surface-bright",
+					"color": "#f6f9f8",
+					"name": "Oberfläche (bright)"
 				},
 				{
 					"slug": "surface-container-lowest",
@@ -53,38 +113,73 @@
 				},
 				{
 					"slug": "surface-container-low",
-					"color": "#f5f3f3",
+					"color": "#eff3f1",
 					"name": "Oberfläche (hell)"
 				},
 				{
 					"slug": "surface-container",
-					"color": "#efeded",
+					"color": "#e9eceb",
 					"name": "Oberfläche (mittel)"
 				},
 				{
 					"slug": "surface-container-high",
-					"color": "#e9e8e8",
+					"color": "#e2e5e4",
 					"name": "Oberfläche (dunkel)"
 				},
 				{
 					"slug": "surface-container-highest",
-					"color": "#e4e2e2",
+					"color": "#dbdfdd",
 					"name": "Oberfläche (am dunkelsten)"
 				},
 				{
 					"slug": "on-surface",
-					"color": "#1b1c1c",
+					"color": "#030403",
 					"name": "Textfarbe"
 				},
 				{
+					"slug": "surface-variant",
+					"color": "#d4e2dc",
+					"name": "Oberfläche (variant)"
+				},
+				{
+					"slug": "on-surface-variant",
+					"color": "#26312c",
+					"name": "Text auf Oberfläche variant"
+				},
+				{
 					"slug": "outline",
-					"color": "#737971",
+					"color": "#5b6662",
 					"name": "Rahmenfarbe"
 				},
 				{
 					"slug": "outline-variant",
-					"color": "#c2c8bf",
+					"color": "#b4c1bc",
 					"name": "Rahmenfarbe (dezent)"
+				},
+				{
+					"slug": "inverse-surface",
+					"color": "#141716",
+					"name": "Inverse Oberfläche"
+				},
+				{
+					"slug": "inverse-on-surface",
+					"color": "#ecefee",
+					"name": "Text auf inverser Oberfläche"
+				},
+				{
+					"slug": "inverse-primary",
+					"color": "#8cceb5",
+					"name": "Inverse Primärfarbe"
+				},
+				{
+					"slug": "scrim",
+					"color": "#000000",
+					"name": "Scrim (Modal-Overlay)"
+				},
+				{
+					"slug": "shadow",
+					"color": "#000000",
+					"name": "Schattenfarbe"
 				}
 			]
 		},

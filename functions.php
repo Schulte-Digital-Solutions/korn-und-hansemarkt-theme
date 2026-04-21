@@ -138,6 +138,7 @@ add_filter( 'redirect_canonical', function ( $redirect_url ) {
 require_once KUH_THEME_DIR . '/inc/helpers.php';
 require_once KUH_THEME_DIR . '/inc/partner-cpt.php';
 require_once KUH_THEME_DIR . '/inc/assets.php';
+require_once KUH_THEME_DIR . '/inc/material-colors.php';
 require_once KUH_THEME_DIR . '/inc/customizer.php';
 require_once KUH_THEME_DIR . '/inc/rest-api.php';
 require_once KUH_THEME_DIR . '/inc/meta-fields.php';

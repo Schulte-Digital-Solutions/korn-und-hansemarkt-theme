@@ -10,18 +10,37 @@
   --color-primary: var(--wp--preset--color--primary, #011e08);
   --color-primary-container: var(--wp--preset--color--primary-container, #15331b);
   --color-on-primary: var(--wp--preset--color--on-primary, #ffffff);
+  --color-on-primary-container: var(--wp--preset--color--on-primary-container, #d7f0d9);
   --color-secondary: var(--wp--preset--color--secondary, #725c0c);
   --color-secondary-container: var(--wp--preset--color--secondary-container, #fcdd83);
   --color-on-secondary: var(--wp--preset--color--on-secondary, #ffffff);
+  --color-on-secondary-container: var(--wp--preset--color--on-secondary-container, #241a00);
+  --color-tertiary: var(--wp--preset--color--tertiary, #3b6a4f);
+  --color-tertiary-container: var(--wp--preset--color--tertiary-container, #bcf0c9);
+  --color-on-tertiary: var(--wp--preset--color--on-tertiary, #ffffff);
+  --color-on-tertiary-container: var(--wp--preset--color--on-tertiary-container, #002110);
+  --color-error: var(--wp--preset--color--error, #ba1a1a);
+  --color-error-container: var(--wp--preset--color--error-container, #ffdad6);
+  --color-on-error: var(--wp--preset--color--on-error, #ffffff);
+  --color-on-error-container: var(--wp--preset--color--on-error-container, #410002);
   --color-surface: var(--wp--preset--color--surface, #fbf9f9);
+  --color-surface-dim: var(--wp--preset--color--surface-dim, #dbd9d9);
+  --color-surface-bright: var(--wp--preset--color--surface-bright, #fbf9f9);
   --color-surface-container-lowest: var(--wp--preset--color--surface-container-lowest, #ffffff);
   --color-surface-container-low: var(--wp--preset--color--surface-container-low, #f5f3f3);
   --color-surface-container: var(--wp--preset--color--surface-container, #efeded);
   --color-surface-container-high: var(--wp--preset--color--surface-container-high, #e9e8e8);
   --color-surface-container-highest: var(--wp--preset--color--surface-container-highest, #e4e2e2);
   --color-on-surface: var(--wp--preset--color--on-surface, #1b1c1c);
+  --color-surface-variant: var(--wp--preset--color--surface-variant, #dee4d8);
+  --color-on-surface-variant: var(--wp--preset--color--on-surface-variant, #424940);
   --color-outline: var(--wp--preset--color--outline, #737971);
   --color-outline-variant: var(--wp--preset--color--outline-variant, #c2c8bf);
+  --color-inverse-surface: var(--wp--preset--color--inverse-surface, #303030);
+  --color-inverse-on-surface: var(--wp--preset--color--inverse-on-surface, #f2f0f0);
+  --color-inverse-primary: var(--wp--preset--color--inverse-primary, #8fd99a);
+  --color-scrim: var(--wp--preset--color--scrim, #000000);
+  --color-shadow: var(--wp--preset--color--shadow, #000000);
 }
 
 @font-face {
