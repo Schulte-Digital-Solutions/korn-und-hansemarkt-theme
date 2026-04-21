@@ -10,33 +10,59 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Liest die Farbpalette aus theme.json und gibt sie als assoziatives
+ * Array (slug => array( name, color )) zurück. Statisch gecacht.
+ */
+function kuh_get_theme_json_palette() {
+    static $palette = null;
+    if ( null !== $palette ) {
+        return $palette;
+    }
+
+    $palette = array();
+    $file    = get_stylesheet_directory() . '/theme.json';
+    if ( ! file_exists( $file ) ) {
+        return $palette;
+    }
+
+    $data = json_decode( file_get_contents( $file ), true );
+    $entries = $data['settings']['color']['palette'] ?? array();
+    foreach ( $entries as $entry ) {
+        if ( empty( $entry['slug'] ) ) {
+            continue;
+        }
+        $palette[ $entry['slug'] ] = array(
+            'name'  => $entry['name']  ?? $entry['slug'],
+            'color' => $entry['color'] ?? '#000000',
+        );
+    }
+    return $palette;
+}
+
+/**
  * Customizer-Einstellungen registrieren
  */
 function kuh_customize_register( $wp_customize ) {
     // === Abschnitt: Farben ===
     $wp_customize->add_section( 'kuh_colors', array(
-        'title'    => __( 'Theme-Farben', 'korn-und-hansemarkt' ),
-        'priority' => 30,
+        'title'       => __( 'Theme-Farben', 'korn-und-hansemarkt' ),
+        'description' => __( 'Alle Farben der Theme-Palette. Standardwerte stammen aus theme.json.', 'korn-und-hansemarkt' ),
+        'priority'    => 30,
     ) );
 
-    $colors = array(
-        'primary'   => array( 'label' => 'Primärfarbe',   'default' => '#2c3e50' ),
-        'secondary' => array( 'label' => 'Sekundärfarbe', 'default' => '#c0862a' ),
-        'accent'    => array( 'label' => 'Akzentfarbe',   'default' => '#e67e22' ),
-        'bg'        => array( 'label' => 'Hintergrund',   'default' => '#ffffff' ),
-        'text'      => array( 'label' => 'Textfarbe',     'default' => '#333333' ),
-        'muted'     => array( 'label' => 'Gedämpft',      'default' => '#6b7280' ),
-    );
+    $palette = kuh_get_theme_json_palette();
 
-    foreach ( $colors as $key => $color ) {
-        $wp_customize->add_setting( 'kuh_color_' . $key, array(
-            'default'           => $color['default'],
+    foreach ( $palette as $slug => $entry ) {
+        $setting_id = 'kuh_color_' . $slug;
+
+        $wp_customize->add_setting( $setting_id, array(
+            'default'           => $entry['color'],
             'sanitize_callback' => 'sanitize_hex_color',
             'transport'         => 'refresh',
         ) );
 
-        $wp_customize->add_control( new WP_Customize_Color_Control( $wp_customize, 'kuh_color_' . $key, array(
-            'label'   => $color['label'],
+        $wp_customize->add_control( new WP_Customize_Color_Control( $wp_customize, $setting_id, array(
+            'label'   => $entry['name'],
             'section' => 'kuh_colors',
         ) ) );
     }
@@ -199,26 +225,47 @@ function kuh_sanitize_color_alpha( $value ) {
 }
 
 /**
- * Customizer-Farben als CSS-Variablen in den <head> ausgeben.
+ * Customizer-Werte in die theme.json-Palette einspiegeln.
  *
- * Gibt nur Variablen aus, für die im Customizer explizit ein Wert gesetzt
- * wurde. Ohne gesetzten Wert greift die Palette aus theme.json als Default.
+ * WordPress schreibt daraus automatisch die `--wp--preset--color--<slug>`-
+ * CSS-Variablen, die vom Theme-CSS (app.css → `--color-<slug>`) und vom
+ * Block-Editor (Palette + `.has-<slug>-color`-Regeln) verwendet werden.
+ * Es werden nur Slugs überschrieben, deren Wert vom theme.json-Default
+ * abweicht; so bleibt die Palette als robuster Fallback erhalten.
  */
-function kuh_customizer_css() {
-    $keys = array( 'primary', 'secondary', 'accent', 'bg', 'text', 'muted' );
+function kuh_apply_customizer_palette( $theme_json ) {
+    $palette = kuh_get_theme_json_palette();
+    if ( empty( $palette ) ) {
+        return $theme_json;
+    }
 
-    $declarations = array();
-    foreach ( $keys as $key ) {
-        $value = get_theme_mod( 'kuh_color_' . $key, null );
-        if ( $value ) {
-            $declarations[] = '--color-' . $key . ':' . $value . ';';
+    $new_palette = array();
+    $changed     = false;
+
+    foreach ( $palette as $slug => $entry ) {
+        $default = $entry['color'];
+        $value   = get_theme_mod( 'kuh_color_' . $slug, $default );
+        if ( $value !== $default ) {
+            $changed = true;
         }
+        $new_palette[] = array(
+            'slug'  => $slug,
+            'name'  => $entry['name'],
+            'color' => $value,
+        );
     }
 
-    if ( empty( $declarations ) ) {
-        return;
+    if ( ! $changed ) {
+        return $theme_json;
     }
 
-    echo '<style>:root {' . esc_html( implode( '', $declarations ) ) . '}</style>' . "\n";
+    return $theme_json->update_with( array(
+        'version'  => 3,
+        'settings' => array(
+            'color' => array(
+                'palette' => $new_palette,
+            ),
+        ),
+    ) );
 }
-add_action( 'wp_head', 'kuh_customizer_css', 5 );
+add_filter( 'wp_theme_json_data_theme', 'kuh_apply_customizer_palette' );
