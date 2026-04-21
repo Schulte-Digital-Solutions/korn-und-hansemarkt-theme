@@ -67,16 +67,3 @@
   </div>
 </section>
 
-<style>
-  :global(.program-teaser-content a) {
-    display: inline-flex;
-    align-items: center;
-    color: var(--color-primary);
-    font-weight: 700;
-    text-underline-offset: 8px;
-    text-decoration-color: var(--color-secondary);
-  }
-  :global(.program-teaser-content a:hover) {
-    gap: 1rem;
-  }
-</style>
