@@ -24,9 +24,9 @@
 <button
   type="button"
   onclick={cycle}
-  class="inline-flex items-center justify-center rounded-md p-2 text-stone-600 transition-colors hover:bg-stone-100/90 hover:text-emerald-900 dark:text-on-surface-variant dark:hover:bg-white/10 dark:hover:text-on-surface cursor-pointer"
+  class="inline-flex items-center justify-center text-stone-600 transition-colors hover:text-emerald-900 dark:text-on-surface-variant dark:hover:text-on-surface cursor-pointer md:rounded-md md:p-2 md:hover:bg-stone-100/90 md:dark:hover:bg-white/10"
   aria-label="Farbmodus umschalten: {label}"
   title="Farbmodus: {label}"
 >
-  <span class="material-symbols-outlined text-xl!">{icon}</span>
+  <span class="material-symbols-outlined md:text-xl!">{icon}</span>
 </button>

@@ -166,8 +166,8 @@
           <img src={config.logo} alt={config.siteName} class="h-10 w-auto" />
         {:else}
           <span
-            class="block font-normal text-emerald-900 dark:text-primary font-headline tracking-tight leading-none"
-            style:font-size="{config.header?.titleSize ?? 1.5}rem"
+            class="block font-normal text-emerald-900 dark:text-primary font-headline tracking-tight leading-none whitespace-nowrap"
+            style:font-size="clamp(1rem, 6.5vw, {config.header?.titleSize ?? 1.5}rem)"
           >
             {#if headerTitleParts}
               <span>{headerTitleParts.left}</span><span class="font-body">-</span><span>{headerTitleParts.right}</span>
