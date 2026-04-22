@@ -198,7 +198,7 @@
               {decodeHtml(item.title)}
               <span class="material-symbols-outlined text-base!">expand_more</span>
             </button>
-            <div class="absolute left-1/2 top-full z-50 hidden -translate-x-1/2 pt-3 group-hover:block group-focus-within:block {parentHasActiveChild ? 'md:block' : ''}">
+            <div class="absolute left-1/2 top-full z-50 hidden -translate-x-1/2 pt-3 group-hover:block group-focus-within:block">
               <div class="min-w-56 overflow-hidden rounded-2xl border border-stone-200/70 bg-white/95 p-1 shadow-[0_18px_35px_-22px_rgba(0,0,0,0.45)] backdrop-blur-md dark:border-white/10 dark:bg-surface-container-high dark:shadow-[0_18px_35px_-22px_rgba(0,0,0,0.8)]">
                 {#each item.children as child}
                   {@const childActive = isUrlActive(child.url)}
