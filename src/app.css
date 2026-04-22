@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-basierter Darkmode: `.dark` auf <html> aktiviert die `dark:`-Utilities. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* Fonts */
   --font-headline: 'Manuskript Gotisch', serif;

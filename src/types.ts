@@ -14,6 +14,7 @@ interface KuhData {
     text: string;
     behavior: 'sticky' | 'normal' | 'autohide';
     display: 'text' | 'image';
+    titleSize: number;
   };
   footer: {
     description: string;
@@ -22,6 +23,10 @@ interface KuhData {
     contactZip: string;
     contactCity: string;
     copyright: string;
+  };
+  darkmode: {
+    enabled: boolean;
+    defaultMode: 'auto' | 'light' | 'dark';
   };
 }
 
