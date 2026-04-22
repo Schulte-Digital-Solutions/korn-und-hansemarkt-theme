@@ -16,6 +16,7 @@
  * gerenderten Content gemountet.
  */
 import { mountBlocks, unmountBlocks } from './blockMounter';
+import { applyOutlineButtonColors } from './outlineButtons';
 
 export function reinitBlocks(): void {
     // Zuerst alte Svelte-Block-Instanzen aufräumen
@@ -27,6 +28,12 @@ export function reinitBlocks(): void {
         });
         // Complianz: DOM neu scannen für Content-Blocker & Platzhalter
         reinitComplianz();
+    } else {
+        // Fallback: Mount + Outline-Buttons trotzdem ausführen
+        requestAnimationFrame(() => {
+            mountBlocks();
+            applyOutlineButtonColors();
+        });
     }
 }
 
@@ -50,5 +57,6 @@ function reinitComplianz(): void {
     // Svelte-Blöcke im neuen Content mounten
     requestAnimationFrame(() => {
         mountBlocks();
+        applyOutlineButtonColors();
     });
 }

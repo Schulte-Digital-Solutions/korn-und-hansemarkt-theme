@@ -140,6 +140,88 @@ a:has(.material-symbols-outlined) {
   text-decoration: none !important;
 }
 
+/* Gutenberg-Buttons sollen nicht von Tailwind-Typography (`prose`) als Textlinks gerendert werden */
+.prose :where(.wp-block-button__link, .wp-element-button) {
+  text-decoration: none;
+  color: inherit;
+}
+.prose :where(.wp-block-button__link, .wp-element-button):hover {
+  color: inherit;
+}
+.prose :where(.wp-block-buttons) {
+  list-style: none;
+  padding-left: 0;
+}
+
+/* Konfigurierbare Tokens für Button-Effekte */
+:root {
+  --kuh-button-transition: background-color 200ms ease, color 200ms ease,
+    border-color 200ms ease, box-shadow 200ms ease, padding 200ms ease;
+  --kuh-button-3d-depth: 4px;
+}
+
+/* Globale Transition für alle Gutenberg-Buttons */
+.wp-block-button > .wp-block-button__link,
+.wp-block-button > .wp-element-button {
+  transition: var(--kuh-button-transition);
+  will-change: box-shadow, padding;
+}
+
+/* Fill-Hover: Text- und Hintergrundfarbe tauschen */
+.wp-block-button:not(.is-style-outline):not(.is-style-3d) > .wp-block-button__link,
+.wp-block-button:not(.is-style-outline):not(.is-style-3d) > .wp-element-button {
+  border-color: var(--kuh-button-fill-bg-color, currentColor) !important;
+}
+.wp-block-button:not(.is-style-outline):not(.is-style-3d) > .wp-block-button__link:hover,
+.wp-block-button:not(.is-style-outline):not(.is-style-3d) > .wp-element-button:hover {
+  background-color: var(--kuh-button-fill-text-color) !important;
+  color: var(--kuh-button-fill-bg-color) !important;
+  border-color: var(--kuh-button-fill-bg-color, currentColor) !important;
+}
+
+/* Style-Variante: Outline
+   Hintergrund grundsätzlich transparent. Farbe/Border folgen der Text-Farbe
+   (border = currentColor in theme.json). Custom-Farben aus dem Editor
+   bleiben dadurch erhalten. */
+.wp-block-button.is-style-outline > .wp-block-button__link,
+.wp-block-button.is-style-outline > .wp-element-button {
+  background-color: transparent !important;
+  color: var(--kuh-button-outline-color, var(--color-primary)) !important;
+  border-color: var(--kuh-button-outline-color, currentColor) !important;
+}
+.wp-block-button.is-style-outline > .wp-block-button__link:hover,
+.wp-block-button.is-style-outline > .wp-element-button:hover {
+  background-color: var(--kuh-button-outline-color, currentColor) !important;
+  border-color: var(--kuh-button-outline-color, currentColor) !important;
+  color: var(--kuh-button-outline-text-color, var(--color-on-primary)) !important;
+}
+
+/* Style-Variante: 3D – wirkt beim Klick "gedrückt".
+   Padding-Top wird um die Tiefe reduziert, damit die Gesamthöhe gleich bleibt
+   wie bei den anderen Button-Varianten. */
+.wp-block-button.is-style-3d > .wp-block-button__link,
+.wp-block-button.is-style-3d > .wp-element-button {
+  /* CoBlocks setzt einen inset-Shadow, der den 3D-Effekt erzeugt */
+  box-shadow: inset 0 calc(var(--kuh-button-3d-depth) * -1) 0 0 rgba(0, 0, 0, 0.28) !important;
+  border-color: var(--kuh-button-fill-bg-color, currentColor) !important;
+  padding-top: calc(0.625rem - var(--kuh-button-3d-depth)) !important;
+  padding-bottom: calc(0.625rem + var(--kuh-button-3d-depth)) !important;
+}
+.wp-block-button.is-style-3d > .wp-block-button__link:hover,
+.wp-block-button.is-style-3d > .wp-element-button:hover {
+  background-color: var(--kuh-button-fill-bg-color, var(--wp--preset--color--primary)) !important;
+  color: var(--kuh-button-fill-text-color, var(--wp--preset--color--on-primary)) !important;
+  border-color: var(--kuh-button-fill-bg-color, currentColor) !important;
+}
+.wp-block-button.is-style-3d > .wp-block-button__link:active,
+.wp-block-button.is-style-3d > .wp-element-button:active {
+  /* Gedrückt: Tiefe fast weg, subtiler Press-Effekt ohne Gesamtverschiebung */
+  box-shadow: inset 0 calc(var(--kuh-button-3d-depth) * -0.2) 0 0 rgba(0, 0, 0, 0.22) !important;
+  border-color: var(--kuh-button-fill-bg-color, currentColor) !important;
+  padding-top: calc(0.625rem - (var(--kuh-button-3d-depth) * 0.15)) !important;
+  padding-bottom: calc(0.625rem + (var(--kuh-button-3d-depth) * 0.15)) !important;
+}
+
 /* WordPress-spezifische Klassen */
 .alignwide {
   @apply max-w-7xl mx-auto;
