@@ -1107,8 +1107,8 @@
             onclick={() => toggleLegendItem(item.key as keyof typeof legendVisibility)}
             aria-pressed={legendVisibility[item.key as keyof typeof legendVisibility]}
           >
-            <span class="inline-flex h-6 w-6 shrink-0 -rotate-45 items-center justify-center rounded-[50%_50%_50%_0] text-[11px]" style="background:{item.color};">
-              <span class="inline-block rotate-45 leading-none">{item.emoji}</span>
+            <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px]" style="background:{item.color};">
+              <span class="inline-block leading-none">{item.emoji}</span>
             </span>
             {item.label}
           </button>
