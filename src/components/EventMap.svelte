@@ -869,6 +869,12 @@
       center: center as [number, number],
       zoom: zoom ?? 15,
       attributionControl: false,
+      cooperativeGestures: true,
+      locale: {
+        'CooperativeGesturesHandler.WindowsHelpText': 'Verwende Strg + Scrollen, um die Karte zu zoomen',
+        'CooperativeGesturesHandler.MacHelpText': 'Verwende ⌘ + Scrollen, um die Karte zu zoomen',
+        'CooperativeGesturesHandler.MobileHelpText': 'Verwende zwei Finger, um die Karte zu bewegen',
+      },
     });
 
     if (loadBaseTiles) {
