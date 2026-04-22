@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import Link from './Link.svelte';
+  import ThemeToggle from './ThemeToggle.svelte';
+  import { theme } from '../lib/theme.svelte';
   import { getCurrentPath } from '../lib/router';
   import { getConfig } from '../lib/api';
   import type { MenuItem } from '../types';
@@ -155,7 +157,7 @@
       <!-- Hamburger (sichtbar auf mobil, unsichtbar auf desktop) -->
       <button
         onclick={toggleMobileMenu}
-        class="md:hidden! material-symbols-outlined text-stone-600 cursor-pointer"
+        class="md:hidden! material-symbols-outlined text-stone-600 dark:text-on-surface-variant cursor-pointer"
         aria-label="Menü öffnen"
       >menu</button>
 
@@ -163,19 +165,23 @@
         {#if config.header?.display === 'image' && config.logo}
           <img src={config.logo} alt={config.siteName} class="h-10 w-auto" />
         {:else}
-          <h1 class="text-2xl font-black text-emerald-900 font-headline tracking-tight">
+          <span
+            class="block font-normal text-emerald-900 dark:text-primary font-headline tracking-tight leading-none"
+            style:font-size="{config.header?.titleSize ?? 1.5}rem"
+          >
             {#if headerTitleParts}
               <span>{headerTitleParts.left}</span><span class="font-body">-</span><span>{headerTitleParts.right}</span>
             {:else}
               {getHeaderSiteTitle()}
             {/if}
-          </h1>
+          </span>
         {/if}
       </Link>
     </div>
 
-    <!-- Desktop Navigation -->
-    <nav class="hidden md:flex! items-center gap-2">
+    <div class="flex items-center gap-2">
+      <!-- Desktop Navigation -->
+      <nav class="hidden md:flex! items-center gap-2">
       {#each menuItems as item}
         {#if item.children && item.children.length > 0}
           {@const parentDirectActive = isUrlActive(item.url)}
@@ -184,23 +190,23 @@
             <button
               type="button"
               class="{parentDirectActive
-                ? 'border-emerald-900/20 bg-emerald-50/70 text-emerald-900'
+                ? 'border-emerald-900/20 bg-emerald-50/70 text-emerald-900 dark:border-white/15 dark:bg-white/10 dark:text-on-surface'
                 : parentHasActiveChild
-                  ? 'border-stone-300/80 bg-stone-100/80 text-stone-700'
-                  : 'border-transparent text-stone-600 hover:border-stone-300/80 hover:bg-stone-100/90 hover:text-emerald-900'} flex items-center gap-1 rounded-md px-3 py-2 text-sm uppercase tracking-widest transition-colors"
+                  ? 'border-stone-300/80 bg-stone-100/80 text-stone-700 dark:border-white/10 dark:bg-white/5 dark:text-on-surface-variant'
+                  : 'border-transparent text-stone-600 hover:border-stone-300/80 hover:bg-stone-100/90 hover:text-emerald-900 dark:text-on-surface-variant dark:hover:border-white/10 dark:hover:bg-white/5 dark:hover:text-on-surface'} flex items-center gap-1 rounded-md px-3 py-2 text-sm uppercase tracking-widest transition-colors"
             >
               {decodeHtml(item.title)}
               <span class="material-symbols-outlined text-base!">expand_more</span>
             </button>
             <div class="absolute left-1/2 top-full z-50 hidden -translate-x-1/2 pt-3 group-hover:block group-focus-within:block {parentHasActiveChild ? 'md:block' : ''}">
-              <div class="min-w-56 overflow-hidden rounded-2xl border border-stone-200/70 bg-white/95 p-1 shadow-[0_18px_35px_-22px_rgba(0,0,0,0.45)] backdrop-blur-md">
+              <div class="min-w-56 overflow-hidden rounded-2xl border border-stone-200/70 bg-white/95 p-1 shadow-[0_18px_35px_-22px_rgba(0,0,0,0.45)] backdrop-blur-md dark:border-white/10 dark:bg-surface-container-high dark:shadow-[0_18px_35px_-22px_rgba(0,0,0,0.8)]">
                 {#each item.children as child}
                   {@const childActive = isUrlActive(child.url)}
                   <Link
                     href={child.url || '/'}
                     class="{childActive
-                      ? 'bg-emerald-50/80 text-emerald-900'
-                      : 'text-stone-600 hover:bg-stone-100/85 hover:text-emerald-900'} block rounded-xl px-4 py-2.5 text-sm transition-colors"
+                      ? 'bg-emerald-50/80 text-emerald-900 dark:bg-white/10 dark:text-on-surface'
+                      : 'text-stone-600 hover:bg-stone-100/85 hover:text-emerald-900 dark:text-on-surface-variant dark:hover:bg-white/5 dark:hover:text-on-surface'} block rounded-xl px-4 py-2.5 text-sm transition-colors"
                   >
                     {decodeHtml(child.title)}
                   </Link>
@@ -213,19 +219,24 @@
           <Link
             href={item.url || '/'}
             class="{itemActive
-              ? 'rounded-md border border-emerald-900/20 bg-emerald-50/70 px-3 py-2 text-emerald-900 font-bold'
-              : 'rounded-md border border-transparent px-3 py-2 text-stone-600 hover:border-stone-300/80 hover:bg-stone-100/90 hover:text-emerald-900'} transition-colors text-sm uppercase tracking-widest"
+              ? 'rounded-md border border-emerald-900/20 bg-emerald-50/70 px-3 py-2 text-emerald-900 font-bold dark:border-white/15 dark:bg-white/10 dark:text-on-surface'
+              : 'rounded-md border border-transparent px-3 py-2 text-stone-600 hover:border-stone-300/80 hover:bg-stone-100/90 hover:text-emerald-900 dark:text-on-surface-variant dark:hover:border-white/10 dark:hover:bg-white/5 dark:hover:text-on-surface'} transition-colors text-sm uppercase tracking-widest"
           >
             {decodeHtml(item.title)}
           </Link>
         {/if}
       {/each}
     </nav>
+
+      {#if theme.enabled}
+        <ThemeToggle />
+      {/if}
+    </div>
   </div>
 
   <!-- Mobile Navigation Drawer -->
   {#if mobileMenuOpen}
-    <div class="md:hidden! border-t border-stone-200/50" style:background-color={config.header?.bg || '#ffffff'}>
+    <div class="md:hidden! border-t border-stone-200/50 dark:border-white/10">
       <div class="flex flex-col px-6 py-4 space-y-1">
         {#each menuItems as item}
           {#if item.children && item.children.length > 0}
@@ -236,20 +247,20 @@
                 <Link
                   href={item.url}
                   class="{mobileParentDirectActive
-                    ? 'bg-emerald-50/80 text-emerald-900 font-semibold'
-                    : 'text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50'} min-w-0 flex-1 rounded-md px-3 py-2 transition-colors text-sm uppercase tracking-widest"
+                    ? 'bg-emerald-50/80 text-emerald-900 font-semibold dark:bg-white/10 dark:text-on-surface'
+                    : 'text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50 dark:text-on-surface-variant dark:hover:bg-white/5 dark:hover:text-on-surface'} min-w-0 flex-1 rounded-md px-3 py-2 transition-colors text-sm uppercase tracking-widest"
                 >
                   {decodeHtml(item.title)}
                 </Link>
               {:else}
-                <span class="min-w-0 flex-1 px-3 py-2 text-sm uppercase tracking-widest text-stone-600">
+                <span class="min-w-0 flex-1 px-3 py-2 text-sm uppercase tracking-widest text-stone-600 dark:text-on-surface-variant">
                   {decodeHtml(item.title)}
                 </span>
               {/if}
               <button
                 type="button"
                 onclick={() => toggleSubmenu(item.id)}
-                class="shrink-0 rounded-md p-2 text-stone-600 transition-colors hover:bg-stone-200/50 hover:text-emerald-900"
+                class="shrink-0 rounded-md p-2 text-stone-600 transition-colors hover:bg-stone-200/50 hover:text-emerald-900 dark:text-on-surface-variant dark:hover:bg-white/5 dark:hover:text-on-surface"
                 aria-label="Untermenü umschalten"
                 aria-expanded={openSubmenuId === item.id || (mobileParentHasActiveChild && openSubmenuId === null)}
               >
@@ -265,8 +276,8 @@
                   <Link
                     href={child.url || '/'}
                     class="{mobileChildActive
-                      ? 'bg-emerald-50/80 text-emerald-900'
-                      : 'text-stone-500 hover:text-emerald-900 hover:bg-stone-200/50'} block rounded-md px-3 py-2 text-sm transition-colors"
+                      ? 'bg-emerald-50/80 text-emerald-900 dark:bg-white/10 dark:text-on-surface'
+                      : 'text-stone-500 hover:text-emerald-900 hover:bg-stone-200/50 dark:text-on-surface-variant dark:hover:bg-white/5 dark:hover:text-on-surface'} block rounded-md px-3 py-2 text-sm transition-colors"
                   >
                     {decodeHtml(child.title)}
                   </Link>
@@ -278,8 +289,8 @@
             <Link
               href={item.url || '/'}
               class="{mobileItemActive
-                ? 'bg-emerald-50/80 text-emerald-900 font-semibold'
-                : 'text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50'} block rounded-md px-3 py-2 transition-colors text-sm uppercase tracking-widest"
+                ? 'bg-emerald-50/80 text-emerald-900 font-semibold dark:bg-white/10 dark:text-on-surface'
+                : 'text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50 dark:text-on-surface-variant dark:hover:bg-white/5 dark:hover:text-on-surface'} block rounded-md px-3 py-2 transition-colors text-sm uppercase tracking-widest"
             >
               {decodeHtml(item.title)}
             </Link>

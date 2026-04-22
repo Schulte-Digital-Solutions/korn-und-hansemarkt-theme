@@ -31,13 +31,13 @@
         <button
           onclick={() => activeDay = i}
           class="w-full text-left p-6 rounded-lg transition-all {activeDay === i
-            ? 'bg-emerald-50 border-l-4 border-secondary'
+            ? 'bg-emerald-50 dark:bg-primary-container dark:text-on-primary-container border-l-4 border-secondary'
             : 'hover:bg-surface-container border-l-4 border-transparent'}"
         >
-          <span class="block text-xs font-bold uppercase tracking-widest {activeDay === i ? 'text-secondary' : 'text-stone-500'} mb-1">
+          <span class="block text-xs font-bold uppercase tracking-widest {activeDay === i ? 'text-secondary' : 'text-stone-500 dark:text-on-surface-variant'} mb-1">
             {day.date}
           </span>
-          <span class="text-2xl font-bold {activeDay === i ? 'text-primary' : 'text-stone-400'}">
+          <span class="text-2xl font-bold {activeDay === i ? 'text-primary dark:text-on-primary-container' : 'text-stone-400 dark:text-on-surface/70'}">
             {day.label}
           </span>
         </button>
