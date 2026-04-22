@@ -64,6 +64,7 @@ function kuh_get_frontend_data() {
             'text'        => get_theme_mod( 'kuh_header_text', '#111827' ),
             'behavior'    => get_theme_mod( 'kuh_header_behavior', 'sticky' ),
             'display'     => get_theme_mod( 'kuh_header_display', 'text' ),
+            'titleSize'   => (float) get_theme_mod( 'kuh_header_title_size', 1.5 ),
         ),
         'footer'      => array(
             'description'  => get_theme_mod( 'kuh_footer_description', 'Seit über 40 Jahren das kulturelle Highlight in der historischen Kornbrennerstadt Haselünne.' ),
@@ -72,6 +73,10 @@ function kuh_get_frontend_data() {
             'contactZip'   => get_theme_mod( 'kuh_footer_contact_zip', '49740' ),
             'contactCity'  => get_theme_mod( 'kuh_footer_contact_city', 'Haselünne' ),
             'copyright'    => get_theme_mod( 'kuh_footer_copyright', 'Korn- und Hansemarkt. Alle Rechte vorbehalten.' ),
+        ),
+        'darkmode'    => array(
+            'enabled'     => (bool) get_theme_mod( 'kuh_darkmode_enabled', false ),
+            'defaultMode' => get_theme_mod( 'kuh_darkmode_default_mode', 'auto' ),
         ),
     );
 }

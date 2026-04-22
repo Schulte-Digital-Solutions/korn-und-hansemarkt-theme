@@ -310,3 +310,94 @@ function kuh_material_palette_light( array $keys ) {
         'shadow'                     => kuh_neutral_tone( $primary, 0 ),
     );
 }
+
+/**
+ * Erzeugt die komplette Material-3-Palette (Dark Scheme) aus Key Colors.
+ *
+ * Im Dark Scheme werden die Rollen tonal invertiert:
+ * - primary: heller Ton der Key Color (Tone 80)
+ * - primary-container: dunkler Ton (Tone 30)
+ * - on-primary: dunkler Ton (Tone 20)
+ * - surface-Neutrale: sehr dunkel (Tone 6..24)
+ *
+ * @param array $keys Assoziatives Array mit mindestens 'primary'.
+ *                    Optional: 'secondary', 'tertiary', 'error'.
+ * @return array<string,string> slug => hex
+ */
+function kuh_material_palette_dark( array $keys, int $intensity = 50 ) {
+    $primary   = $keys['primary']   ?? '#6750a4';
+    $secondary = $keys['secondary'] ?? $primary;
+    $tertiary  = $keys['tertiary']  ?? $primary;
+    $error     = $keys['error']     ?? '#ba1a1a';
+
+    // Intensity 0..100 verschiebt alle Surface-Tones linear.
+    // 0   = sehr dunkel (OLED-Schwarz, M3-Original)
+    // 50  = angenehm dunkel (Default)
+    // 100 = deutlich heller (Surface ≈ Tone 28)
+    $shift = (int) round( ( max( 0, min( 100, $intensity ) ) - 50 ) * 0.36 ); // ±18 Tones
+
+    $t = function( $base ) use ( $shift ) {
+        return max( 0, min( 100, $base + $shift ) );
+    };
+
+    // Key-Colors werden im Dark-Scheme 1:1 als primary/secondary/... übernommen,
+    // damit die im Customizer gesetzten Farben genau so erscheinen wie gewählt.
+    // Container- und On-Farben werden aus der Tonal-Palette der Key-Color abgeleitet.
+
+    $primary_container   = kuh_tone( $primary, 30 );
+    $secondary_container = kuh_tone( $secondary, 30 );
+    $tertiary_container  = kuh_tone( $tertiary, 30 );
+    $error_container     = kuh_tone( $error, 30 );
+
+    return array(
+        // Primary
+        'primary'                    => $primary,
+        'on-primary'                 => kuh_on_color( $primary ),
+        'primary-container'          => $primary_container,
+        'on-primary-container'       => kuh_on_color( $primary_container ),
+
+        // Secondary
+        'secondary'                  => $secondary,
+        'on-secondary'               => kuh_on_color( $secondary ),
+        'secondary-container'        => $secondary_container,
+        'on-secondary-container'     => kuh_on_color( $secondary_container ),
+
+        // Tertiary
+        'tertiary'                   => $tertiary,
+        'on-tertiary'                => kuh_on_color( $tertiary ),
+        'tertiary-container'         => $tertiary_container,
+        'on-tertiary-container'      => kuh_on_color( $tertiary_container ),
+
+        // Error
+        'error'                      => $error,
+        'on-error'                   => kuh_on_color( $error ),
+        'error-container'            => $error_container,
+        'on-error-container'         => kuh_on_color( $error_container ),
+
+        // Surface & Neutral (dunkel, Hue aus Primary) – leicht angehoben ggü.
+        // reinem M3-Default (6 → 10), damit es nicht nach OLED-Schwarz wirkt
+        // und Primary-Akzente besser lesbar sind.
+        'surface'                    => kuh_neutral_tone( $primary, $t( 10 ) ),
+        'surface-dim'                => kuh_neutral_tone( $primary, $t( 8 ) ),
+        'surface-bright'             => kuh_neutral_tone( $primary, $t( 28 ) ),
+        'surface-container-lowest'   => kuh_neutral_tone( $primary, $t( 6 ) ),
+        'surface-container-low'      => kuh_neutral_tone( $primary, $t( 14 ) ),
+        'surface-container'          => kuh_neutral_tone( $primary, $t( 16 ) ),
+        'surface-container-high'     => kuh_neutral_tone( $primary, $t( 20 ) ),
+        'surface-container-highest'  => kuh_neutral_tone( $primary, $t( 26 ) ),
+        'on-surface'                 => kuh_neutral_tone( $primary, 92 ),
+
+        // Surface Variant & Outline
+        'surface-variant'            => kuh_neutral_tone( $primary, $t( 34 ), 0.016 ),
+        'on-surface-variant'         => kuh_neutral_tone( $primary, 82, 0.016 ),
+        'outline'                    => kuh_neutral_tone( $primary, 62, 0.016 ),
+        'outline-variant'            => kuh_neutral_tone( $primary, $t( 34 ), 0.016 ),
+
+        // Inverse & Utility
+        'inverse-surface'            => kuh_neutral_tone( $primary, 90 ),
+        'inverse-on-surface'         => kuh_neutral_tone( $primary, 20 ),
+        'inverse-primary'            => kuh_tone( $primary, 40 ),
+        'scrim'                      => kuh_neutral_tone( $primary, 0 ),
+        'shadow'                     => kuh_neutral_tone( $primary, 0 ),
+    );
+}
