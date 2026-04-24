@@ -78,6 +78,10 @@ function kuh_get_frontend_data() {
             'enabled'     => (bool) get_theme_mod( 'kuh_darkmode_enabled', false ),
             'defaultMode' => get_theme_mod( 'kuh_darkmode_default_mode', 'auto' ),
         ),
+        'contact'     => array(
+            'hcaptchaEnabled' => kuh_is_hcaptcha_enabled(),
+            'hcaptchaSiteKey' => kuh_get_hcaptcha_site_key(),
+        ),
     );
 }
 
@@ -152,3 +156,4 @@ require_once KUH_THEME_DIR . '/inc/blocks.php';
 require_once KUH_THEME_DIR . '/inc/button-styles.php';
 require_once KUH_THEME_DIR . '/inc/media-enhancements.php';
 require_once KUH_THEME_DIR . '/inc/event-map-data.php';
+require_once KUH_THEME_DIR . '/inc/contact-form.php';

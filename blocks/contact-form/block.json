@@ -1,0 +1,115 @@
+{
+  "apiVersion": 3,
+  "name": "kuh/contact-form",
+  "version": "1.0.0",
+  "title": "Kontaktformular",
+  "category": "widgets",
+  "icon": "email",
+  "description": "SPA-Kontaktformular mit optionalem hCaptcha und eigener Empfaenger-Adresse pro Block.",
+  "keywords": ["kontakt", "formular", "mail", "hcaptcha"],
+  "supports": {
+    "html": false,
+    "anchor": true
+  },
+  "attributes": {
+    "subject": {
+      "type": "string",
+      "default": "Kontaktanfrage"
+    },
+    "recipientEmail": {
+      "type": "string",
+      "default": ""
+    },
+    "fields": {
+      "type": "array",
+      "default": [
+        {
+          "id": "name",
+          "name": "name",
+          "label": "Name",
+          "type": "text",
+          "required": true,
+          "placeholder": "",
+          "cols": 2
+        },
+        {
+          "id": "email",
+          "name": "email",
+          "label": "E-Mail",
+          "type": "email",
+          "required": true,
+          "placeholder": "",
+          "cols": 2
+        },
+        {
+          "id": "message",
+          "name": "message",
+          "label": "Nachricht",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "",
+          "cols": 4
+        }
+      ]
+    },
+    "formTitle": {
+      "type": "string",
+      "default": ""
+    },
+    "formIntro": {
+      "type": "string",
+      "default": ""
+    },
+    "nameLabel": {
+      "type": "string",
+      "default": "Name *"
+    },
+    "emailLabel": {
+      "type": "string",
+      "default": "E-Mail *"
+    },
+    "messageLabel": {
+      "type": "string",
+      "default": "Nachricht *"
+    },
+    "namePlaceholder": {
+      "type": "string",
+      "default": ""
+    },
+    "emailPlaceholder": {
+      "type": "string",
+      "default": ""
+    },
+    "messagePlaceholder": {
+      "type": "string",
+      "default": ""
+    },
+    "submitLabel": {
+      "type": "string",
+      "default": "Nachricht senden"
+    },
+    "successMessage": {
+      "type": "string",
+      "default": "Vielen Dank! Deine Nachricht wurde gesendet."
+    },
+    "showSubjectField": {
+      "type": "boolean",
+      "default": false
+    },
+    "subjectLabel": {
+      "type": "string",
+      "default": "Betreff"
+    },
+    "subjectPlaceholder": {
+      "type": "string",
+      "default": ""
+    },
+    "privacyNote": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "textdomain": "korn-und-hansemarkt",
+  "editorScript": "file:./editor.js",
+  "render": "file:./render.php"
+}

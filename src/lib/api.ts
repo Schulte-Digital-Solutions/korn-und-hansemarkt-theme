@@ -140,3 +140,43 @@ export async function getMenus() {
   const config = getConfig();
   return config.menus;
 }
+
+interface ContactFormPayload {
+  fields?: Array<{
+    id: string;
+    name: string;
+    label: string;
+    type: 'text' | 'email' | 'number' | 'tel' | 'textarea' | 'select' | 'checkbox';
+    required: boolean;
+    placeholder?: string;
+    options?: string[];
+    value: string | boolean;
+  }>;
+  fieldsToken?: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  website: string;
+  formStartedAt: number;
+  recipientEmail?: string;
+  recipientToken?: string;
+  hcaptchaToken?: string;
+}
+
+interface ContactFormResponse {
+  success: boolean;
+  message: string;
+}
+
+export { type ContactFormPayload, type ContactFormResponse };
+
+/**
+ * Kontaktformular an den Theme-Endpoint senden.
+ */
+export async function sendContactForm(payload: ContactFormPayload): Promise<ContactFormResponse> {
+  return apiFetch<ContactFormResponse>('kuh/v1/contact', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}

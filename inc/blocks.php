@@ -21,6 +21,7 @@ function kuh_register_blocks() {
     register_block_type( KUH_THEME_DIR . '/blocks/partner-carousel' );
     register_block_type( KUH_THEME_DIR . '/blocks/program-schedule' );
     register_block_type( KUH_THEME_DIR . '/blocks/event-map' );
+    register_block_type( KUH_THEME_DIR . '/blocks/contact-form' );
 
     // Alten Block-Namen als Alias registrieren (Rückwärtskompatibilität)
     register_block_type( 'kuh/hero-collage', array(

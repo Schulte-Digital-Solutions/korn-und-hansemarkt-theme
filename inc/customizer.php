@@ -264,6 +264,61 @@ function kuh_customize_register( $wp_customize ) {
         'section' => 'kuh_footer',
         'type'    => 'text',
     ) );
+
+    // === Abschnitt: Kontaktformular ===
+    $wp_customize->add_section( 'kuh_contact_form', array(
+        'title'       => __( 'Kontaktformular', 'korn-und-hansemarkt' ),
+        'description' => __( 'Empfaenger und Spam-Schutz fuer das SPA-Kontaktformular konfigurieren.', 'korn-und-hansemarkt' ),
+        'priority'    => 36,
+    ) );
+
+    $wp_customize->add_setting( 'kuh_contact_recipient', array(
+        'default'           => get_option( 'admin_email' ),
+        'sanitize_callback' => 'sanitize_email',
+        'transport'         => 'refresh',
+    ) );
+    $wp_customize->add_control( 'kuh_contact_recipient', array(
+        'label'       => __( 'Empfaenger E-Mail', 'korn-und-hansemarkt' ),
+        'description' => __( 'An diese Adresse werden Kontaktanfragen gesendet.', 'korn-und-hansemarkt' ),
+        'section'     => 'kuh_contact_form',
+        'type'        => 'email',
+    ) );
+
+    $wp_customize->add_setting( 'kuh_hcaptcha_enabled', array(
+        'default'           => false,
+        'sanitize_callback' => 'rest_sanitize_boolean',
+        'transport'         => 'refresh',
+    ) );
+    $wp_customize->add_control( 'kuh_hcaptcha_enabled', array(
+        'label'       => __( 'hCaptcha aktivieren', 'korn-und-hansemarkt' ),
+        'description' => __( 'Wenn aktiv, muss der Besucher die hCaptcha-Pruefung bestehen.', 'korn-und-hansemarkt' ),
+        'section'     => 'kuh_contact_form',
+        'type'        => 'checkbox',
+    ) );
+
+    $wp_customize->add_setting( 'kuh_hcaptcha_site_key', array(
+        'default'           => '',
+        'sanitize_callback' => 'sanitize_text_field',
+        'transport'         => 'refresh',
+    ) );
+    $wp_customize->add_control( 'kuh_hcaptcha_site_key', array(
+        'label'       => __( 'hCaptcha Site Key', 'korn-und-hansemarkt' ),
+        'description' => __( 'Public Site Key aus dem hCaptcha-Dashboard.', 'korn-und-hansemarkt' ),
+        'section'     => 'kuh_contact_form',
+        'type'        => 'text',
+    ) );
+
+    $wp_customize->add_setting( 'kuh_hcaptcha_secret_key', array(
+        'default'           => '',
+        'sanitize_callback' => 'sanitize_text_field',
+        'transport'         => 'refresh',
+    ) );
+    $wp_customize->add_control( 'kuh_hcaptcha_secret_key', array(
+        'label'       => __( 'hCaptcha Secret Key', 'korn-und-hansemarkt' ),
+        'description' => __( 'Secret Key nur serverseitig genutzt. Optional auch per Konstante KUH_HCAPTCHA_SECRET_KEY in wp-config.php.', 'korn-und-hansemarkt' ),
+        'section'     => 'kuh_contact_form',
+        'type'        => 'text',
+    ) );
 }
 add_action( 'customize_register', 'kuh_customize_register' );
 

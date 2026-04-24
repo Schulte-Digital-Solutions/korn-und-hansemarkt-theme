@@ -28,6 +28,10 @@ interface KuhData {
     enabled: boolean;
     defaultMode: 'auto' | 'light' | 'dark';
   };
+  contact: {
+    hcaptchaEnabled: boolean;
+    hcaptchaSiteKey: string;
+  };
 }
 
 interface MenuItem {
@@ -83,6 +87,11 @@ declare global {
     __kuhReinitBlocks?: () => void;
     cmplz_set_blocked_content_container?: () => void;
     cmplz_has_consent?: (category: string) => boolean;
+    hcaptcha?: {
+      render: (container: HTMLElement, params: { sitekey: string; theme?: 'light' | 'dark'; callback?: (token: string) => void; 'expired-callback'?: () => void; 'error-callback'?: () => void }) => string | number;
+      reset: (widgetId?: string | number) => void;
+      remove: (widgetId?: string | number) => void;
+    };
   }
 }
 

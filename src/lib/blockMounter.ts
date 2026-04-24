@@ -13,6 +13,7 @@ import DropCapParagraph from '../components/DropCapParagraph.svelte';
 import PartnerCarousel from '../components/PartnerCarousel.svelte';
 import ProgramSchedule from '../components/ProgramSchedule.svelte';
 import EventMap from '../components/EventMap.svelte';
+import ContactForm from '../components/ContactForm.svelte';
 
 interface MountedBlock {
   container: HTMLElement;
@@ -31,6 +32,7 @@ const blockRegistry: Record<string, any> = {
   'kuh-partner-carousel': PartnerCarousel,
   'kuh-program-schedule': ProgramSchedule,
   'kuh-event-map': EventMap,
+  'kuh-contact-form': ContactForm,
 };
 
 /**
