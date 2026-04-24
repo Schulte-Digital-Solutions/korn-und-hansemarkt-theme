@@ -14,7 +14,7 @@
   <div class="grid grid-cols-1 md:grid-cols-4 gap-12 px-8 py-16 max-w-7xl mx-auto">
     <!-- Über uns -->
     <div class="space-y-6">
-      <h3 class="text-xl font-headline text-emerald-900 dark:text-primary">{config.siteName}</h3>
+      <p class="text-xl font-headline text-emerald-900 dark:text-primary">{config.siteName}</p>
       {#if footer?.description}
         <p class="text-sm opacity-70 leading-relaxed">{footer.description}</p>
       {/if}
@@ -23,7 +23,7 @@
     <!-- Navigation -->
     {#if footerMenuItems.length > 0}
     <div>
-      <h4 class="font-bold text-emerald-900 dark:text-primary mb-6 text-sm uppercase tracking-widest">Navigation</h4>
+      <p class="font-bold text-emerald-900 dark:text-primary mb-6 text-sm uppercase tracking-widest">Navigation</p>
       <ul class="space-y-4">
         {#each footerMenuItems as item}
           <li>
@@ -42,7 +42,7 @@
     <!-- Rechtliches -->
     {#if legalMenuItems.length > 0}
     <div>
-      <h4 class="font-bold text-emerald-900 dark:text-primary mb-6 text-sm uppercase tracking-widest">Rechtliches</h4>
+      <p class="font-bold text-emerald-900 dark:text-primary mb-6 text-sm uppercase tracking-widest">Rechtliches</p>
       <ul class="space-y-4">
         {#each legalMenuItems as item}
           <li>
@@ -61,7 +61,7 @@
     <!-- Kontakt -->
     {#if footer?.contactName}
     <div>
-      <h4 class="font-bold text-emerald-900 dark:text-primary mb-6 text-sm uppercase tracking-widest">Kontakt</h4>
+      <p class="font-bold text-emerald-900 dark:text-primary mb-6 text-sm uppercase tracking-widest">Kontakt</p>
       <p class="text-sm text-stone-700 dark:text-on-surface/80">
         {footer.contactName}<br />
         {footer.contactAddr}<br />

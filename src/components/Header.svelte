@@ -63,6 +63,11 @@
     openSubmenuId = willOpen ? getActiveSubmenuParentId() : null;
   }
 
+  function closeMobileMenu() {
+    mobileMenuOpen = false;
+    openSubmenuId = null;
+  }
+
   function toggleSubmenu(id: number) {
     openSubmenuId = openSubmenuId === id ? null : id;
   }
@@ -118,6 +123,30 @@
     return null;
   }
 
+  function handleMobileDrawerClick(event: MouseEvent) {
+    const target = event.target;
+    if (target instanceof Element && target.closest('a')) {
+      closeMobileMenu();
+    }
+  }
+
+  function handleMobileDrawerKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      closeMobileMenu();
+    }
+  }
+
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  });
+
   onMount(() => {
     const onNavChange = () => {
       currentPath = getCurrentPath();
@@ -127,8 +156,13 @@
 
     const closeMobileMenuOnDesktop = () => {
       if (window.matchMedia('(min-width: 768px)').matches) {
-        mobileMenuOpen = false;
-        openSubmenuId = null;
+        closeMobileMenu();
+      }
+    };
+
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeMobileMenu();
       }
     };
 
@@ -136,18 +170,21 @@
     closeMobileMenuOnDesktop();
     window.addEventListener('popstate', onNavChange);
     window.addEventListener('resize', closeMobileMenuOnDesktop);
+    window.addEventListener('keydown', onEscape);
 
     return () => {
       window.removeEventListener('popstate', onNavChange);
       window.removeEventListener('resize', closeMobileMenuOnDesktop);
+      window.removeEventListener('keydown', onEscape);
     };
   });
 
   const hasAdminBar = document.body.classList.contains('admin-bar');
+  const mobileDrawerTop = hasAdminBar ? 'var(--wp-admin--admin-bar--height, 32px)' : '0';
 </script>
 
 <header
-  class="sticky top-0 w-full z-50 shadow-sm transition-colors duration-300"
+  class="sticky top-0 w-full z-70 shadow-sm transition-colors duration-300"
   style:top={hasAdminBar ? 'var(--wp-admin--admin-bar--height, 32px)' : '0'}
   style:background-color={config.header?.bg || '#ffffff'}
   style:color={config.header?.text || '#111827'}
@@ -159,6 +196,8 @@
         onclick={toggleMobileMenu}
         class="md:hidden! material-symbols-outlined text-stone-600 dark:text-on-surface-variant cursor-pointer"
         aria-label="Menü öffnen"
+        aria-expanded={mobileMenuOpen}
+        aria-controls="mobile-navigation-drawer"
       >menu</button>
 
       <Link href="/" class="no-underline">
@@ -236,67 +275,103 @@
 
   <!-- Mobile Navigation Drawer -->
   {#if mobileMenuOpen}
-    <div class="md:hidden! border-t border-stone-200/50 dark:border-white/10">
-      <div class="flex flex-col px-6 py-4 space-y-1">
-        {#each menuItems as item}
-          {#if item.children && item.children.length > 0}
-            {@const mobileParentHasActiveChild = hasActiveChild(item)}
-            <div class="flex items-center gap-1">
-              {#if item.url}
-                {@const mobileParentDirectActive = isUrlActive(item.url)}
+    <div
+      class="md:hidden! fixed inset-x-0 bottom-0 z-70"
+      style:top={mobileDrawerTop}
+      aria-hidden={!mobileMenuOpen}
+    >
+      <button
+        type="button"
+        class="absolute inset-0 bg-black/45 backdrop-blur-[1px]"
+        onclick={closeMobileMenu}
+        aria-label="Menü schließen"
+      ></button>
+
+      <aside
+        id="mobile-navigation-drawer"
+        class="relative h-full w-[min(24rem,85vw)] border-r border-stone-200/60 shadow-[0_20px_40px_-20px_rgba(0,0,0,0.6)] dark:border-white/10"
+        style:background-color={config.header?.bg || '#ffffff'}
+        style:color={config.header?.text || '#111827'}
+      >
+        <div class="flex items-center justify-between border-b border-stone-200/60 px-6 py-4 dark:border-white/10">
+          <span class="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500 dark:text-on-surface-variant">Navigation</span>
+          <button
+            type="button"
+            onclick={closeMobileMenu}
+            class="material-symbols-outlined -mr-1 inline-flex h-8 w-8 items-center justify-center rounded-md text-[22px] leading-none text-stone-600 transition-colors hover:bg-stone-200/50 hover:text-emerald-900 dark:text-on-surface-variant dark:hover:bg-white/5 dark:hover:text-on-surface"
+            aria-label="Menü schließen"
+          >close</button>
+        </div>
+
+        <div
+          class="max-h-[calc(100vh-4.5rem)] overflow-y-auto px-6 py-4"
+          onclick={handleMobileDrawerClick}
+          onkeydown={handleMobileDrawerKeydown}
+          role="presentation"
+          tabindex="-1"
+        >
+          <div class="flex flex-col space-y-1">
+            {#each menuItems as item}
+              {#if item.children && item.children.length > 0}
+                {@const mobileParentHasActiveChild = hasActiveChild(item)}
+                <div class="flex items-center gap-1">
+                  {#if item.url}
+                    {@const mobileParentDirectActive = isUrlActive(item.url)}
+                    <Link
+                      href={item.url}
+                      class="{mobileParentDirectActive
+                        ? 'bg-emerald-50/80 text-emerald-900 font-semibold dark:bg-white/10 dark:text-on-surface'
+                        : 'text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50 dark:text-on-surface-variant dark:hover:bg-white/5 dark:hover:text-on-surface'} min-w-0 flex-1 rounded-md px-3 py-2 transition-colors text-sm uppercase tracking-widest"
+                    >
+                      {decodeHtml(item.title)}
+                    </Link>
+                  {:else}
+                    <span class="min-w-0 flex-1 px-3 py-2 text-sm uppercase tracking-widest text-stone-600 dark:text-on-surface-variant">
+                      {decodeHtml(item.title)}
+                    </span>
+                  {/if}
+                  <button
+                    type="button"
+                    onclick={() => toggleSubmenu(item.id)}
+                    class="shrink-0 rounded-md p-2 text-stone-600 transition-colors hover:bg-stone-200/50 hover:text-emerald-900 dark:text-on-surface-variant dark:hover:bg-white/5 dark:hover:text-on-surface"
+                    aria-label="Untermenü umschalten"
+                    aria-expanded={openSubmenuId === item.id || (mobileParentHasActiveChild && openSubmenuId === null)}
+                  >
+                    <span class="material-symbols-outlined text-sm transition-transform {openSubmenuId === item.id || (mobileParentHasActiveChild && openSubmenuId === null) ? 'rotate-180' : ''}">
+                      expand_more
+                    </span>
+                  </button>
+                </div>
+                {#if openSubmenuId === item.id || (mobileParentHasActiveChild && openSubmenuId === null)}
+                  <div class="flex flex-col space-y-1 pl-4">
+                    {#each item.children as child}
+                      {@const mobileChildActive = isUrlActive(child.url)}
+                      <Link
+                        href={child.url || '/'}
+                        class="{mobileChildActive
+                          ? 'bg-emerald-50/80 text-emerald-900 dark:bg-white/10 dark:text-on-surface'
+                          : 'text-stone-500 hover:text-emerald-900 hover:bg-stone-200/50 dark:text-on-surface-variant dark:hover:bg-white/5 dark:hover:text-on-surface'} block rounded-md px-3 py-2 text-sm transition-colors"
+                      >
+                        {decodeHtml(child.title)}
+                      </Link>
+                    {/each}
+                  </div>
+                {/if}
+              {:else}
+                {@const mobileItemActive = isUrlActive(item.url)}
                 <Link
-                  href={item.url}
-                  class="{mobileParentDirectActive
+                  href={item.url || '/'}
+                  class="{mobileItemActive
                     ? 'bg-emerald-50/80 text-emerald-900 font-semibold dark:bg-white/10 dark:text-on-surface'
-                    : 'text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50 dark:text-on-surface-variant dark:hover:bg-white/5 dark:hover:text-on-surface'} min-w-0 flex-1 rounded-md px-3 py-2 transition-colors text-sm uppercase tracking-widest"
+                    : 'text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50 dark:text-on-surface-variant dark:hover:bg-white/5 dark:hover:text-on-surface'} block rounded-md px-3 py-2 transition-colors text-sm uppercase tracking-widest"
                 >
                   {decodeHtml(item.title)}
                 </Link>
-              {:else}
-                <span class="min-w-0 flex-1 px-3 py-2 text-sm uppercase tracking-widest text-stone-600 dark:text-on-surface-variant">
-                  {decodeHtml(item.title)}
-                </span>
               {/if}
-              <button
-                type="button"
-                onclick={() => toggleSubmenu(item.id)}
-                class="shrink-0 rounded-md p-2 text-stone-600 transition-colors hover:bg-stone-200/50 hover:text-emerald-900 dark:text-on-surface-variant dark:hover:bg-white/5 dark:hover:text-on-surface"
-                aria-label="Untermenü umschalten"
-                aria-expanded={openSubmenuId === item.id || (mobileParentHasActiveChild && openSubmenuId === null)}
-              >
-                <span class="material-symbols-outlined text-sm transition-transform {openSubmenuId === item.id || (mobileParentHasActiveChild && openSubmenuId === null) ? 'rotate-180' : ''}">
-                  expand_more
-                </span>
-              </button>
-            </div>
-            {#if openSubmenuId === item.id || (mobileParentHasActiveChild && openSubmenuId === null)}
-              <div class="flex flex-col space-y-1 pl-4">
-                {#each item.children as child}
-                  {@const mobileChildActive = isUrlActive(child.url)}
-                  <Link
-                    href={child.url || '/'}
-                    class="{mobileChildActive
-                      ? 'bg-emerald-50/80 text-emerald-900 dark:bg-white/10 dark:text-on-surface'
-                      : 'text-stone-500 hover:text-emerald-900 hover:bg-stone-200/50 dark:text-on-surface-variant dark:hover:bg-white/5 dark:hover:text-on-surface'} block rounded-md px-3 py-2 text-sm transition-colors"
-                  >
-                    {decodeHtml(child.title)}
-                  </Link>
-                {/each}
-              </div>
-            {/if}
-          {:else}
-            {@const mobileItemActive = isUrlActive(item.url)}
-            <Link
-              href={item.url || '/'}
-              class="{mobileItemActive
-                ? 'bg-emerald-50/80 text-emerald-900 font-semibold dark:bg-white/10 dark:text-on-surface'
-                : 'text-stone-600 hover:text-emerald-900 hover:bg-stone-200/50 dark:text-on-surface-variant dark:hover:bg-white/5 dark:hover:text-on-surface'} block rounded-md px-3 py-2 transition-colors text-sm uppercase tracking-widest"
-            >
-              {decodeHtml(item.title)}
-            </Link>
-          {/if}
-        {/each}
-      </div>
+            {/each}
+          </div>
+        </div>
+      </aside>
     </div>
   {/if}
 </header>
