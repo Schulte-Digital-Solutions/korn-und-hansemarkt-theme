@@ -51,7 +51,7 @@
           <div class="flex gap-6 pb-8 border-b border-outline/10">
             <span class="text-secondary font-bold text-lg min-w-15">{event.time}</span>
             <div>
-              <h4 class="text-xl font-bold text-on-surface">{event.title}</h4>
+              <h4 class="font-body text-base font-normal text-on-surface">{event.title}</h4>
               <p class="text-on-surface/70 mt-2">{event.description}</p>
             </div>
           </div>
