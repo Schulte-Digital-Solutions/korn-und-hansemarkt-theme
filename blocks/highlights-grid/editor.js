@@ -65,7 +65,7 @@ registerBlockType('kuh/highlights-grid', {
               'div',
               { key: i, style: { background: '#f5f3f3', padding: '2.5rem', borderRadius: '0.75rem' } },
               el('span', { style: { fontSize: '3rem', fontWeight: 'bold', color: '#725c0c', display: 'block', marginBottom: '2rem' } }, item.value || '…'),
-              el('h3', { style: { textTransform: 'uppercase', letterSpacing: '0.1em', color: '#011e08', fontSize: '1.25rem', fontWeight: 'bold' } }, item.title || 'Titel'),
+              el('h3', { style: { fontFamily: 'var(--font-body, Inter, sans-serif)', fontSize: '1rem', fontWeight: 400, lineHeight: 1.5, color: 'var(--color-on-surface, #1b1c1c)', textTransform: 'none', letterSpacing: 'normal' } }, item.title || 'Titel'),
               el('p', { style: { fontSize: '0.875rem', color: '#666', marginTop: '0.5rem' } }, item.description || 'Beschreibung')
             )
           )

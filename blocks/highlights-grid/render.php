@@ -30,7 +30,7 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
             <?php foreach ( $highlights as $item ) : ?>
                 <div style="background:#f5f3f3;padding:2.5rem;border-radius:0.75rem;">
                     <span style="font-size:3rem;font-weight:bold;color:#725c0c;"><?php echo esc_html( $item['value'] ?? '' ); ?></span>
-                    <h3 style="text-transform:uppercase;letter-spacing:0.1em;color:#011e08;margin-top:2rem;"><?php echo esc_html( $item['title'] ?? '' ); ?></h3>
+                    <h3 style="font-family:var(--font-body, Inter, sans-serif);font-size:1rem;font-weight:400;line-height:1.5;color:var(--color-on-surface, #1b1c1c);margin-top:2rem;text-transform:none;letter-spacing:normal;"><?php echo esc_html( $item['title'] ?? '' ); ?></h3>
                     <p style="font-size:0.875rem;color:#666;"><?php echo esc_html( $item['description'] ?? '' ); ?></p>
                 </div>
             <?php endforeach; ?>
