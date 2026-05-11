@@ -241,6 +241,45 @@ function kuh_preload_spectra_assets( array $post_ids, array $block_types ) {
 add_action( 'kuh_preload_block_plugin_assets', 'kuh_preload_spectra_assets', 10, 2 );
 
 /**
+ * Contact Form 7 – Assets für SPA-Navigation vorladen.
+ *
+ * CF7 lädt seine Assets normalerweise nur, wenn der aktuelle Request
+ * ein Formular enthält. In der SPA werden Inhalte jedoch per REST
+ * nachgeladen, daher müssen die Assets global vorab verfügbar sein.
+ */
+function kuh_preload_contact_form_7_assets() {
+    if ( ! function_exists( 'wpcf7_enqueue_scripts' ) || ! function_exists( 'wpcf7_enqueue_styles' ) ) {
+        return;
+    }
+
+    global $wpdb, $kuh_reinit_handles;
+
+    $has_cf7_forms = (bool) $wpdb->get_var(
+        "SELECT ID FROM {$wpdb->posts}
+         WHERE post_status = 'publish'
+         AND post_type IN ('post', 'page')
+         AND post_content LIKE '%[contact-form-7%'
+         LIMIT 1"
+    );
+
+    if ( ! $has_cf7_forms ) {
+        return;
+    }
+
+    wpcf7_enqueue_styles();
+    wpcf7_enqueue_scripts();
+
+    if ( wp_script_is( 'contact-form-7', 'enqueued' ) ) {
+        $kuh_reinit_handles['contact-form-7'] = true;
+    }
+
+    if ( wp_script_is( 'wpcf7-recaptcha', 'enqueued' ) ) {
+        $kuh_reinit_handles['wpcf7-recaptcha'] = true;
+    }
+}
+add_action( 'kuh_preload_block_plugin_assets', 'kuh_preload_contact_form_7_assets', 20, 2 );
+
+/**
  * Complianz: AJAX-Content-Blocking für die SPA erzwingen.
  *
  * Damit Complianz das 2000ms-Intervall mit cmplz_set_blocked_content_container()
