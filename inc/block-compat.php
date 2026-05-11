@@ -261,6 +261,7 @@ function kuh_preload_contact_form_7_assets( array $post_ids = array(), array $bl
     if ( false !== $cached_value ) {
         $has_cf7_forms = '1' === $cached_value;
     } else {
+        $search_term = '%' . $wpdb->esc_like( '[contact-form-7' ) . '%';
         $has_cf7_forms = (bool) $wpdb->get_var(
             $wpdb->prepare(
                 "SELECT ID FROM {$wpdb->posts}
@@ -268,7 +269,7 @@ function kuh_preload_contact_form_7_assets( array $post_ids = array(), array $bl
                  AND post_type IN ('post', 'page')
                  AND post_content LIKE %s
                  LIMIT 1",
-                '%[contact-form-7%'
+                $search_term
             )
         );
 
@@ -295,7 +296,7 @@ add_action( 'kuh_preload_block_plugin_assets', 'kuh_preload_contact_form_7_asset
 /**
  * Cache für CF7-Formular-Prüfung leeren, wenn Inhalte geändert werden.
  */
-function kuh_invalidate_cf7_preload_cache( $post_id, $post = null, $update = false ) {
+function kuh_invalidate_cf7_preload_cache( $post_id ) {
     if ( wp_is_post_revision( $post_id ) ) {
         return;
     }
@@ -307,7 +308,7 @@ function kuh_invalidate_cf7_preload_cache( $post_id, $post = null, $update = fal
 
     delete_transient( 'kuh_has_cf7_forms' );
 }
-add_action( 'save_post', 'kuh_invalidate_cf7_preload_cache', 10, 3 );
+add_action( 'save_post', 'kuh_invalidate_cf7_preload_cache', 10, 1 );
 add_action( 'deleted_post', 'kuh_invalidate_cf7_preload_cache', 10, 1 );
 add_action( 'trashed_post', 'kuh_invalidate_cf7_preload_cache', 10, 1 );
 
