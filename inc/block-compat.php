@@ -247,20 +247,30 @@ add_action( 'kuh_preload_block_plugin_assets', 'kuh_preload_spectra_assets', 10,
  * ein Formular enthält. In der SPA werden Inhalte jedoch per REST
  * nachgeladen, daher müssen die Assets global vorab verfügbar sein.
  */
-function kuh_preload_contact_form_7_assets() {
+function kuh_preload_contact_form_7_assets( array $post_ids = array(), array $block_types = array() ) {
     if ( ! function_exists( 'wpcf7_enqueue_scripts' ) || ! function_exists( 'wpcf7_enqueue_styles' ) ) {
         return;
     }
 
     global $wpdb, $kuh_reinit_handles;
 
-    $has_cf7_forms = (bool) $wpdb->get_var(
-        "SELECT ID FROM {$wpdb->posts}
-         WHERE post_status = 'publish'
-         AND post_type IN ('post', 'page')
-         AND post_content LIKE '%[contact-form-7%'
-         LIMIT 1"
-    );
+    $cache_key     = 'kuh_has_cf7_forms';
+    $cached_value  = get_transient( $cache_key );
+    $has_cf7_forms = null;
+
+    if ( false !== $cached_value ) {
+        $has_cf7_forms = '1' === $cached_value;
+    } else {
+        $has_cf7_forms = (bool) $wpdb->get_var(
+            "SELECT ID FROM {$wpdb->posts}
+             WHERE post_status = 'publish'
+             AND post_type IN ('post', 'page')
+             AND post_content LIKE '%[contact-form-7%'
+             LIMIT 1"
+        );
+
+        set_transient( $cache_key, $has_cf7_forms ? '1' : '0', HOUR_IN_SECONDS );
+    }
 
     if ( ! $has_cf7_forms ) {
         return;
@@ -278,6 +288,25 @@ function kuh_preload_contact_form_7_assets() {
     }
 }
 add_action( 'kuh_preload_block_plugin_assets', 'kuh_preload_contact_form_7_assets', 20, 2 );
+
+/**
+ * Cache für CF7-Formular-Prüfung leeren, wenn Inhalte geändert werden.
+ */
+function kuh_invalidate_cf7_preload_cache( $post_id, $post = null, $update = false ) {
+    if ( wp_is_post_revision( $post_id ) ) {
+        return;
+    }
+
+    $post_type = get_post_type( $post_id );
+    if ( ! in_array( $post_type, array( 'post', 'page' ), true ) ) {
+        return;
+    }
+
+    delete_transient( 'kuh_has_cf7_forms' );
+}
+add_action( 'save_post', 'kuh_invalidate_cf7_preload_cache', 10, 3 );
+add_action( 'deleted_post', 'kuh_invalidate_cf7_preload_cache', 10, 1 );
+add_action( 'trashed_post', 'kuh_invalidate_cf7_preload_cache', 10, 1 );
 
 /**
  * Complianz: AJAX-Content-Blocking für die SPA erzwingen.
