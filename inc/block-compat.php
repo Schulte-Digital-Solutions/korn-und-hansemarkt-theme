@@ -262,14 +262,17 @@ function kuh_preload_contact_form_7_assets( array $post_ids = array(), array $bl
         $has_cf7_forms = '1' === $cached_value;
     } else {
         $has_cf7_forms = (bool) $wpdb->get_var(
-            "SELECT ID FROM {$wpdb->posts}
-             WHERE post_status = 'publish'
-             AND post_type IN ('post', 'page')
-             AND post_content LIKE '%[contact-form-7%'
-             LIMIT 1"
+            $wpdb->prepare(
+                "SELECT ID FROM {$wpdb->posts}
+                 WHERE post_status = 'publish'
+                 AND post_type IN ('post', 'page')
+                 AND post_content LIKE %s
+                 LIMIT 1",
+                '%[contact-form-7%'
+            )
         );
 
-        set_transient( $cache_key, $has_cf7_forms ? '1' : '0', HOUR_IN_SECONDS );
+        set_transient( $cache_key, $has_cf7_forms ? '1' : '0', DAY_IN_SECONDS );
     }
 
     if ( ! $has_cf7_forms ) {
