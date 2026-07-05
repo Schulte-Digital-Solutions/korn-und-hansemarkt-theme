@@ -363,6 +363,53 @@ function kuh_inline_group_grid_layout( $block_content, $block ) {
         }
     }
 
+    // D) Flex-Layout Ausrichtung: justifyContent / verticalAlignment
+    // WP schreibt diese Werte fuer flex-Layout ebenfalls als Head-CSS aus –
+    // bei SPA-Navigation verloren. Fuer Grid setzt WP nur die Klasse
+    // `is-content-justification-*`, die vom Theme-CSS aufgeloest wird.
+    $layout = $block['attrs']['layout'] ?? array();
+    if ( 'flex' === ( $layout['type'] ?? '' ) ) {
+        $orientation = $layout['orientation'] ?? 'horizontal';
+        $justify_map = array(
+            'left'          => 'flex-start',
+            'center'        => 'center',
+            'right'         => 'flex-end',
+            'space-between' => 'space-between',
+            'stretch'       => 'stretch',
+        );
+        $align_map = array(
+            'top'           => 'flex-start',
+            'center'        => 'center',
+            'bottom'        => 'flex-end',
+            'stretch'       => 'stretch',
+            'space-between' => 'space-between',
+        );
+        $jc = $layout['justifyContent'] ?? '';
+        $va = $layout['verticalAlignment'] ?? '';
+
+        if ( 'horizontal' === $orientation ) {
+            if ( $jc !== '' && isset( $justify_map[ $jc ] ) ) {
+                $decls[] = 'justify-content:' . $justify_map[ $jc ];
+            }
+            if ( $va !== '' && isset( $align_map[ $va ] ) ) {
+                $decls[] = 'align-items:' . $align_map[ $va ];
+            }
+        } else {
+            // vertical: Achsen werden gedreht
+            $decls[] = 'flex-direction:column';
+            if ( $jc !== '' && isset( $justify_map[ $jc ] ) ) {
+                $decls[] = 'align-items:' . $justify_map[ $jc ];
+            }
+            if ( $va !== '' && isset( $align_map[ $va ] ) ) {
+                $decls[] = 'justify-content:' . $align_map[ $va ];
+            }
+        }
+
+        if ( ! empty( $layout['flexWrap'] ) && 'nowrap' === $layout['flexWrap'] ) {
+            $decls[] = 'flex-wrap:nowrap';
+        }
+    }
+
     if ( empty( $decls ) ) {
         return $block_content;
     }
