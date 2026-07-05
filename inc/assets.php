@@ -136,3 +136,28 @@ function kuh_disable_emoji() {
     remove_filter( 'wp_mail',             'wp_staticize_emoji_for_email' );
 }
 add_action( 'init', 'kuh_disable_emoji' );
+
+/**
+ * Kompiliertes Theme-CSS auch im Block-Editor laden.
+ *
+ * Ohne diesen Aufruf sind die Block-Style-Previews (rechte Sidebar) und die
+ * WYSIWYG-Vorschau im Editor-Iframe ungestyled – Farben, Radien und Varianten
+ * (z.B. Tabelle "Karten") sehen dort anders aus als im Frontend.
+ * Vite haengt einen Hash an den Dateinamen, deshalb lesen wir den echten
+ * Pfad aus dem Manifest aus.
+ */
+function kuh_add_editor_styles() {
+    $manifest_path = KUH_THEME_DIR . '/dist/.vite/manifest.json';
+    if ( ! file_exists( $manifest_path ) ) {
+        return;
+    }
+    $manifest = json_decode( file_get_contents( $manifest_path ), true );
+    $entry    = $manifest['src/main.ts'] ?? null;
+    if ( empty( $entry['css'] ) ) {
+        return;
+    }
+    foreach ( $entry['css'] as $css_file ) {
+        add_editor_style( 'dist/' . $css_file );
+    }
+}
+add_action( 'after_setup_theme', 'kuh_add_editor_styles', 20 );
