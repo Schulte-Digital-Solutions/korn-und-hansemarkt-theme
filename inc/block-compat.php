@@ -256,16 +256,42 @@ function kuh_force_complianz_ajax_blocking( $settings, $banner ) {
 add_filter( 'cmplz_cookiebanner_settings_front_end', 'kuh_force_complianz_ajax_blocking', 10, 2 );
 
 /**
- * Grid-Layout (Group-Block "Raster") als inline-Style in den gerenderten
- * Markup schreiben.
+ * Loest einen Spacing-Wert auf.
+ *
+ * WordPress speichert Preset-Referenzen als "var:preset|spacing|<slug>". Diese
+ * muessen fuer inline-Styles zu "var(--wp--preset--spacing--<slug>)" umgewandelt
+ * werden. Rohe CSS-Werte (z.B. "2rem", "16px", "1.5em") werden auf sichere
+ * Zeichen gefiltert und unveraendert zurueckgegeben.
+ */
+function kuh_resolve_spacing_value( $value ) {
+    if ( ! is_string( $value ) || $value === '' ) {
+        return '';
+    }
+    if ( str_contains( $value, 'var:preset|spacing|' ) ) {
+        $slug = substr( $value, strrpos( $value, '|' ) + 1 );
+        $slug = preg_replace( '/[^a-zA-Z0-9_-]/', '', $slug );
+        if ( $slug === '' ) {
+            return '';
+        }
+        return 'var(--wp--preset--spacing--' . $slug . ')';
+    }
+    // Rohe CSS-Werte auf sichere Zeichen beschraenken (Zahlen, Einheiten,
+    // calc(), min(), max(), clamp(), var(), Komma/Leerzeichen).
+    $safe = preg_replace( '/[^0-9a-zA-Z\.%\-\+\*\/\(\)\, ]/', '', $value );
+    return trim( (string) $safe );
+}
+
+/**
+ * Grid-Layout (Group-Block "Raster") und Block-Gap als inline-Style in den
+ * gerenderten Markup schreiben.
  *
  * WordPress gibt die Spalten-Konfiguration (columnCount / minimumColumnWidth /
- * rowCount) und die Kind-Positionierung (columnSpan / rowSpan / columnStart /
- * rowStart) normalerweise als separate CSS-Regel im <head> aus (Style-Engine,
- * Kontext "block-supports"). Bei SPA-Navigation ueber die REST-API wird nur
- * content.rendered ausgeliefert – dieses Head-CSS fehlt, alle Grid-Einstellungen
- * werden ignoriert. Wir schreiben die Regeln daher direkt als inline-Style an
- * das gerenderte Element.
+ * rowCount), die Kind-Positionierung (columnSpan / rowSpan / columnStart /
+ * rowStart) und den blockGap normalerweise als separate CSS-Regel im <head>
+ * aus (Style-Engine, Kontext "block-supports"). Bei SPA-Navigation ueber die
+ * REST-API wird nur content.rendered ausgeliefert – dieses Head-CSS fehlt.
+ * Wir schreiben die Regeln daher direkt als inline-Style an das gerenderte
+ * Element.
  */
 function kuh_inline_group_grid_layout( $block_content, $block ) {
     if ( empty( $block['blockName'] ) ) {
@@ -314,6 +340,26 @@ function kuh_inline_group_grid_layout( $block_content, $block ) {
         }
         if ( isset( $child['rowStart'] ) ) {
             $decls[] = 'grid-row-start:' . absint( $child['rowStart'] );
+        }
+    }
+
+    // C) blockGap: Grid, Flex-Group, Columns, Buttons, Social-Links etc.
+    $gap_attr = $block['attrs']['style']['spacing']['blockGap'] ?? null;
+    if ( null !== $gap_attr ) {
+        if ( is_array( $gap_attr ) ) {
+            $row_gap = isset( $gap_attr['top'] ) ? kuh_resolve_spacing_value( $gap_attr['top'] ) : '';
+            $col_gap = isset( $gap_attr['left'] ) ? kuh_resolve_spacing_value( $gap_attr['left'] ) : '';
+            if ( $row_gap !== '' ) {
+                $decls[] = 'row-gap:' . $row_gap;
+            }
+            if ( $col_gap !== '' ) {
+                $decls[] = 'column-gap:' . $col_gap;
+            }
+        } else {
+            $gap = kuh_resolve_spacing_value( $gap_attr );
+            if ( $gap !== '' ) {
+                $decls[] = 'gap:' . $gap;
+            }
         }
     }
 
