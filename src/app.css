@@ -289,8 +289,10 @@ a:has(.material-symbols-outlined) {
   gap: var(--wp--style--block-gap, 1.25rem);
 }
 
-/* Fallback fuer Group-Grid ohne explizite Spaltenangabe */
-.wp-block-group-is-layout-grid {
+/* Fallback fuer Group-Grid ohne explizite Spaltenangabe.
+   :where() reduziert die Spezifitaet auf 0, damit die von WordPress
+   erzeugte Container-Regel (Spalten / min-Spaltenbreite) immer gewinnt. */
+:where(.wp-block-group-is-layout-grid) {
   grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
 }
 

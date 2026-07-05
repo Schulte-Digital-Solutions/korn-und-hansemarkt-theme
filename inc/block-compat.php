@@ -254,3 +254,109 @@ function kuh_force_complianz_ajax_blocking( $settings, $banner ) {
     return $settings;
 }
 add_filter( 'cmplz_cookiebanner_settings_front_end', 'kuh_force_complianz_ajax_blocking', 10, 2 );
+
+/**
+ * Grid-Layout (Group-Block "Raster") als inline-Style in den gerenderten
+ * Markup schreiben.
+ *
+ * WordPress gibt die Spalten-Konfiguration (columnCount / minimumColumnWidth /
+ * rowCount) und die Kind-Positionierung (columnSpan / rowSpan / columnStart /
+ * rowStart) normalerweise als separate CSS-Regel im <head> aus (Style-Engine,
+ * Kontext "block-supports"). Bei SPA-Navigation ueber die REST-API wird nur
+ * content.rendered ausgeliefert – dieses Head-CSS fehlt, alle Grid-Einstellungen
+ * werden ignoriert. Wir schreiben die Regeln daher direkt als inline-Style an
+ * das gerenderte Element.
+ */
+function kuh_inline_group_grid_layout( $block_content, $block ) {
+    if ( empty( $block['blockName'] ) ) {
+        return $block_content;
+    }
+
+    $decls = array();
+
+    // A) Parent-Ebene: core/group mit layout.type=grid
+    if ( 'core/group' === $block['blockName'] ) {
+        $layout = $block['attrs']['layout'] ?? array();
+        if ( ! empty( $layout ) && 'grid' === ( $layout['type'] ?? '' ) ) {
+            $col_count = ! empty( $layout['columnCount'] ) ? absint( $layout['columnCount'] ) : 0;
+            $row_count = ! empty( $layout['rowCount'] ) ? absint( $layout['rowCount'] ) : 0;
+            $min_width = ! empty( $layout['minimumColumnWidth'] )
+                ? preg_replace( '/[^0-9a-zA-Z\.%\-]/', '', (string) $layout['minimumColumnWidth'] )
+                : '';
+
+            if ( $col_count > 0 && $min_width !== '' ) {
+                // Kombinationsmodus (columnCount + minimumColumnWidth): WP-Formel nachbauen.
+                $gap     = '1.25rem';
+                $max_val = 'max(min(' . $min_width . ',100%),(100% - (' . $gap . ' * (' . $col_count . ' - 1))) /' . $col_count . ')';
+                $decls[] = 'grid-template-columns:repeat(auto-fill,minmax(' . $max_val . ',1fr))';
+            } elseif ( $col_count > 0 ) {
+                $decls[] = 'grid-template-columns:repeat(' . $col_count . ',minmax(0,1fr))';
+            } elseif ( $min_width !== '' ) {
+                $decls[] = 'grid-template-columns:repeat(auto-fill,minmax(min(' . $min_width . ',100%),1fr))';
+            }
+            if ( $row_count > 0 ) {
+                $decls[] = 'grid-template-rows:repeat(' . $row_count . ',minmax(1rem,auto))';
+            }
+        }
+    }
+
+    // B) Kind-Ebene: beliebiger Block mit style.layout.column/rowSpan/Start
+    $child = $block['attrs']['style']['layout'] ?? null;
+    if ( is_array( $child ) ) {
+        if ( isset( $child['columnSpan'] ) ) {
+            $decls[] = 'grid-column:span ' . absint( $child['columnSpan'] );
+        }
+        if ( isset( $child['rowSpan'] ) ) {
+            $decls[] = 'grid-row:span ' . absint( $child['rowSpan'] );
+        }
+        if ( isset( $child['columnStart'] ) ) {
+            $decls[] = 'grid-column-start:' . absint( $child['columnStart'] );
+        }
+        if ( isset( $child['rowStart'] ) ) {
+            $decls[] = 'grid-row-start:' . absint( $child['rowStart'] );
+        }
+    }
+
+    if ( empty( $decls ) ) {
+        return $block_content;
+    }
+    $rule = implode( ';', $decls ) . ';';
+
+    // Nur das erste (Wrapper-)Element anfassen.
+    $done = false;
+    return preg_replace_callback(
+        '/<([a-zA-Z][a-zA-Z0-9]*)\b([^>]*)>/',
+        function ( $m ) use ( $rule, &$done ) {
+            if ( $done ) {
+                return $m[0];
+            }
+            $done  = true;
+            $tag   = $m[1];
+            $attrs = (string) $m[2];
+            if ( preg_match( '/\sstyle\s*=\s*"([^"]*)"/i', $attrs, $sm ) ) {
+                $existing = $sm[1];
+                // Bereits vom Nutzer gesetzte Werte nicht ueberschreiben.
+                $filtered = array_filter(
+                    explode( ';', $rule ),
+                    function ( $decl ) use ( $existing ) {
+                        $prop = trim( strtok( $decl, ':' ) );
+                        return $prop !== '' && stripos( $existing, $prop . ':' ) === false;
+                    }
+                );
+                if ( empty( $filtered ) ) {
+                    return $m[0];
+                }
+                $new_style = rtrim( $existing, '; ' ) . ';' . implode( ';', $filtered ) . ';';
+                $attrs     = (string) str_replace( $sm[0], ' style="' . esc_attr( $new_style ) . '"', $attrs );
+            } else {
+                $attrs .= ' style="' . esc_attr( $rule ) . '"';
+            }
+            return '<' . $tag . $attrs . '>';
+        },
+        $block_content,
+        1
+    );
+}
+add_filter( 'render_block', 'kuh_inline_group_grid_layout', 10, 2 );
+
+
