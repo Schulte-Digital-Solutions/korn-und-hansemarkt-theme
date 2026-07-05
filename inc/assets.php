@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 function kuh_enqueue_assets() {
     // Block-Styles explizit laden (headless Theme ruft nie the_content() auf)
     wp_enqueue_style( 'wp-block-library' );
+    wp_enqueue_style( 'wp-block-library-theme' );
 
     $manifest_path = KUH_THEME_DIR . '/dist/.vite/manifest.json';
     $is_dev = str_ends_with( wp_parse_url( home_url(), PHP_URL_HOST ), '.test' );
