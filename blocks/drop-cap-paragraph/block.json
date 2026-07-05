@@ -10,7 +10,15 @@
   "supports": {
     "html": false,
     "align": ["wide", "full"],
-    "anchor": true
+    "anchor": true,
+    "spacing": {
+      "padding": true,
+      "margin": true,
+      "__experimentalDefaultControls": {
+        "padding": true,
+        "margin": true
+      }
+    }
   },
   "attributes": {
     "text": {
@@ -27,6 +35,10 @@
       "type": "string",
       "default": "gothic",
       "enum": ["gothic", "serif", "inherit"]
+    },
+    "maxWidth": {
+      "type": "string",
+      "default": "65ch"
     }
   },
   "textdomain": "korn-und-hansemarkt",

@@ -6,9 +6,11 @@
     dropCapColor?: string;
     /** Schriftart des Initials: 'gothic' | 'serif' | 'inherit' */
     dropCapFont?: string;
+    /** Maximale Breite als CSS-Wert (z. B. '65ch', '100%') */
+    maxWidth?: string;
   }
 
-  let { text, dropCapColor = '', dropCapFont = 'gothic' }: Props = $props();
+  let { text, dropCapColor = '', dropCapFont = 'gothic', maxWidth = '65ch' }: Props = $props();
 
   const fontMap: Record<string, string> = {
     gothic: "'Manuskript Gotisch', serif",
@@ -24,6 +26,7 @@
   class="kuh-drop-cap-text"
   style:--kuh-dc-font={initialFont}
   style:--kuh-dc-color={initialColor}
+  style:--kuh-dc-max-width={maxWidth}
 >
   {@html text}
 </p>
@@ -32,7 +35,7 @@
   .kuh-drop-cap-text {
     font-size: 1.125rem;
     line-height: 1.8;
-    max-width: 65ch;
+    max-width: var(--kuh-dc-max-width, 65ch);
     margin: 0 auto 2rem;
     color: var(--color-on-surface);
   }

@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 $text           = $attributes['text'] ?? '';
 $drop_cap_color = $attributes['dropCapColor'] ?? '';
 $drop_cap_font  = $attributes['dropCapFont'] ?? 'gothic';
+$max_width      = $attributes['maxWidth'] ?? '65ch';
 
 // source:"html"-Attribute werden nur clientseitig geparst.
 // Serverseitig den Text aus dem gespeicherten $content extrahieren.
@@ -27,6 +28,7 @@ $block_data = array(
     'text'         => $text,
     'dropCapColor' => $drop_cap_color,
     'dropCapFont'  => $drop_cap_font,
+    'maxWidth'     => $max_width,
 );
 
 $font_map = array(
@@ -45,7 +47,7 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
 ?>
 <div <?php echo $wrapper_attributes; // phpcs:ignore ?>>
     <noscript>
-        <p style="font-size:1.125rem;line-height:1.8;max-width:65ch;margin:0 auto 2rem;">
+        <p style="font-size:1.125rem;line-height:1.8;max-width:<?php echo esc_attr( $max_width ); ?>;margin:0 auto 2rem;">
             <style scoped>
                 .kuh-drop-cap-noscript::first-letter {
                     font-size: 4em;

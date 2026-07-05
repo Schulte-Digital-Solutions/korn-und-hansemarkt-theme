@@ -14,6 +14,14 @@ const FONT_OPTIONS = [
   { label: 'Gleiche Schriftart', value: 'inherit' },
 ];
 
+const WIDTH_OPTIONS = [
+  { label: 'Schmal (45 ch)', value: '45ch' },
+  { label: 'Lesbar (65 ch)', value: '65ch' },
+  { label: 'Inhaltsbreite (56 rem)', value: '56rem' },
+  { label: 'Breite Ausrichtung (80 rem)', value: '80rem' },
+  { label: 'Volle Breite', value: '100%' },
+];
+
 const FONT_FAMILIES = {
   gothic: "'Manuskript Gotisch', serif",
   serif: "'Newsreader', serif",
@@ -22,7 +30,7 @@ const FONT_FAMILIES = {
 
 registerBlockType('kuh/drop-cap-paragraph', {
   edit({ attributes, setAttributes }) {
-    const { text, dropCapColor, dropCapFont } = attributes;
+    const { text, dropCapColor, dropCapFont, maxWidth } = attributes;
 
     const blockProps = useBlockProps({
       className: 'kuh-drop-cap-paragraph-editor',
@@ -45,7 +53,11 @@ registerBlockType('kuh/drop-cap-paragraph', {
       document.head.appendChild(dropCapStyle);
     }
 
-    const richTextStyle = {};
+    const richTextStyle = {
+      maxWidth: maxWidth || '65ch',
+      marginLeft: 'auto',
+      marginRight: 'auto',
+    };
     if (dropCapColor || dropCapFont) {
       richTextStyle['--kuh-drop-cap-color'] = dropCapColor || 'inherit';
       richTextStyle['--kuh-drop-cap-font'] = FONT_FAMILIES[dropCapFont] || FONT_FAMILIES.gothic;
@@ -65,6 +77,13 @@ registerBlockType('kuh/drop-cap-paragraph', {
             value: dropCapFont || 'gothic',
             options: FONT_OPTIONS,
             onChange: function(value) { setAttributes({ dropCapFont: value }); },
+          }),
+          el(SelectControl, {
+            label: 'Maximale Breite',
+            help: 'Steuert die Zeilenlänge des Absatzes.',
+            value: maxWidth || '65ch',
+            options: WIDTH_OPTIONS,
+            onChange: function(value) { setAttributes({ maxWidth: value }); },
           }),
           el('div', { style: { marginTop: '16px' } },
             el('label', {
