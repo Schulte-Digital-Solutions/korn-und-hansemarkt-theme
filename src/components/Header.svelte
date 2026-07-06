@@ -226,17 +226,31 @@
           {@const parentDirectActive = isUrlActive(item.url)}
           {@const parentHasActiveChild = hasActiveChild(item)}
           <div class="relative group">
-            <button
-              type="button"
-              class="{parentDirectActive
-                ? 'border-emerald-900/20 bg-emerald-50/70 text-emerald-900 dark:border-white/15 dark:bg-white/10 dark:text-on-surface'
-                : parentHasActiveChild
-                  ? 'border-stone-300/80 bg-stone-100/80 text-stone-700 dark:border-white/10 dark:bg-white/5 dark:text-on-surface-variant'
-                  : 'border-transparent text-stone-600 hover:border-stone-300/80 hover:bg-stone-100/90 hover:text-emerald-900 dark:text-on-surface-variant dark:hover:border-white/10 dark:hover:bg-white/5 dark:hover:text-on-surface'} flex items-center gap-1 rounded-md px-3 py-2 text-sm uppercase tracking-widest transition-colors"
-            >
-              {decodeHtml(item.title)}
-              <span class="material-symbols-outlined text-base!">expand_more</span>
-            </button>
+            {#if item.url}
+              <Link
+                href={item.url}
+                class="{parentDirectActive
+                  ? 'border-emerald-900/20 bg-emerald-50/70 text-emerald-900 dark:border-white/15 dark:bg-white/10 dark:text-on-surface'
+                  : parentHasActiveChild
+                    ? 'border-stone-300/80 bg-stone-100/80 text-stone-700 dark:border-white/10 dark:bg-white/5 dark:text-on-surface-variant'
+                    : 'border-transparent text-stone-600 hover:border-stone-300/80 hover:bg-stone-100/90 hover:text-emerald-900 dark:text-on-surface-variant dark:hover:border-white/10 dark:hover:bg-white/5 dark:hover:text-on-surface'} flex items-center gap-1 rounded-md border px-3 py-2 text-sm uppercase tracking-widest transition-colors"
+              >
+                {decodeHtml(item.title)}
+                <span class="material-symbols-outlined text-base!">expand_more</span>
+              </Link>
+            {:else}
+              <button
+                type="button"
+                class="{parentDirectActive
+                  ? 'border-emerald-900/20 bg-emerald-50/70 text-emerald-900 dark:border-white/15 dark:bg-white/10 dark:text-on-surface'
+                  : parentHasActiveChild
+                    ? 'border-stone-300/80 bg-stone-100/80 text-stone-700 dark:border-white/10 dark:bg-white/5 dark:text-on-surface-variant'
+                    : 'border-transparent text-stone-600 hover:border-stone-300/80 hover:bg-stone-100/90 hover:text-emerald-900 dark:text-on-surface-variant dark:hover:border-white/10 dark:hover:bg-white/5 dark:hover:text-on-surface'} flex items-center gap-1 rounded-md border px-3 py-2 text-sm uppercase tracking-widest transition-colors"
+              >
+                {decodeHtml(item.title)}
+                <span class="material-symbols-outlined text-base!">expand_more</span>
+              </button>
+            {/if}
             <div class="absolute left-1/2 top-full z-50 hidden -translate-x-1/2 pt-3 group-hover:block group-focus-within:block">
               <div class="min-w-56 overflow-hidden rounded-2xl border border-stone-200/70 bg-white/95 p-1 shadow-[0_18px_35px_-22px_rgba(0,0,0,0.45)] backdrop-blur-md dark:border-white/10 dark:bg-surface-container-high dark:shadow-[0_18px_35px_-22px_rgba(0,0,0,0.8)]">
                 {#each item.children as child}
