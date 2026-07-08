@@ -13,6 +13,6 @@ export const routes: Route[] = [
   { path: '/post/:slug', component: SinglePost },
   { path: '/category', component: Categories },
   { path: '/category/:slug', component: Category },
-  { path: '/:slug', component: Page },
+  { path: '/:path*', component: Page },
   { path: '*', component: NotFound },
 ];

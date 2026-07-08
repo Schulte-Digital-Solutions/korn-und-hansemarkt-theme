@@ -8,7 +8,7 @@
   import type { WPPage } from '../types';
 
   interface Props {
-    params: { slug: string };
+    params: { path: string };
   }
 
   let { params }: Props = $props();
@@ -17,10 +17,11 @@
   let error: string | null = $state(null);
   let showTitle = $state(true);
 
-  async function loadPage(slug: string) {
+  async function loadPage(path: string) {
     try {
       loading = true;
       error = null;
+      const slug = path.split('/').filter(Boolean).pop() ?? '';
       page = await getPageBySlug(slug);
       showTitle = !page?.meta?.kuh_hide_title;
       updateAdminBar(page?.id ?? null);
@@ -29,7 +30,7 @@
           title: page.title.rendered.replace(/<[^>]*>/g, ''),
           description: page.content.rendered.replace(/<[^>]*>/g, '').slice(0, 160).trim(),
           ogImage: page.featured_image_url?.large,
-          canonical: window.kuhData?.homeUrl?.replace(/\/$/, '') + '/' + slug,
+          canonical: window.kuhData?.homeUrl?.replace(/\/$/, '') + '/' + path,
         });
       } else {
         error = 'Seite nicht gefunden';
@@ -42,7 +43,7 @@
   }
 
   $effect(() => {
-    loadPage(params.slug);
+    loadPage(params.path);
   });
 
   $effect(() => {

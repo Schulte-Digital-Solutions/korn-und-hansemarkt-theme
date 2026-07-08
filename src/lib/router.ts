@@ -14,7 +14,10 @@ export interface RouteMatch {
 
 /**
  * Route-Pattern mit Parametern matchen
- * Unterstützt: /path/:param und Wildcard *
+ * Unterstützt:
+ *  - /path/:param          – einzelnes Segment
+ *  - /path/:rest*          – „Rest"-Parameter, matched 1..n Segmente (nur am Ende)
+ *  - *                     – Wildcard, matched alles
  */
 function matchRoute(pattern: string, path: string): Record<string, string> | null {
   // Wildcard: matcht alles
@@ -25,19 +28,27 @@ function matchRoute(pattern: string, path: string): Record<string, string> | nul
   const patternParts = pattern.split('/').filter(Boolean);
   const pathParts = path.split('/').filter(Boolean);
 
-  // Exakte Länge muss stimmen (außer bei leerem pattern & path)
-  if (patternParts.length !== pathParts.length) {
-    return null;
-  }
-
   // Leerer Pfad = Startseite
   if (patternParts.length === 0 && pathParts.length === 0) {
     return {};
   }
 
-  const params: Record<string, string> = {};
+  const lastPat = patternParts[patternParts.length - 1];
+  const hasRest = typeof lastPat === 'string' && lastPat.startsWith(':') && lastPat.endsWith('*');
 
-  for (let i = 0; i < patternParts.length; i++) {
+  if (hasRest) {
+    // Rest-Parameter: mindestens so viele Segmente wie Fix-Teile davor.
+    if (pathParts.length < patternParts.length) {
+      return null;
+    }
+  } else if (patternParts.length !== pathParts.length) {
+    return null;
+  }
+
+  const params: Record<string, string> = {};
+  const fixedLen = hasRest ? patternParts.length - 1 : patternParts.length;
+
+  for (let i = 0; i < fixedLen; i++) {
     const pat = patternParts[i];
     const val = pathParts[i];
 
@@ -46,6 +57,12 @@ function matchRoute(pattern: string, path: string): Record<string, string> | nul
     } else if (pat !== val) {
       return null;
     }
+  }
+
+  if (hasRest) {
+    const name = lastPat.slice(1, -1); // ":foo*" -> "foo"
+    const rest = pathParts.slice(fixedLen).map(decodeURIComponent).join('/');
+    params[name] = rest;
   }
 
   return params;

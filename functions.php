@@ -123,8 +123,12 @@ function kuh_parse_spa_request( $wp ) {
             'category_name' => sanitize_title( $matches[1] ),
         );
     } else {
-        $slug = sanitize_title( basename( $request_uri ) );
-        $page = get_page_by_path( $slug );
+        // get_page_by_path unterstützt hierarchische Pfade nativ (z.B. "programm/kuenstler").
+        $page = get_page_by_path( $request_uri );
+        if ( ! $page ) {
+            // Fallback: nur das letzte Segment (falls die Seite flach angelegt ist).
+            $page = get_page_by_path( sanitize_title( basename( $request_uri ) ) );
+        }
         if ( $page ) {
             $wp->query_vars = array(
                 'page_id' => $page->ID,
@@ -143,6 +147,34 @@ add_filter( 'redirect_canonical', function ( $redirect_url ) {
     }
     return $redirect_url;
 } );
+
+/**
+ * Für SPA-Routen ohne passende WP-Seite kein 404 ausliefern –
+ * die Svelte-App übernimmt das Client-Side-Routing.
+ */
+function kuh_prevent_spa_404() {
+    if ( is_admin() ) {
+        return;
+    }
+
+    global $wp_query;
+    if ( ! is_404() ) {
+        return;
+    }
+
+    $request_uri = trim( wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH ), '/' );
+
+    // WP-eigene Pfade unangetastet lassen.
+    if ( preg_match( '#^(wp-admin|wp-json|wp-login|wp-content|wp-includes)#', $request_uri ) ) {
+        return;
+    }
+
+    status_header( 200 );
+    $wp_query->is_404     = false;
+    $wp_query->is_page    = true;
+    $wp_query->is_singular = true;
+}
+add_action( 'wp', 'kuh_prevent_spa_404' );
 
 // Module laden
 require_once KUH_THEME_DIR . '/inc/helpers.php';
