@@ -1,5 +1,22 @@
+<script lang="ts" module>
+  // Pfad beim Laden der App – dient als Marker für den direkten Seitenaufruf.
+  const initialPath = typeof window !== 'undefined' ? window.location.pathname : '';
+</script>
+
 <script lang="ts">
+  import { onMount } from 'svelte';
   import Link from '../components/Link.svelte';
+
+  onMount(() => {
+    const url = new URL(window.location.href);
+
+    if (url.pathname !== initialPath || url.searchParams.get('wp_fallback') === '1') {
+      return;
+    }
+
+    url.searchParams.set('wp_fallback', '1');
+    window.location.replace(`${url.pathname}${url.search}${url.hash}`);
+  });
 </script>
 
 <div class="max-w-4xl mx-auto px-4 py-20 text-center">

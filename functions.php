@@ -87,6 +87,27 @@ function kuh_get_frontend_data() {
 }
 
 /**
+ * Prüft, ob für die aktuelle Anfrage ein expliziter WordPress-Fallback gewünscht ist.
+ */
+function kuh_is_wp_fallback_request() {
+    if ( ! isset( $_GET['wp_fallback'] ) ) {
+        return false;
+    }
+
+    return '1' === sanitize_text_field( wp_unslash( $_GET['wp_fallback'] ) );
+}
+
+/**
+ * Fallback-URLs (mit wp_fallback-Parameter) nicht indexieren lassen.
+ */
+function kuh_noindex_wp_fallback() {
+    if ( ! is_admin() && kuh_is_wp_fallback_request() ) {
+        add_filter( 'wp_robots', 'wp_robots_no_robots' );
+    }
+}
+add_action( 'template_redirect', 'kuh_noindex_wp_fallback' );
+
+/**
  * SPA-Routing: Alle Requests auf index.php umleiten
  */
 function kuh_rewrite_rules() {
@@ -100,6 +121,32 @@ add_action( 'init', 'kuh_rewrite_rules' );
  */
 function kuh_parse_spa_request( $wp ) {
     if ( is_admin() ) {
+        return;
+    }
+
+    if ( kuh_is_wp_fallback_request() ) {
+        $request_path = wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH );
+        $post_id      = $request_path ? url_to_postid( home_url( $request_path ) ) : 0;
+
+        if ( $post_id > 0 ) {
+            $post_type = get_post_type( $post_id );
+
+            if ( 'page' === $post_type ) {
+                $wp->query_vars = array(
+                    'page_id' => $post_id,
+                );
+            } else {
+                $wp->query_vars = array(
+                    'p'         => $post_id,
+                    'post_type' => $post_type ?: 'post',
+                );
+            }
+        } else {
+            $wp->query_vars = array(
+                'error' => '404',
+            );
+        }
+
         return;
     }
 
@@ -142,6 +189,10 @@ add_action( 'parse_request', 'kuh_parse_spa_request' );
  * WordPress-Canonical-Redirect für SPA-Routen deaktivieren
  */
 add_filter( 'redirect_canonical', function ( $redirect_url ) {
+    if ( kuh_is_wp_fallback_request() ) {
+        return $redirect_url;
+    }
+
     if ( ! is_admin() ) {
         return false;
     }
@@ -154,6 +205,10 @@ add_filter( 'redirect_canonical', function ( $redirect_url ) {
  */
 function kuh_prevent_spa_404() {
     if ( is_admin() ) {
+        return;
+    }
+
+    if ( kuh_is_wp_fallback_request() ) {
         return;
     }
 
