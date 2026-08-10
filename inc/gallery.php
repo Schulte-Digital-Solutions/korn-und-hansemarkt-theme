@@ -456,7 +456,7 @@ function kuh_format_gallery_item( WP_Post $post ) {
  *     @type string $jahr     Slug eines Jahres, auf das vorgefiltert wird.
  *     @type string $fotograf Slug eines Fotografen, auf den vorgefiltert wird.
  *     @type int    $limit    Maximale Anzahl Einträge. -1 für alle. Default 500.
- *     @type string $order    ASC oder DESC (nach Datum). Default DESC.
+ *     @type string $order    ASC oder DESC (nach Galerie-Jahr, dann Datum). Default DESC.
  * }
  * @return array
  */
@@ -503,11 +503,40 @@ function kuh_get_gallery_data( array $args = array() ) {
     $query = new WP_Query( $query_args );
     $items = array_values( array_filter( array_map( 'kuh_format_gallery_item', $query->posts ) ) );
 
+    // Primär nach Galerie-Jahr sortieren. usort ist stabil, dadurch bleibt die
+    // Datumssortierung der Query innerhalb eines Jahres erhalten – und Videos
+    // landen zwischen den Bildern ihres Jahres statt pauschal ganz oben.
+    $descending = 'DESC' === strtoupper( $args['order'] );
+    usort( $items, static function ( $a, $b ) use ( $descending ) {
+        $year_a = kuh_gallery_sort_year( $a );
+        $year_b = kuh_gallery_sort_year( $b );
+
+        return $descending ? strnatcmp( $year_b, $year_a ) : strnatcmp( $year_a, $year_b );
+    } );
+
     return array(
         'items'         => $items,
         'years'         => kuh_get_gallery_terms( KUH_TAX_JAHR, $items, 'years' ),
         'photographers' => kuh_get_gallery_terms( KUH_TAX_FOTOGRAF, $items, 'photographers' ),
     );
+}
+
+/**
+ * Sortierschlüssel eines Eintrags: das jüngste zugeordnete Galerie-Jahr.
+ *
+ * @param array $item Aufbereiteter Eintrag.
+ * @return string
+ */
+function kuh_gallery_sort_year( array $item ) {
+    $years = $item['years'];
+
+    if ( empty( $years ) ) {
+        return '';
+    }
+
+    usort( $years, 'strnatcmp' );
+
+    return (string) end( $years );
 }
 
 /**

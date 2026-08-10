@@ -177,10 +177,11 @@
               label: 'Sortierung',
               value: order,
               options: [
-                { label: 'Neueste zuerst', value: 'DESC' },
-                { label: 'Älteste zuerst', value: 'ASC' },
+                { label: 'Neuestes Jahr zuerst', value: 'DESC' },
+                { label: 'Ältestes Jahr zuerst', value: 'ASC' },
               ],
               onChange: (val) => setAttributes({ order: val }),
+              help: 'Innerhalb eines Jahres wird nach Datum sortiert.',
             })
           )
         ),
