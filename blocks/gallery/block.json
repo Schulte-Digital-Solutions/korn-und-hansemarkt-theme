@@ -1,0 +1,62 @@
+{
+  "apiVersion": 3,
+  "name": "kuh/gallery",
+  "version": "1.0.0",
+  "title": "Bildergalerie",
+  "category": "media",
+  "icon": "format-gallery",
+  "description": "Galerie aus der Medienbibliothek mit Filter nach Jahr und Fotograf.",
+  "keywords": ["galerie", "gallery", "bilder", "fotos", "fotograf", "jahr", "filter"],
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"],
+    "anchor": true,
+    "multiple": true
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "default": "Bildergalerie"
+    },
+    "showTitle": {
+      "type": "boolean",
+      "default": true
+    },
+    "columns": {
+      "type": "number",
+      "default": 3
+    },
+    "showYearFilter": {
+      "type": "boolean",
+      "default": true
+    },
+    "showPhotographerFilter": {
+      "type": "boolean",
+      "default": true
+    },
+    "showResultCount": {
+      "type": "boolean",
+      "default": true
+    },
+    "showCredit": {
+      "type": "boolean",
+      "default": true
+    },
+    "defaultYear": {
+      "type": "string",
+      "default": ""
+    },
+    "limit": {
+      "type": "number",
+      "default": 500
+    },
+    "order": {
+      "type": "string",
+      "default": "DESC",
+      "enum": ["DESC", "ASC"]
+    }
+  },
+  "textdomain": "korn-und-hansemarkt",
+  "editorScript": "file:./editor.js",
+  "render": "file:./render.php"
+}
