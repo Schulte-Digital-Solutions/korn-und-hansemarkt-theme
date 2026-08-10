@@ -448,14 +448,114 @@ function kuh_format_gallery_item( WP_Post $post ) {
 }
 
 /**
- * Galerie-Daten inklusive der vorkommenden Filterwerte laden.
+ * Leichtgewichtiger Index aller Galerie-Einträge.
+ *
+ * Enthält nur ID, Typ und die zugeordneten Terms – genug zum Filtern, Sortieren
+ * und Zählen, ohne für jeden Eintrag Bildgrößen und Meta zu laden. Erst die
+ * Einträge der angeforderten Seite werden vollständig aufbereitet.
+ *
+ * @param string $order ASC oder DESC.
+ * @return array Liste aus id, type, years, photographers – bereits sortiert.
+ */
+function kuh_get_gallery_index( $order = 'DESC' ) {
+    static $cache = array();
+
+    $order = 'ASC' === strtoupper( $order ) ? 'ASC' : 'DESC';
+    if ( isset( $cache[ $order ] ) ) {
+        return $cache[ $order ];
+    }
+
+    $query = new WP_Query( array(
+        'post_type'              => array( 'attachment', KUH_CPT_VIDEO ),
+        'post_status'            => array( 'inherit', 'publish' ),
+        'posts_per_page'         => -1,
+        'orderby'                => 'date',
+        'order'                  => $order,
+        'fields'                 => 'ids',
+        'no_found_rows'          => true,
+        'update_post_meta_cache' => false,
+        'update_post_term_cache' => false,
+        'tax_query'              => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+            array(
+                'taxonomy' => KUH_TAX_JAHR,
+                'operator' => 'EXISTS',
+            ),
+        ),
+    ) );
+
+    if ( empty( $query->posts ) ) {
+        $cache[ $order ] = array();
+        return $cache[ $order ];
+    }
+
+    $index = array();
+    foreach ( $query->posts as $post_id ) {
+        $index[ $post_id ] = array(
+            'id'            => (int) $post_id,
+            'type'          => '',
+            'years'         => array(),
+            'photographers' => array(),
+        );
+    }
+
+    // Terms aller Einträge in einer einzigen Abfrage.
+    $terms = wp_get_object_terms(
+        array_keys( $index ),
+        array( KUH_TAX_JAHR, KUH_TAX_FOTOGRAF ),
+        array( 'fields' => 'all_with_object_id' )
+    );
+
+    if ( ! is_wp_error( $terms ) ) {
+        foreach ( $terms as $term ) {
+            $key = KUH_TAX_JAHR === $term->taxonomy ? 'years' : 'photographers';
+            $index[ $term->object_id ][ $key ][] = $term->slug;
+        }
+    }
+
+    // Post-Typen ebenfalls gebündelt bestimmen.
+    $video_ids = get_posts( array(
+        'post_type'      => KUH_CPT_VIDEO,
+        'post_status'    => 'publish',
+        'posts_per_page' => -1,
+        'fields'         => 'ids',
+        'post__in'       => array_keys( $index ),
+        'no_found_rows'  => true,
+    ) );
+    $video_ids = array_flip( $video_ids );
+
+    foreach ( $index as $post_id => $entry ) {
+        $index[ $post_id ]['type'] = isset( $video_ids[ $post_id ] ) ? 'video' : 'image';
+    }
+
+    $index = array_values( $index );
+
+    // Primär nach Galerie-Jahr. usort ist stabil, dadurch bleibt die
+    // Datumssortierung der Abfrage innerhalb eines Jahres erhalten – und Videos
+    // landen zwischen den Bildern ihres Jahres statt pauschal ganz oben.
+    $descending = 'DESC' === $order;
+    usort( $index, static function ( $a, $b ) use ( $descending ) {
+        $year_a = kuh_gallery_sort_year( $a );
+        $year_b = kuh_gallery_sort_year( $b );
+
+        return $descending ? strnatcmp( $year_b, $year_a ) : strnatcmp( $year_a, $year_b );
+    } );
+
+    $cache[ $order ] = $index;
+
+    return $index;
+}
+
+/**
+ * Galerie-Daten seitenweise laden, inklusive der Filteroptionen.
  *
  * @param array $args {
  *     Optionale Parameter.
  *
- *     @type string $jahr     Slug eines Jahres, auf das vorgefiltert wird.
- *     @type string $fotograf Slug eines Fotografen, auf den vorgefiltert wird.
- *     @type int    $limit    Maximale Anzahl Einträge. -1 für alle. Default 500.
+ *     @type string $jahr     Slug eines Jahres, auf das gefiltert wird.
+ *     @type string $fotograf Slug eines Fotografen, auf den gefiltert wird.
+ *     @type string $typ      `bild` oder `video`; leer = beides.
+ *     @type int    $page     1-basierte Seitennummer. Default 1.
+ *     @type int    $per_page Einträge pro Seite. Default 48.
  *     @type string $order    ASC oder DESC (nach Galerie-Jahr, dann Datum). Default DESC.
  * }
  * @return array
@@ -464,60 +564,57 @@ function kuh_get_gallery_data( array $args = array() ) {
     $args = wp_parse_args( $args, array(
         'jahr'     => '',
         'fotograf' => '',
-        'limit'    => 500,
+        'typ'      => '',
+        'page'     => 1,
+        'per_page' => 48,
         'order'    => 'DESC',
     ) );
 
-    $query_args = array(
-        'post_type'      => array( 'attachment', KUH_CPT_VIDEO ),
-        'post_status'    => array( 'inherit', 'publish' ),
-        'posts_per_page' => (int) $args['limit'],
-        'orderby'        => 'date',
-        'order'          => 'DESC' === strtoupper( $args['order'] ) ? 'DESC' : 'ASC',
-        'no_found_rows'  => true,
-        'tax_query'      => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
-            'relation' => 'AND',
-            array(
-                'taxonomy' => KUH_TAX_JAHR,
-                'operator' => 'EXISTS',
-            ),
-        ),
-    );
+    $index    = kuh_get_gallery_index( $args['order'] );
+    $jahr     = kuh_sanitize_gallery_slug( $args['jahr'] );
+    $fotograf = kuh_sanitize_gallery_slug( $args['fotograf'] );
+    $typ      = in_array( $args['typ'], array( 'bild', 'video' ), true ) ? $args['typ'] : '';
 
-    if ( $args['jahr'] ) {
-        $query_args['tax_query'][] = array(
-            'taxonomy' => KUH_TAX_JAHR,
-            'field'    => 'slug',
-            'terms'    => kuh_sanitize_gallery_slug( $args['jahr'] ),
-        );
+    $matching = array_values( array_filter( $index, static function ( $entry ) use ( $jahr, $fotograf, $typ ) {
+        if ( $jahr && ! in_array( $jahr, $entry['years'], true ) ) {
+            return false;
+        }
+        if ( $fotograf && ! in_array( $fotograf, $entry['photographers'], true ) ) {
+            return false;
+        }
+        if ( $typ && $entry['type'] !== ( 'video' === $typ ? 'video' : 'image' ) ) {
+            return false;
+        }
+        return true;
+    } ) );
+
+    $total    = count( $matching );
+    $per_page = max( 1, (int) $args['per_page'] );
+    $page     = max( 1, (int) $args['page'] );
+    $offset   = ( $page - 1 ) * $per_page;
+    $page_ids = wp_list_pluck( array_slice( $matching, $offset, $per_page ), 'id' );
+
+    $items = array();
+    if ( $page_ids ) {
+        // Nur für die aktuelle Seite Bildgrößen, Meta und Terms laden.
+        _prime_post_caches( $page_ids, true, true );
+        foreach ( $page_ids as $post_id ) {
+            $post = get_post( $post_id );
+            $item = $post ? kuh_format_gallery_item( $post ) : null;
+            if ( $item ) {
+                $items[] = $item;
+            }
+        }
     }
-
-    if ( $args['fotograf'] ) {
-        $query_args['tax_query'][] = array(
-            'taxonomy' => KUH_TAX_FOTOGRAF,
-            'field'    => 'slug',
-            'terms'    => kuh_sanitize_gallery_slug( $args['fotograf'] ),
-        );
-    }
-
-    $query = new WP_Query( $query_args );
-    $items = array_values( array_filter( array_map( 'kuh_format_gallery_item', $query->posts ) ) );
-
-    // Primär nach Galerie-Jahr sortieren. usort ist stabil, dadurch bleibt die
-    // Datumssortierung der Query innerhalb eines Jahres erhalten – und Videos
-    // landen zwischen den Bildern ihres Jahres statt pauschal ganz oben.
-    $descending = 'DESC' === strtoupper( $args['order'] );
-    usort( $items, static function ( $a, $b ) use ( $descending ) {
-        $year_a = kuh_gallery_sort_year( $a );
-        $year_b = kuh_gallery_sort_year( $b );
-
-        return $descending ? strnatcmp( $year_b, $year_a ) : strnatcmp( $year_a, $year_b );
-    } );
 
     return array(
         'items'         => $items,
-        'years'         => kuh_get_gallery_terms( KUH_TAX_JAHR, $items, 'years' ),
-        'photographers' => kuh_get_gallery_terms( KUH_TAX_FOTOGRAF, $items, 'photographers' ),
+        'total'         => $total,
+        'page'          => $page,
+        'perPage'       => $per_page,
+        'hasMore'       => $offset + count( $items ) < $total,
+        'years'         => kuh_get_gallery_terms( KUH_TAX_JAHR, $index, 'years' ),
+        'photographers' => kuh_get_gallery_terms( KUH_TAX_FOTOGRAF, $index, 'photographers' ),
     );
 }
 
@@ -627,11 +724,26 @@ function kuh_register_gallery_rest_route() {
                 'default'           => '',
                 'sanitize_callback' => 'kuh_sanitize_gallery_slug',
             ),
-            'limit'    => array(
+            'typ'      => array(
+                'type'    => 'string',
+                'default' => '',
+                'enum'    => array( '', 'bild', 'video' ),
+            ),
+            'page'     => array(
                 'type'    => 'integer',
-                'default' => 500,
+                'default' => 1,
                 'minimum' => 1,
-                'maximum' => 2000,
+            ),
+            'per_page' => array(
+                'type'    => 'integer',
+                'default' => 48,
+                'minimum' => 1,
+                'maximum' => 200,
+            ),
+            'order'    => array(
+                'type'    => 'string',
+                'default' => 'DESC',
+                'enum'    => array( 'ASC', 'DESC' ),
             ),
         ),
     ) );
@@ -648,6 +760,9 @@ function kuh_rest_get_gallery( WP_REST_Request $request ) {
     return new WP_REST_Response( kuh_get_gallery_data( array(
         'jahr'     => $request->get_param( 'jahr' ),
         'fotograf' => $request->get_param( 'fotograf' ),
-        'limit'    => $request->get_param( 'limit' ),
+        'typ'      => $request->get_param( 'typ' ),
+        'page'     => $request->get_param( 'page' ),
+        'per_page' => $request->get_param( 'per_page' ),
+        'order'    => $request->get_param( 'order' ),
     ) ), 200 );
 }

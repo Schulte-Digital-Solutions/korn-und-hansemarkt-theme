@@ -11,12 +11,14 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-$limit = absint( $attributes['limit'] ?? 500 );
-$order = ( $attributes['order'] ?? 'DESC' ) === 'ASC' ? 'ASC' : 'DESC';
+$per_page = absint( $attributes['limit'] ?? 48 );
+$order    = ( $attributes['order'] ?? 'DESC' ) === 'ASC' ? 'ASC' : 'DESC';
+$year     = kuh_sanitize_gallery_slug( $attributes['defaultYear'] ?? '' );
 
 $gallery = kuh_get_gallery_data( array(
-    'limit' => $limit,
-    'order' => $order,
+    'jahr'     => $year,
+    'per_page' => $per_page,
+    'order'    => $order,
 ) );
 
 if ( empty( $gallery['items'] ) ) {
@@ -38,7 +40,11 @@ $block_data = array(
     'showTypeFilter'         => (bool) ( $attributes['showTypeFilter'] ?? true ),
     'showResultCount'        => (bool) ( $attributes['showResultCount'] ?? true ),
     'showCredit'             => (bool) ( $attributes['showCredit'] ?? true ),
-    'defaultYear'            => kuh_sanitize_gallery_slug( $attributes['defaultYear'] ?? '' ),
+    'defaultYear'            => $year,
+    'order'                  => $order,
+    'perPage'                => $per_page,
+    'total'                  => $gallery['total'],
+    'hasMore'                => $gallery['hasMore'],
     'items'                  => $gallery['items'],
     'years'                  => $gallery['years'],
     'photographers'          => $gallery['photographers'],

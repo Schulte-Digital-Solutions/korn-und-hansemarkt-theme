@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy, untrack } from 'svelte';
+  import { getGalleryPage } from '../lib/api';
 
   interface Photographer {
     slug: string;
@@ -39,6 +40,10 @@
     showResultCount?: boolean;
     showCredit?: boolean;
     defaultYear?: string;
+    order?: string;
+    perPage?: number;
+    total?: number;
+    hasMore?: boolean;
     items: GalleryItem[];
     years: FilterTerm[];
     photographers: FilterTerm[];
@@ -54,6 +59,10 @@
     showResultCount = true,
     showCredit = true,
     defaultYear = '',
+    order = 'DESC',
+    perPage = 48,
+    total: initialTotal = 0,
+    hasMore: initialHasMore = false,
     items,
     years,
     photographers,
@@ -74,20 +83,59 @@
   );
   let lightboxIndex = $state(-1);
 
-  const imageCount = $derived(items.filter((item) => item.type === 'image').length);
-  const videoCount = $derived(items.length - imageCount);
-
-  const filtered = $derived(
-    items.filter(
-      (item) =>
-        (!activeYear || item.years.includes(activeYear)) &&
-        (!activePhotographer || item.photographers.some((p) => p.slug === activePhotographer)) &&
-        (!activeType || (activeType === 'video' ? item.type === 'video' : item.type === 'image'))
-    )
-  );
+  let loaded = $state<GalleryItem[]>(untrack(() => items));
+  let total = $state(untrack(() => initialTotal || items.length));
+  let hasMore = $state(untrack(() => initialHasMore));
+  let page = $state(1);
+  let loading = $state(false);
+  let loadError = $state('');
+  let sentinel: HTMLDivElement | undefined = $state();
 
   const hasActiveFilter = $derived(Boolean(activeYear || activePhotographer || activeType));
-  const lightboxItem = $derived(lightboxIndex >= 0 ? filtered[lightboxIndex] : undefined);
+  const lightboxItem = $derived(lightboxIndex >= 0 ? loaded[lightboxIndex] : undefined);
+
+  interface GalleryResponse {
+    items: GalleryItem[];
+    total: number;
+    hasMore: boolean;
+  }
+
+  /**
+   * Eine Seite nachladen. `reset` ersetzt die Liste (Filterwechsel),
+   * sonst wird angehängt.
+   */
+  async function fetchPage(nextPage: number, reset = false) {
+    if (loading) return;
+    loading = true;
+    loadError = '';
+
+    try {
+      const data = await getGalleryPage<GalleryResponse>({
+        jahr: activeYear,
+        fotograf: activePhotographer,
+        typ: activeType,
+        page: nextPage,
+        perPage,
+        order,
+      });
+
+      loaded = reset ? data.items : [...loaded, ...data.items];
+      total = data.total;
+      hasMore = data.hasMore;
+      page = nextPage;
+    } catch (error) {
+      loadError = 'Weitere Bilder konnten nicht geladen werden.';
+      console.error('[kuh] Galerie:', error);
+    } finally {
+      loading = false;
+    }
+  }
+
+  function applyFilters() {
+    syncUrl();
+    lightboxIndex = -1;
+    fetchPage(1, true);
+  }
 
   /** Filterzustand in die URL schreiben, damit Ansichten verlinkbar bleiben. */
   function syncUrl() {
@@ -107,7 +155,7 @@
     activeYear = '';
     activePhotographer = '';
     activeType = '';
-    syncUrl();
+    applyFilters();
   }
 
   function openLightbox(index: number) {
@@ -121,8 +169,8 @@
   }
 
   function step(direction: number) {
-    if (filtered.length === 0) return;
-    lightboxIndex = (lightboxIndex + direction + filtered.length) % filtered.length;
+    if (loaded.length === 0) return;
+    lightboxIndex = (lightboxIndex + direction + loaded.length) % loaded.length;
   }
 
   function onKeydown(event: KeyboardEvent) {
@@ -132,12 +180,32 @@
     else if (event.key === 'ArrowLeft') step(-1);
   }
 
+  let observer: IntersectionObserver | undefined;
+
   onMount(() => {
     window.addEventListener('keydown', onKeydown);
+
+    // Serverseitig gerendert wurde ohne die Filter aus der URL – dann neu laden.
+    if (activeYear !== defaultYear || activePhotographer || activeType) {
+      fetchPage(1, true);
+    }
+
+    observer = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting && hasMore && !loading) {
+        fetchPage(page + 1);
+      }
+    }, { rootMargin: '400px' });
+  });
+
+  $effect(() => {
+    if (!observer) return;
+    observer.disconnect();
+    if (sentinel) observer.observe(sentinel);
   });
 
   onDestroy(() => {
     window.removeEventListener('keydown', onKeydown);
+    observer?.disconnect();
     document.body.style.overflow = '';
   });
 </script>
@@ -153,7 +221,7 @@
         <span class="material-symbols-outlined text-[1.1rem]">calendar_month</span>
         <select
           bind:value={activeYear}
-          onchange={syncUrl}
+          onchange={applyFilters}
           aria-label="Jahr"
           class="rounded-xl border border-outline-variant/40 bg-surface-container-low px-3 py-2 text-sm text-on-surface"
         >
@@ -170,7 +238,7 @@
         <span class="material-symbols-outlined text-[1.1rem]">photo_camera</span>
         <select
           bind:value={activePhotographer}
-          onchange={syncUrl}
+          onchange={applyFilters}
           aria-label="Fotograf"
           class="rounded-xl border border-outline-variant/40 bg-surface-container-low px-3 py-2 text-sm text-on-surface"
         >
@@ -182,18 +250,18 @@
       </label>
     {/if}
 
-    {#if showTypeFilter && imageCount > 0 && videoCount > 0}
+    {#if showTypeFilter}
       <label class="flex items-center gap-2 text-sm text-on-surface-variant">
         <span class="material-symbols-outlined text-[1.1rem]">perm_media</span>
         <select
           bind:value={activeType}
-          onchange={syncUrl}
+          onchange={applyFilters}
           aria-label="Medientyp"
           class="rounded-xl border border-outline-variant/40 bg-surface-container-low px-3 py-2 text-sm text-on-surface"
         >
           <option value="">Bilder & Videos</option>
-          <option value="bild">Nur Bilder ({imageCount})</option>
-          <option value="video">Nur Videos ({videoCount})</option>
+          <option value="bild">Nur Bilder</option>
+          <option value="video">Nur Videos</option>
         </select>
       </label>
     {/if}
@@ -211,19 +279,19 @@
 
     {#if showResultCount}
       <span class="text-sm text-on-surface-variant ml-auto">
-        {filtered.length}
-        {filtered.length === 1 ? 'Beitrag' : 'Beiträge'} gefunden
+        {total}
+        {total === 1 ? 'Beitrag' : 'Beiträge'} gefunden
       </span>
     {/if}
   </div>
 
-  {#if filtered.length === 0}
+  {#if loaded.length === 0}
     <p class="text-center text-on-surface-variant py-12">
-      Für diese Auswahl gibt es keine Inhalte.
+      {loading ? 'Wird geladen …' : 'Für diese Auswahl gibt es keine Inhalte.'}
     </p>
   {:else}
     <div class="gallery-grid" style:--kuh-gallery-columns={columns}>
-      {#each filtered as item, index (item.id)}
+      {#each loaded as item, index (item.id)}
         <figure class="m-0">
           <button
             type="button"
@@ -281,6 +349,27 @@
           {/if}
         </figure>
       {/each}
+    </div>
+  {/if}
+
+  {#if hasMore || loading || loadError}
+    <div bind:this={sentinel} class="mt-8 flex flex-col items-center gap-2">
+      {#if loadError}
+        <p class="text-sm text-error">{loadError}</p>
+      {/if}
+      {#if hasMore}
+        <button
+          type="button"
+          onclick={() => fetchPage(page + 1)}
+          disabled={loading}
+          class="rounded-xl border border-outline-variant/40 bg-surface-container-low px-5 py-3 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container disabled:opacity-60"
+        >
+          {loading ? 'Wird geladen …' : 'Mehr laden'}
+        </button>
+      {/if}
+      {#if showResultCount && loaded.length > 0}
+        <span class="text-xs text-on-surface-variant">{loaded.length} von {total} angezeigt</span>
+      {/if}
     </div>
   {/if}
 </section>
@@ -368,7 +457,7 @@
           {/each}
         </p>
       {/if}
-      <p class="mt-1 text-xs text-white/50">{lightboxIndex + 1} / {filtered.length}</p>
+      <p class="mt-1 text-xs text-white/50">{lightboxIndex + 1} / {loaded.length}</p>
       {#if lightboxItem.type === 'video'}
         <p class="mt-1 text-xs text-white/50">
           Beim Abspielen wird eine Verbindung zu YouTube hergestellt.

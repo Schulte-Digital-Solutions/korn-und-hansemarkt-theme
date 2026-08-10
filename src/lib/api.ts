@@ -171,6 +171,30 @@ interface ContactFormResponse {
 
 export { type ContactFormPayload, type ContactFormResponse };
 
+export interface GalleryQuery {
+  jahr?: string;
+  fotograf?: string;
+  typ?: string;
+  page?: number;
+  perPage?: number;
+  order?: string;
+}
+
+/**
+ * Eine Seite der Galerie laden.
+ */
+export async function getGalleryPage<T>(query: GalleryQuery): Promise<T> {
+  const params = new URLSearchParams();
+  if (query.jahr) params.set('jahr', query.jahr);
+  if (query.fotograf) params.set('fotograf', query.fotograf);
+  if (query.typ) params.set('typ', query.typ);
+  params.set('page', String(query.page ?? 1));
+  params.set('per_page', String(query.perPage ?? 48));
+  params.set('order', query.order ?? 'DESC');
+
+  return apiFetch<T>(`kuh/v1/gallery?${params.toString()}`);
+}
+
 /**
  * Kontaktformular an den Theme-Endpoint senden.
  */

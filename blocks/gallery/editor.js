@@ -31,7 +31,7 @@
 
       useEffect(() => {
         let cancelled = false;
-        apiFetch({ path: addQueryArgs('/kuh/v1/gallery', { limit: limit }) })
+        apiFetch({ path: addQueryArgs('/kuh/v1/gallery', { per_page: limit }) })
           .then((result) => {
             if (!cancelled) setData(result);
           })
@@ -72,15 +72,16 @@
           el(
             'p',
             null,
-            data.items.length -
-              videoCount +
-              ' Bilder · ' +
-              videoCount +
-              ' Videos · ' +
+            data.total +
+              ' Einträge insgesamt · ' +
               data.years.length +
               ' Jahre · ' +
               data.photographers.length +
-              ' Fotografen'
+              ' Fotografen · erste Seite: ' +
+              (data.items.length - videoCount) +
+              ' Bilder / ' +
+              videoCount +
+              ' Videos'
           ),
           el(
             'div',
@@ -166,12 +167,13 @@
             PanelBody,
             { title: 'Daten', initialOpen: false },
             el(RangeControl, {
-              label: 'Maximale Bildanzahl',
+              label: 'Bilder pro Seite',
               value: limit,
               onChange: (val) => setAttributes({ limit: val }),
               min: 12,
-              max: 2000,
+              max: 200,
               step: 12,
+              help: 'Weitere Einträge werden im Frontend beim Scrollen nachgeladen.',
             }),
             el(SelectControl, {
               label: 'Sortierung',

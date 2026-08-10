@@ -52,7 +52,7 @@
     },
     "limit": {
       "type": "number",
-      "default": 500
+      "default": 48
     },
     "order": {
       "type": "string",
