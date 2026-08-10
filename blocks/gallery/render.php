@@ -19,11 +19,11 @@ $gallery = kuh_get_gallery_data( array(
     'order' => $order,
 ) );
 
-if ( empty( $gallery['images'] ) ) {
+if ( empty( $gallery['items'] ) ) {
     if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
         echo '<div style="padding:2rem;text-align:center;color:#737971;">';
-        echo '<p>Noch keine Galerie-Bilder vorhanden.</p>';
-        echo '<p style="font-size:0.875rem;">Weise Bildern in der <strong>Medienbibliothek</strong> ein Galerie-Jahr zu.</p>';
+        echo '<p>Noch keine Galerie-Inhalte vorhanden.</p>';
+        echo '<p style="font-size:0.875rem;">Weise Bildern in der <strong>Medienbibliothek</strong> ein Galerie-Jahr zu oder lege unter <strong>Medien &rarr; Galerie-Videos</strong> ein Video an.</p>';
         echo '</div>';
     }
     return;
@@ -35,16 +35,17 @@ $block_data = array(
     'columns'                => absint( $attributes['columns'] ?? 3 ),
     'showYearFilter'         => (bool) ( $attributes['showYearFilter'] ?? true ),
     'showPhotographerFilter' => (bool) ( $attributes['showPhotographerFilter'] ?? true ),
+    'showTypeFilter'         => (bool) ( $attributes['showTypeFilter'] ?? true ),
     'showResultCount'        => (bool) ( $attributes['showResultCount'] ?? true ),
     'showCredit'             => (bool) ( $attributes['showCredit'] ?? true ),
     'defaultYear'            => kuh_sanitize_gallery_slug( $attributes['defaultYear'] ?? '' ),
-    'images'                 => $gallery['images'],
+    'items'                  => $gallery['items'],
     'years'                  => $gallery['years'],
     'photographers'          => $gallery['photographers'],
 );
 
 $wrapper_attributes = get_block_wrapper_attributes( array(
-    'class'           => 'kuh-gallery not-prose',
+    'class'            => 'kuh-gallery not-prose',
     'data-kuh-gallery' => wp_json_encode( $block_data ),
 ) );
 ?>
@@ -57,19 +58,31 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                 </h2>
             <?php endif; ?>
             <div style="display:grid;grid-template-columns:repeat(<?php echo (int) $block_data['columns']; ?>,1fr);gap:1rem;">
-                <?php foreach ( $gallery['images'] as $image ) : ?>
+                <?php foreach ( $gallery['items'] as $item ) : ?>
                     <figure style="margin:0;">
-                        <img src="<?php echo esc_url( $image['thumb'] ); ?>"
-                             alt="<?php echo esc_attr( $image['alt'] ?: $image['title'] ); ?>"
-                             width="<?php echo (int) $image['width']; ?>"
-                             height="<?php echo (int) $image['height']; ?>"
-                             loading="lazy"
-                             style="width:100%;height:auto;border-radius:0.75rem;" />
-                        <?php if ( $block_data['showCredit'] && ! empty( $image['photographers'] ) ) : ?>
+                        <?php if ( 'video' === $item['type'] ) : ?>
+                            <a href="<?php echo esc_url( 'https://www.youtube.com/watch?v=' . $item['videoId'] ); ?>" target="_blank" rel="noopener noreferrer">
+                        <?php endif; ?>
+                        <?php if ( $item['thumb'] ) : ?>
+                            <img src="<?php echo esc_url( $item['thumb'] ); ?>"
+                                 alt="<?php echo esc_attr( $item['alt'] ?: $item['title'] ); ?>"
+                                 width="<?php echo (int) $item['width']; ?>"
+                                 height="<?php echo (int) $item['height']; ?>"
+                                 loading="lazy"
+                                 style="width:100%;height:auto;border-radius:0.75rem;" />
+                        <?php else : ?>
+                            <span style="display:block;padding:2rem;background:#f5f3f3;border-radius:0.75rem;text-align:center;">
+                                <?php echo esc_html( $item['title'] ); ?>
+                            </span>
+                        <?php endif; ?>
+                        <?php if ( 'video' === $item['type'] ) : ?>
+                            </a>
+                        <?php endif; ?>
+                        <?php if ( $block_data['showCredit'] && ! empty( $item['photographers'] ) ) : ?>
                             <figcaption style="font-size:0.75rem;color:#737971;margin-top:0.25rem;">
                                 <?php
                                 /* translators: %s: Name des Fotografen. */
-                                printf( esc_html__( 'Foto: %s', 'korn-und-hansemarkt' ), esc_html( implode( ', ', wp_list_pluck( $image['photographers'], 'name' ) ) ) );
+                                printf( esc_html__( 'Foto: %s', 'korn-und-hansemarkt' ), esc_html( implode( ', ', wp_list_pluck( $item['photographers'], 'name' ) ) ) );
                                 ?>
                             </figcaption>
                         <?php endif; ?>

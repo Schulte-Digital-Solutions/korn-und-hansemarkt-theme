@@ -34,6 +34,10 @@
       "type": "boolean",
       "default": true
     },
+    "showTypeFilter": {
+      "type": "boolean",
+      "default": true
+    },
     "showResultCount": {
       "type": "boolean",
       "default": true

@@ -18,6 +18,7 @@
         columns,
         showYearFilter,
         showPhotographerFilter,
+        showTypeFilter,
         showResultCount,
         showCredit,
         defaultYear,
@@ -51,34 +52,43 @@
         preview = el(Placeholder, { icon: 'format-gallery', label: 'Bildergalerie' }, error);
       } else if (!data) {
         preview = el(Placeholder, { icon: 'format-gallery', label: 'Bildergalerie' }, el(Spinner));
-      } else if (!data.images.length) {
+      } else if (!data.items.length) {
         preview = el(
           Placeholder,
           { icon: 'format-gallery', label: 'Bildergalerie' },
           el(
             'p',
             null,
-            'Noch keine Bilder verschlagwortet. Weise Bildern in der Medienbibliothek ein ',
+            'Noch keine Inhalte verschlagwortet. Weise Bildern in der Medienbibliothek ein ',
             el('strong', null, 'Galerie-Jahr'),
-            ' zu – nur Bilder mit Jahr erscheinen in der Galerie.'
+            ' zu oder lege unter Medien → Galerie-Videos ein Video an.'
           )
         );
       } else {
+        const videoCount = data.items.filter((item) => item.type === 'video').length;
         preview = el(
           Placeholder,
           { icon: 'format-gallery', label: showTitle && title ? title : 'Bildergalerie' },
           el(
             'p',
             null,
-            data.images.length + ' Bilder · ' + data.years.length + ' Jahre · ' + data.photographers.length + ' Fotografen'
+            data.items.length -
+              videoCount +
+              ' Bilder · ' +
+              videoCount +
+              ' Videos · ' +
+              data.years.length +
+              ' Jahre · ' +
+              data.photographers.length +
+              ' Fotografen'
           ),
           el(
             'div',
             { style: { display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '4px', width: '100%' } },
-            data.images.slice(0, 6).map((image) =>
+            data.items.slice(0, 6).map((item) =>
               el('img', {
-                key: image.id,
-                src: image.thumb,
+                key: item.id,
+                src: item.thumb,
                 alt: '',
                 style: { width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '4px' },
               })
@@ -132,6 +142,12 @@
               label: 'Filter „Fotograf" anzeigen',
               checked: showPhotographerFilter,
               onChange: (val) => setAttributes({ showPhotographerFilter: val }),
+            }),
+            el(ToggleControl, {
+              label: 'Filter „Bilder / Videos" anzeigen',
+              checked: showTypeFilter,
+              onChange: (val) => setAttributes({ showTypeFilter: val }),
+              help: 'Erscheint im Frontend nur, wenn sowohl Bilder als auch Videos vorhanden sind.',
             }),
             el(ToggleControl, {
               label: 'Trefferanzahl anzeigen',

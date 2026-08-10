@@ -7,8 +7,10 @@
     url: string;
   }
 
-  interface GalleryImage {
+  interface GalleryItem {
     id: number;
+    type: 'image' | 'video';
+    videoId: string;
     title: string;
     caption: string;
     alt: string;
@@ -33,10 +35,11 @@
     columns?: number;
     showYearFilter?: boolean;
     showPhotographerFilter?: boolean;
+    showTypeFilter?: boolean;
     showResultCount?: boolean;
     showCredit?: boolean;
     defaultYear?: string;
-    images: GalleryImage[];
+    items: GalleryItem[];
     years: FilterTerm[];
     photographers: FilterTerm[];
   }
@@ -47,10 +50,11 @@
     columns = 3,
     showYearFilter = true,
     showPhotographerFilter = true,
+    showTypeFilter = true,
     showResultCount = true,
     showCredit = true,
     defaultYear = '',
-    images,
+    items,
     years,
     photographers,
   }: Props = $props();
@@ -65,24 +69,32 @@
 
   let activeYear = $state(untrack(() => initialFilter('jahr', defaultYear, years)));
   let activePhotographer = $state(untrack(() => initialFilter('fotograf', '', photographers)));
+  let activeType = $state(
+    untrack(() => (['bild', 'video'].includes(params.get('typ') ?? '') ? params.get('typ')! : ''))
+  );
   let lightboxIndex = $state(-1);
 
+  const imageCount = $derived(items.filter((item) => item.type === 'image').length);
+  const videoCount = $derived(items.length - imageCount);
+
   const filtered = $derived(
-    images.filter(
-      (image) =>
-        (!activeYear || image.years.includes(activeYear)) &&
-        (!activePhotographer || image.photographers.some((p) => p.slug === activePhotographer))
+    items.filter(
+      (item) =>
+        (!activeYear || item.years.includes(activeYear)) &&
+        (!activePhotographer || item.photographers.some((p) => p.slug === activePhotographer)) &&
+        (!activeType || (activeType === 'video' ? item.type === 'video' : item.type === 'image'))
     )
   );
 
-  const hasActiveFilter = $derived(Boolean(activeYear || activePhotographer));
-  const lightboxImage = $derived(lightboxIndex >= 0 ? filtered[lightboxIndex] : undefined);
+  const hasActiveFilter = $derived(Boolean(activeYear || activePhotographer || activeType));
+  const lightboxItem = $derived(lightboxIndex >= 0 ? filtered[lightboxIndex] : undefined);
 
   /** Filterzustand in die URL schreiben, damit Ansichten verlinkbar bleiben. */
   function syncUrl() {
     const next = new URLSearchParams(window.location.search);
     activeYear ? next.set('jahr', activeYear) : next.delete('jahr');
     activePhotographer ? next.set('fotograf', activePhotographer) : next.delete('fotograf');
+    activeType ? next.set('typ', activeType) : next.delete('typ');
     const query = next.toString();
     history.replaceState(
       history.state,
@@ -91,14 +103,10 @@
     );
   }
 
-  function selectYear(slug: string) {
-    activeYear = activeYear === slug ? '' : slug;
-    syncUrl();
-  }
-
   function resetFilters() {
     activeYear = '';
     activePhotographer = '';
+    activeType = '';
     syncUrl();
   }
 
@@ -139,38 +147,53 @@
     <h2 class="text-4xl font-headline text-primary text-center mb-8">{title}</h2>
   {/if}
 
-  {#if showYearFilter && years.length > 0}
-    <div class="flex overflow-x-auto hide-scrollbar gap-2 pb-2 mb-4">
-      {#each years as year (year.slug)}
-        <button
-          type="button"
-          onclick={() => selectYear(year.slug)}
-          aria-pressed={activeYear === year.slug}
-          class="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all border
-                 {activeYear === year.slug
-                   ? 'bg-primary-container text-on-primary border-transparent'
-                   : 'bg-surface-container-low text-on-surface border-outline-variant/40 hover:bg-surface-container'}"
-        >
-          {year.name}
-          <span class="opacity-60 text-xs">({year.count})</span>
-        </button>
-      {/each}
-    </div>
-  {/if}
-
   <div class="flex flex-wrap items-center gap-3 mb-8">
+    {#if showYearFilter && years.length > 0}
+      <label class="flex items-center gap-2 text-sm text-on-surface-variant">
+        <span class="material-symbols-outlined text-[1.1rem]">calendar_month</span>
+        <select
+          bind:value={activeYear}
+          onchange={syncUrl}
+          aria-label="Jahr"
+          class="rounded-xl border border-outline-variant/40 bg-surface-container-low px-3 py-2 text-sm text-on-surface"
+        >
+          <option value="">Alle Jahre</option>
+          {#each years as year (year.slug)}
+            <option value={year.slug}>{year.name} ({year.count})</option>
+          {/each}
+        </select>
+      </label>
+    {/if}
+
     {#if showPhotographerFilter && photographers.length > 0}
       <label class="flex items-center gap-2 text-sm text-on-surface-variant">
         <span class="material-symbols-outlined text-[1.1rem]">photo_camera</span>
         <select
           bind:value={activePhotographer}
           onchange={syncUrl}
+          aria-label="Fotograf"
           class="rounded-xl border border-outline-variant/40 bg-surface-container-low px-3 py-2 text-sm text-on-surface"
         >
           <option value="">Alle Fotografen</option>
           {#each photographers as photographer (photographer.slug)}
             <option value={photographer.slug}>{photographer.name} ({photographer.count})</option>
           {/each}
+        </select>
+      </label>
+    {/if}
+
+    {#if showTypeFilter && imageCount > 0 && videoCount > 0}
+      <label class="flex items-center gap-2 text-sm text-on-surface-variant">
+        <span class="material-symbols-outlined text-[1.1rem]">perm_media</span>
+        <select
+          bind:value={activeType}
+          onchange={syncUrl}
+          aria-label="Medientyp"
+          class="rounded-xl border border-outline-variant/40 bg-surface-container-low px-3 py-2 text-sm text-on-surface"
+        >
+          <option value="">Bilder & Videos</option>
+          <option value="bild">Nur Bilder ({imageCount})</option>
+          <option value="video">Nur Videos ({videoCount})</option>
         </select>
       </label>
     {/if}
@@ -189,39 +212,59 @@
     {#if showResultCount}
       <span class="text-sm text-on-surface-variant ml-auto">
         {filtered.length}
-        {filtered.length === 1 ? 'Bild' : 'Bilder'} gefunden
+        {filtered.length === 1 ? 'Beitrag' : 'Beiträge'} gefunden
       </span>
     {/if}
   </div>
 
   {#if filtered.length === 0}
     <p class="text-center text-on-surface-variant py-12">
-      Für diese Auswahl gibt es keine Bilder.
+      Für diese Auswahl gibt es keine Inhalte.
     </p>
   {:else}
     <div class="gallery-grid" style:--kuh-gallery-columns={columns}>
-      {#each filtered as image, index (image.id)}
+      {#each filtered as item, index (item.id)}
         <figure class="m-0">
           <button
             type="button"
             onclick={() => openLightbox(index)}
-            class="block w-full overflow-hidden rounded-xl bg-surface-container-low cursor-zoom-in"
-            aria-label={`Bild vergrößern: ${image.alt || image.title}`}
+            class="relative block w-full overflow-hidden rounded-xl bg-surface-container-low"
+            class:cursor-zoom-in={item.type === 'image'}
+            class:cursor-pointer={item.type === 'video'}
+            aria-label={item.type === 'video'
+              ? `Video abspielen: ${item.title}`
+              : `Bild vergrößern: ${item.alt || item.title}`}
           >
-            <img
-              src={image.thumb}
-              alt={image.alt || image.title}
-              width={image.width}
-              height={image.height}
-              loading="lazy"
-              decoding="async"
-              class="w-full h-full object-cover aspect-4/3 transition-transform duration-300 hover:scale-105"
-            />
+            {#if item.thumb}
+              <img
+                src={item.thumb}
+                alt={item.alt || item.title}
+                width={item.width}
+                height={item.height}
+                loading="lazy"
+                decoding="async"
+                class="w-full h-full object-cover aspect-4/3 transition-transform duration-300 hover:scale-105"
+              />
+            {:else}
+              <span class="flex aspect-4/3 items-center justify-center px-3 text-center text-sm text-on-surface-variant">
+                {item.title}
+              </span>
+            {/if}
+            {#if item.type === 'video'}
+              <span
+                class="pointer-events-none absolute inset-0 flex items-center justify-center bg-scrim/25 transition-colors hover:bg-scrim/10"
+              >
+                <span
+                  class="material-symbols-outlined !text-5xl rounded-full bg-black/60 p-2 text-white"
+                  style="font-variation-settings: 'FILL' 1;"
+                >play_arrow</span>
+              </span>
+            {/if}
           </button>
-          {#if showCredit && image.photographers.length > 0}
+          {#if showCredit && item.photographers.length > 0}
             <figcaption class="mt-1 text-xs text-on-surface-variant">
               Foto:
-              {#each image.photographers as photographer, i (photographer.slug)}
+              {#each item.photographers as photographer, i (photographer.slug)}
                 {#if i > 0},{/if}
                 {#if photographer.url}
                   <a
@@ -242,12 +285,12 @@
   {/if}
 </section>
 
-{#if lightboxImage}
+{#if lightboxItem}
   <div
     class="fixed inset-0 z-[1000] flex flex-col bg-black/90 p-4"
     role="dialog"
     aria-modal="true"
-    aria-label="Bildansicht"
+    aria-label={lightboxItem.type === 'video' ? 'Videoansicht' : 'Bildansicht'}
   >
     <div class="flex justify-end">
       <button
@@ -265,35 +308,52 @@
         type="button"
         onclick={() => step(-1)}
         class="shrink-0 rounded-full p-2 text-white/80 hover:text-white"
-        aria-label="Vorheriges Bild"
+        aria-label="Vorheriger Beitrag"
       >
         <span class="material-symbols-outlined">chevron_left</span>
       </button>
 
-      <img
-        src={lightboxImage.full}
-        alt={lightboxImage.alt || lightboxImage.title}
-        class="mx-auto max-h-full max-w-full object-contain"
-      />
+      {#if lightboxItem.type === 'video'}
+        <!-- Der Iframe entsteht erst hier – vorher geht kein Request an YouTube. -->
+        <div class="mx-auto aspect-video w-full max-w-5xl">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${lightboxItem.videoId}?autoplay=1&rel=0`}
+            title={lightboxItem.title}
+            class="h-full w-full rounded-xl"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen
+          ></iframe>
+        </div>
+      {:else}
+        <img
+          src={lightboxItem.full}
+          alt={lightboxItem.alt || lightboxItem.title}
+          class="mx-auto max-h-full max-w-full object-contain"
+        />
+      {/if}
 
       <button
         type="button"
         onclick={() => step(1)}
         class="shrink-0 rounded-full p-2 text-white/80 hover:text-white"
-        aria-label="Nächstes Bild"
+        aria-label="Nächster Beitrag"
       >
         <span class="material-symbols-outlined">chevron_right</span>
       </button>
     </div>
 
     <div class="mt-3 text-center text-sm text-white/70">
-      {#if lightboxImage.caption}
-        <p class="mb-1 text-white/90">{lightboxImage.caption}</p>
+      {#if lightboxItem.type === 'video'}
+        <p class="mb-1 text-white/90">{lightboxItem.title}</p>
       {/if}
-      {#if lightboxImage.photographers.length > 0}
+      {#if lightboxItem.caption}
+        <p class="mb-1 text-white/90">{lightboxItem.caption}</p>
+      {/if}
+      {#if lightboxItem.photographers.length > 0}
         <p>
           Foto:
-          {#each lightboxImage.photographers as photographer, i (photographer.slug)}
+          {#each lightboxItem.photographers as photographer, i (photographer.slug)}
             {#if i > 0},{/if}
             {#if photographer.url}
               <a
@@ -309,20 +369,16 @@
         </p>
       {/if}
       <p class="mt-1 text-xs text-white/50">{lightboxIndex + 1} / {filtered.length}</p>
+      {#if lightboxItem.type === 'video'}
+        <p class="mt-1 text-xs text-white/50">
+          Beim Abspielen wird eine Verbindung zu YouTube hergestellt.
+        </p>
+      {/if}
     </div>
   </div>
 {/if}
 
 <style>
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
   .gallery-grid {
     display: grid;
     gap: 1rem;
