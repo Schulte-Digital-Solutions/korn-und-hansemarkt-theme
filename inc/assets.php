@@ -15,6 +15,7 @@ function kuh_enqueue_assets() {
     wp_enqueue_style( 'wp-block-library-theme' );
 
     $manifest_path = KUH_THEME_DIR . '/dist/.vite/manifest.json';
+    $asset_version = file_exists( $manifest_path ) ? (string) filemtime( $manifest_path ) : KUH_THEME_VERSION;
     $is_dev = str_ends_with( wp_parse_url( home_url(), PHP_URL_HOST ), '.test' );
     $use_dev_server = false;
 
@@ -66,7 +67,7 @@ function kuh_enqueue_assets() {
                         'kuh-style-' . $index,
                         KUH_THEME_URI . '/dist/' . $css_file,
                         array(),
-                        KUH_THEME_VERSION
+                        $asset_version
                     );
                 }
             }
@@ -76,7 +77,7 @@ function kuh_enqueue_assets() {
                 'kuh-app',
                 KUH_THEME_URI . '/dist/' . $entry['file'],
                 array(),
-                KUH_THEME_VERSION,
+                $asset_version,
                 true
             );
 
@@ -113,7 +114,7 @@ function kuh_preload_material_symbols_font() {
     $font_key = 'src/assets/fonts/material-symbols-outlined.woff2';
 
     if ( isset( $manifest[ $font_key ]['file'] ) ) {
-        $font_url = esc_url( KUH_THEME_URI . '/dist/' . $manifest[ $font_key ]['file'] );
+            $font_url = esc_url( add_query_arg( 'ver', (string) filemtime( $manifest_path ), KUH_THEME_URI . '/dist/' . $manifest[ $font_key ]['file'] ) );
         printf(
             '<link rel="preload" href="%s" as="font" type="font/woff2" crossorigin="anonymous">' . "\n",
             $font_url

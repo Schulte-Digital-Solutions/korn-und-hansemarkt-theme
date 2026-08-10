@@ -16,6 +16,15 @@ export default defineConfig(({ command }) => ({
     rollupOptions: {
       input: 'src/main.ts',
       output: {
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.names.some((name) => name.endsWith('.css'))) {
+            return 'assets/[name][extname]';
+          }
+
+          return 'assets/[name]-[hash][extname]';
+        },
         manualChunks: {
           maplibre: ['maplibre-gl'],
         },
