@@ -181,6 +181,25 @@
   }
 
   let observer: IntersectionObserver | undefined;
+  let iframeEl: HTMLIFrameElement | undefined = $state();
+
+  /**
+   * YouTube-Iframes werden mit den Blocker-Attributen von Complianz gerendert.
+   * Complianz baut daraus seinen Einwilligungs-Platzhalter und tauscht
+   * `data-src-cmplz` erst nach erteilter Einwilligung in `src`.
+   */
+  $effect(() => {
+    const frame = iframeEl;
+    if (!frame) return;
+
+    if (typeof window.cmplz_set_blocked_content_container === 'function') {
+      window.cmplz_set_blocked_content_container();
+      return;
+    }
+
+    // Ohne Complianz gilt der bewusste Klick auf das Video als Einwilligung.
+    frame.setAttribute('src', frame.getAttribute('data-src-cmplz') ?? '');
+  });
 
   onMount(() => {
     window.addEventListener('keydown', onKeydown);
@@ -403,17 +422,25 @@
       </button>
 
       {#if lightboxItem.type === 'video'}
-        <!-- Der Iframe entsteht erst hier – vorher geht kein Request an YouTube. -->
-        <div class="mx-auto aspect-video w-full max-w-5xl">
-          <iframe
-            src={`https://www.youtube-nocookie.com/embed/${lightboxItem.videoId}?autoplay=1&rel=0`}
-            title={lightboxItem.title}
-            class="h-full w-full rounded-xl"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            referrerpolicy="strict-origin-when-cross-origin"
-            allowfullscreen
-          ></iframe>
-        </div>
+        <!-- Frisches Element je Video, sonst greift Complianz' cmplz-activated-Sperre. -->
+        {#key lightboxItem.id}
+          <div class="mx-auto aspect-video w-full max-w-5xl">
+            <iframe
+              bind:this={iframeEl}
+              src="about:blank"
+              data-cmplz-target="src"
+              data-src-cmplz={`https://www.youtube-nocookie.com/embed/${lightboxItem.videoId}?autoplay=1&rel=0`}
+              data-service="youtube"
+              data-category="marketing"
+              data-placeholder-image={lightboxItem.thumb}
+              class="cmplz-iframe cmplz-iframe-styles cmplz-video cmplz-placeholder-element h-full w-full rounded-xl"
+              title={lightboxItem.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen
+            ></iframe>
+          </div>
+        {/key}
       {:else}
         <img
           src={lightboxItem.full}
@@ -460,7 +487,7 @@
       <p class="mt-1 text-xs text-white/50">{lightboxIndex + 1} / {loaded.length}</p>
       {#if lightboxItem.type === 'video'}
         <p class="mt-1 text-xs text-white/50">
-          Beim Abspielen wird eine Verbindung zu YouTube hergestellt.
+          Das Video wird erst nach deiner Einwilligung von YouTube geladen.
         </p>
       {/if}
     </div>
