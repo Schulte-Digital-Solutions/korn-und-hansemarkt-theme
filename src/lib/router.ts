@@ -89,6 +89,18 @@ function normalizePath(path: string): string {
   return normalized === '' ? '/' : normalized.startsWith('/') ? normalized : '/' + normalized;
 }
 
+function getStickyHeaderOffset(): number {
+  const header = document.querySelector('header');
+  if (!header) return 0;
+
+  const style = window.getComputedStyle(header);
+  const isOverlaying = style.position === 'sticky' || style.position === 'fixed';
+  if (!isOverlaying) return 0;
+
+  // Kleiner Puffer, damit Ueberschriften nicht direkt am Header kleben.
+  return Math.ceil(header.getBoundingClientRect().height + 12);
+}
+
 function scrollToHash(hash: string) {
   const normalizedHash = hash && hash.startsWith('#') ? hash : '';
   if (!normalizedHash || normalizedHash === '#') return;
@@ -99,7 +111,10 @@ function scrollToHash(hash: string) {
   const scroll = () => {
     const target = document.getElementById(targetId);
     if (target) {
-      target.scrollIntoView({ block: 'start' });
+      const offset = getStickyHeaderOffset();
+      const targetTop = target.getBoundingClientRect().top + window.scrollY;
+      const top = Math.max(0, targetTop - offset);
+      window.scrollTo({ top, behavior: 'auto' });
     }
   };
 
@@ -228,6 +243,14 @@ export function initScrollRestoration() {
     history.scrollRestoration = 'manual';
   }
   window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('hashchange', () => {
+    setTimeout(() => scrollToHash(window.location.hash || ''), 0);
+  });
+
+  if (window.location.hash) {
+    setTimeout(() => scrollToHash(window.location.hash), 0);
+  }
+
   window.addEventListener('beforeunload', () => {
     try {
       sessionStorage.setItem(SCROLL_KEY, JSON.stringify({
