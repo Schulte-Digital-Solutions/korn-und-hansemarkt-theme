@@ -66,6 +66,7 @@ function kuh_get_frontend_data() {
             'behavior'    => get_theme_mod( 'kuh_header_behavior', 'sticky' ),
             'display'     => get_theme_mod( 'kuh_header_display', 'text' ),
             'titleSize'   => (float) get_theme_mod( 'kuh_header_title_size', 1.5 ),
+            'anchorPriorityActive' => (bool) get_theme_mod( 'kuh_header_anchor_priority_active', false ),
         ),
         'footer'      => array(
             'description'  => get_theme_mod( 'kuh_footer_description', 'Seit über 40 Jahren das kulturelle Highlight in der historischen Kornbrennerstadt Haselünne.' ),

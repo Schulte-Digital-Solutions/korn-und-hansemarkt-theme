@@ -15,6 +15,7 @@ interface KuhData {
     behavior: 'sticky' | 'normal' | 'autohide';
     display: 'text' | 'image';
     titleSize: number;
+    anchorPriorityActive?: boolean;
   };
   footer: {
     description: string;

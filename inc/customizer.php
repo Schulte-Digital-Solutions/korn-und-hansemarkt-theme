@@ -193,6 +193,22 @@ function kuh_customize_register( $wp_customize ) {
         'type'        => 'number',
         'input_attrs' => array( 'min' => 0.75, 'max' => 4.0, 'step' => 0.05 ),
     ) );
+
+    // Aktive Navigation: Bei Anker-URLs zuerst Hash prüfen.
+    $wp_customize->add_setting( 'kuh_header_anchor_priority_active', array(
+        'default'           => false,
+        'sanitize_callback' => function( $value ) {
+            return (bool) $value;
+        },
+        'transport'         => 'refresh',
+    ) );
+    $wp_customize->add_control( 'kuh_header_anchor_priority_active', array(
+        'label'       => __( 'Aktive Navigation mit Anker priorisieren', 'korn-und-hansemarkt' ),
+        'description' => __( 'Wenn aktiv, wird bei #Anker-URLs zuerst der Hash geprüft. Ohne Treffer gilt die normale Pfad-Prüfung als Fallback.', 'korn-und-hansemarkt' ),
+        'section'     => 'kuh_header',
+        'type'        => 'checkbox',
+    ) );
+
     // === Abschnitt: Footer ===
     $wp_customize->add_section( 'kuh_footer', array(
         'title'    => __( 'Footer', 'korn-und-hansemarkt' ),

@@ -8,10 +8,12 @@
   import type { MenuItem } from '../types';
 
   const config = getConfig();
+  const anchorPriorityActive = Boolean(config.header?.anchorPriorityActive);
   const flatItems: MenuItem[] = config.menus?.primary ?? [];
   let mobileMenuOpen = $state(false);
   let openSubmenuId = $state<number | null>(null);
   let currentPath = $state(getCurrentPath());
+  let currentHash = $state(window.location.hash || '');
 
   // Build tree from flat menu items
   function buildMenuTree(items: MenuItem[]): MenuItem[] {
@@ -92,7 +94,7 @@
 
   function toAppPath(url: string): string {
     try {
-      const parsed = new URL(url, window.location.origin);
+      const parsed = new URL(url, window.location.href);
       const base = getBasePath();
       let pathname = parsed.pathname || '/';
       if (base && pathname.startsWith(base)) {
@@ -104,14 +106,59 @@
     }
   }
 
-  function isUrlActive(url?: string | null): boolean {
-    if (!url) return false;
-    return normalizePath(currentPath) === toAppPath(url);
+  function normalizeHash(hash: string): string {
+    if (!hash) return '';
+    const clean = hash.trim();
+    if (!clean) return '';
+    return clean.startsWith('#') ? clean : `#${clean}`;
+  }
+
+  function toUrlHash(url: string): string {
+    try {
+      const parsed = new URL(url, window.location.href);
+      return normalizeHash(parsed.hash || '');
+    } catch {
+      return '';
+    }
+  }
+
+  function findSingleActiveMenuItemId(): number | null {
+    const normalizedCurrentPath = normalizePath(currentPath);
+    const normalizedCurrentHash = normalizeHash(currentHash);
+
+    if (anchorPriorityActive && normalizedCurrentHash) {
+      const anchorMatch = flatItems.find((item) => {
+        if (!item.url) return false;
+        return toAppPath(item.url) === normalizedCurrentPath && toUrlHash(item.url) === normalizedCurrentHash;
+      });
+
+      if (anchorMatch) {
+        return anchorMatch.id;
+      }
+    }
+
+    const pathMatches = flatItems.filter((item) => item.url && toAppPath(item.url) === normalizedCurrentPath);
+    if (pathMatches.length === 0) return null;
+
+    if (normalizedCurrentHash) {
+      const noHashMatch = pathMatches.find((item) => toUrlHash(item.url || '') === '');
+      if (noHashMatch) {
+        return noHashMatch.id;
+      }
+    }
+
+    return pathMatches[0]?.id ?? null;
+  }
+
+  const activeMenuItemId = $derived(findSingleActiveMenuItemId());
+
+  function isMenuItemActive(item: MenuItem): boolean {
+    return activeMenuItemId !== null && item.id === activeMenuItemId;
   }
 
   function hasActiveChild(item: MenuItem): boolean {
     if (!item.children || item.children.length === 0) return false;
-    return item.children.some((child) => isUrlActive(child.url));
+    return item.children.some((child) => isMenuItemActive(child));
   }
 
   function getActiveSubmenuParentId(): number | null {
@@ -150,8 +197,13 @@
   onMount(() => {
     const onNavChange = () => {
       currentPath = getCurrentPath();
+      currentHash = window.location.hash || '';
       mobileMenuOpen = false;
       openSubmenuId = null;
+    };
+
+    const onHashChange = () => {
+      currentHash = window.location.hash || '';
     };
 
     const closeMobileMenuOnDesktop = () => {
@@ -169,11 +221,13 @@
     onNavChange();
     closeMobileMenuOnDesktop();
     window.addEventListener('popstate', onNavChange);
+    window.addEventListener('hashchange', onHashChange);
     window.addEventListener('resize', closeMobileMenuOnDesktop);
     window.addEventListener('keydown', onEscape);
 
     return () => {
       window.removeEventListener('popstate', onNavChange);
+      window.removeEventListener('hashchange', onHashChange);
       window.removeEventListener('resize', closeMobileMenuOnDesktop);
       window.removeEventListener('keydown', onEscape);
     };
@@ -223,7 +277,7 @@
       <nav class="hidden md:flex! items-center gap-2">
       {#each menuItems as item}
         {#if item.children && item.children.length > 0}
-          {@const parentDirectActive = isUrlActive(item.url)}
+          {@const parentDirectActive = isMenuItemActive(item)}
           {@const parentHasActiveChild = hasActiveChild(item)}
           <div class="relative group">
             {#if item.url}
@@ -232,7 +286,7 @@
                 class="{parentDirectActive
                   ? 'border-emerald-900/20 bg-emerald-50/70 text-emerald-900 dark:border-white/15 dark:bg-white/10 dark:text-on-surface'
                   : parentHasActiveChild
-                    ? 'border-stone-300/80 bg-stone-100/80 text-stone-700 dark:border-white/10 dark:bg-white/5 dark:text-on-surface-variant'
+                    ? 'border-transparent text-stone-600 hover:border-stone-300/80 hover:bg-stone-100/90 hover:text-emerald-900 dark:text-on-surface-variant dark:hover:border-white/10 dark:hover:bg-white/5 dark:hover:text-on-surface'
                     : 'border-transparent text-stone-600 hover:border-stone-300/80 hover:bg-stone-100/90 hover:text-emerald-900 dark:text-on-surface-variant dark:hover:border-white/10 dark:hover:bg-white/5 dark:hover:text-on-surface'} flex items-center gap-1 rounded-md border px-3 py-2 text-sm uppercase tracking-widest transition-colors"
               >
                 {decodeHtml(item.title)}
@@ -244,7 +298,7 @@
                 class="{parentDirectActive
                   ? 'border-emerald-900/20 bg-emerald-50/70 text-emerald-900 dark:border-white/15 dark:bg-white/10 dark:text-on-surface'
                   : parentHasActiveChild
-                    ? 'border-stone-300/80 bg-stone-100/80 text-stone-700 dark:border-white/10 dark:bg-white/5 dark:text-on-surface-variant'
+                    ? 'border-transparent text-stone-600 hover:border-stone-300/80 hover:bg-stone-100/90 hover:text-emerald-900 dark:text-on-surface-variant dark:hover:border-white/10 dark:hover:bg-white/5 dark:hover:text-on-surface'
                     : 'border-transparent text-stone-600 hover:border-stone-300/80 hover:bg-stone-100/90 hover:text-emerald-900 dark:text-on-surface-variant dark:hover:border-white/10 dark:hover:bg-white/5 dark:hover:text-on-surface'} flex items-center gap-1 rounded-md border px-3 py-2 text-sm uppercase tracking-widest transition-colors"
               >
                 {decodeHtml(item.title)}
@@ -254,7 +308,7 @@
             <div class="absolute left-1/2 top-full z-50 hidden -translate-x-1/2 pt-3 group-hover:block group-focus-within:block">
               <div class="min-w-56 overflow-hidden rounded-2xl border border-stone-200/70 bg-white/95 p-1 shadow-[0_18px_35px_-22px_rgba(0,0,0,0.45)] backdrop-blur-md dark:border-white/10 dark:bg-surface-container-high dark:shadow-[0_18px_35px_-22px_rgba(0,0,0,0.8)]">
                 {#each item.children as child}
-                  {@const childActive = isUrlActive(child.url)}
+                  {@const childActive = isMenuItemActive(child)}
                   <Link
                     href={child.url || '/'}
                     class="{childActive
@@ -268,7 +322,7 @@
             </div>
           </div>
         {:else}
-          {@const itemActive = isUrlActive(item.url)}
+          {@const itemActive = isMenuItemActive(item)}
           <Link
             href={item.url || '/'}
             class="{itemActive
@@ -330,7 +384,7 @@
                 {@const mobileParentHasActiveChild = hasActiveChild(item)}
                 <div class="flex items-center gap-1">
                   {#if item.url}
-                    {@const mobileParentDirectActive = isUrlActive(item.url)}
+                    {@const mobileParentDirectActive = isMenuItemActive(item)}
                     <Link
                       href={item.url}
                       class="{mobileParentDirectActive
@@ -359,7 +413,7 @@
                 {#if openSubmenuId === item.id || (mobileParentHasActiveChild && openSubmenuId === null)}
                   <div class="flex flex-col space-y-1 pl-4">
                     {#each item.children as child}
-                      {@const mobileChildActive = isUrlActive(child.url)}
+                      {@const mobileChildActive = isMenuItemActive(child)}
                       <Link
                         href={child.url || '/'}
                         class="{mobileChildActive
@@ -372,7 +426,7 @@
                   </div>
                 {/if}
               {:else}
-                {@const mobileItemActive = isUrlActive(item.url)}
+                {@const mobileItemActive = isMenuItemActive(item)}
                 <Link
                   href={item.url || '/'}
                   class="{mobileItemActive
