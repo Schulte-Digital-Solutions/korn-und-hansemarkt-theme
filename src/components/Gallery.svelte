@@ -94,6 +94,39 @@
   const hasActiveFilter = $derived(Boolean(activeYear || activePhotographer || activeType));
   const lightboxItem = $derived(lightboxIndex >= 0 ? loaded[lightboxIndex] : undefined);
 
+  interface GroupedGalleryItem {
+    item: GalleryItem;
+    index: number;
+  }
+
+  interface GalleryYearGroup {
+    year: string;
+    items: GroupedGalleryItem[];
+  }
+
+  function getDisplayYear(item: GalleryItem): string {
+    const year = item.years?.find((value) => value?.trim());
+    return year ? year.trim() : 'Ohne Jahr';
+  }
+
+  const groupedItems = $derived.by<GalleryYearGroup[]>(() => {
+    const groups: GalleryYearGroup[] = [];
+
+    loaded.forEach((item, index) => {
+      const year = getDisplayYear(item);
+      const previous = groups[groups.length - 1];
+
+      if (!previous || previous.year !== year) {
+        groups.push({ year, items: [{ item, index }] });
+        return;
+      }
+
+      previous.items.push({ item, index });
+    });
+
+    return groups;
+  });
+
   interface GalleryResponse {
     items: GalleryItem[];
     total: number;
@@ -309,64 +342,73 @@
       {loading ? 'Wird geladen …' : 'Für diese Auswahl gibt es keine Inhalte.'}
     </p>
   {:else}
-    <div class="gallery-grid" style:--kuh-gallery-columns={columns}>
-      {#each loaded as item, index (item.id)}
-        <figure class="m-0">
-          <button
-            type="button"
-            onclick={() => openLightbox(index)}
-            class="relative block w-full overflow-hidden rounded-xl bg-surface-container-low"
-            class:cursor-zoom-in={item.type === 'image'}
-            class:cursor-pointer={item.type === 'video'}
-            aria-label={item.type === 'video'
-              ? `Video abspielen: ${item.title}`
-              : `Bild vergrößern: ${item.alt || item.title}`}
-          >
-            {#if item.thumb}
-              <img
-                src={item.thumb}
-                alt={item.alt || item.title}
-                width={item.width}
-                height={item.height}
-                loading="lazy"
-                decoding="async"
-                class="w-full h-full object-cover aspect-4/3 transition-transform duration-300 hover:scale-105"
-              />
-            {:else}
-              <span class="flex aspect-4/3 items-center justify-center px-3 text-center text-sm text-on-surface-variant">
-                {item.title}
-              </span>
-            {/if}
-            {#if item.type === 'video'}
-              <span
-                class="pointer-events-none absolute inset-0 flex items-center justify-center bg-scrim/25 transition-colors hover:bg-scrim/10"
-              >
-                <span
-                  class="material-symbols-outlined !text-5xl rounded-full bg-black/60 p-2 text-white"
-                  style="font-variation-settings: 'FILL' 1;"
-                >play_arrow</span>
-              </span>
-            {/if}
-          </button>
-          {#if showCredit && item.photographers.length > 0}
-            <figcaption class="mt-1 text-xs text-on-surface-variant">
-              Foto:
-              {#each item.photographers as photographer, i (photographer.slug)}
-                {#if i > 0},{/if}
-                {#if photographer.url}
-                  <a
-                    href={photographer.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="text-secondary hover:text-primary transition-colors"
-                  >{photographer.name}</a>
-                {:else}
-                  {photographer.name}
+    <div class="space-y-8">
+      {#each groupedItems as group (`${group.year}-${group.items[0]?.item.id ?? 'empty'}`)}
+        <section aria-label={`Jahr ${group.year}`}>
+          <h3 class="mb-4 border-b border-outline-variant/40 pb-2 text-2xl font-headline text-primary">
+            {group.year}
+          </h3>
+          <div class="gallery-grid" style:--kuh-gallery-columns={columns}>
+            {#each group.items as entry (entry.item.id)}
+              <figure class="m-0">
+                <button
+                  type="button"
+                  onclick={() => openLightbox(entry.index)}
+                  class="relative block w-full overflow-hidden rounded-xl bg-surface-container-low"
+                  class:cursor-zoom-in={entry.item.type === 'image'}
+                  class:cursor-pointer={entry.item.type === 'video'}
+                  aria-label={entry.item.type === 'video'
+                    ? `Video abspielen: ${entry.item.title}`
+                    : `Bild vergrößern: ${entry.item.alt || entry.item.title}`}
+                >
+                  {#if entry.item.thumb}
+                    <img
+                      src={entry.item.thumb}
+                      alt={entry.item.alt || entry.item.title}
+                      width={entry.item.width}
+                      height={entry.item.height}
+                      loading="lazy"
+                      decoding="async"
+                      class="w-full h-full object-cover aspect-4/3 transition-transform duration-300 hover:scale-105"
+                    />
+                  {:else}
+                    <span class="flex aspect-4/3 items-center justify-center px-3 text-center text-sm text-on-surface-variant">
+                      {entry.item.title}
+                    </span>
+                  {/if}
+                  {#if entry.item.type === 'video'}
+                    <span
+                      class="pointer-events-none absolute inset-0 flex items-center justify-center bg-scrim/25 transition-colors hover:bg-scrim/10"
+                    >
+                      <span
+                        class="material-symbols-outlined text-5xl! rounded-full bg-black/60 p-2 text-white"
+                        style="font-variation-settings: 'FILL' 1;"
+                      >play_arrow</span>
+                    </span>
+                  {/if}
+                </button>
+                {#if showCredit && entry.item.photographers.length > 0}
+                  <figcaption class="mt-1 text-xs text-on-surface-variant">
+                    Foto:
+                    {#each entry.item.photographers as photographer, i (photographer.slug)}
+                      {#if i > 0},{/if}
+                      {#if photographer.url}
+                        <a
+                          href={photographer.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="text-secondary hover:text-primary transition-colors"
+                        >{photographer.name}</a>
+                      {:else}
+                        {photographer.name}
+                      {/if}
+                    {/each}
+                  </figcaption>
                 {/if}
-              {/each}
-            </figcaption>
-          {/if}
-        </figure>
+              </figure>
+            {/each}
+          </div>
+        </section>
       {/each}
     </div>
   {/if}
@@ -395,7 +437,7 @@
 
 {#if lightboxItem}
   <div
-    class="fixed inset-0 z-[1000] flex flex-col bg-black/90 p-4"
+    class="fixed inset-0 z-1000 flex flex-col bg-black/90 p-4"
     role="dialog"
     aria-modal="true"
     aria-label={lightboxItem.type === 'video' ? 'Videoansicht' : 'Bildansicht'}
