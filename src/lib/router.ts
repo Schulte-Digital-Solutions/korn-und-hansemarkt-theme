@@ -83,6 +83,31 @@ function getBasePath(): string {
   return '';
 }
 
+function normalizePath(path: string): string {
+  const clean = path.split('?')[0].split('#')[0];
+  const normalized = clean.replace(/\/+$/, '');
+  return normalized === '' ? '/' : normalized.startsWith('/') ? normalized : '/' + normalized;
+}
+
+function scrollToHash(hash: string) {
+  const normalizedHash = hash && hash.startsWith('#') ? hash : '';
+  if (!normalizedHash || normalizedHash === '#') return;
+
+  const targetId = decodeURIComponent(normalizedHash.slice(1));
+  if (!targetId) return;
+
+  const scroll = () => {
+    const target = document.getElementById(targetId);
+    if (target) {
+      target.scrollIntoView({ block: 'start' });
+    }
+  };
+
+  // Direkt versuchen und zusaetzlich nach dem naechsten Paint.
+  scroll();
+  requestAnimationFrame(scroll);
+}
+
 /**
  * Aktuelle Route aus dem Pathname lesen (ohne WordPress-Basispfad)
  */
@@ -92,7 +117,7 @@ export function getCurrentPath(): string {
   if (base && path.startsWith(base)) {
     path = path.slice(base.length) || '/';
   }
-  return path.startsWith('/') ? path : '/' + path;
+  return normalizePath(path);
 }
 
 /**
@@ -100,11 +125,38 @@ export function getCurrentPath(): string {
  */
 export function navigate(path: string) {
   const base = getBasePath();
-  const target = path.startsWith('/') ? path : '/' + path;
-  window.history.pushState({ scrollY: 0 }, '', base + target);
+  const parsed = new URL(path, window.location.href);
+  let nextPath = parsed.pathname || '/';
+
+  if (base && nextPath.startsWith(base)) {
+    nextPath = nextPath.slice(base.length) || '/';
+  }
+
+  const currentPath = normalizePath(getCurrentPath());
+  const targetPath = normalizePath(nextPath);
+  const targetSearch = parsed.search || '';
+  const targetHash = parsed.hash || '';
+
+  const currentSearch = window.location.search || '';
+  const currentHash = window.location.hash || '';
+
+  const sameRoute = currentPath === targetPath && currentSearch === targetSearch;
+
+  window.history.pushState({ scrollY: 0 }, '', `${base}${targetPath}${targetSearch}${targetHash}`);
+
   _pendingScrollY = 0;
-  window.scrollTo(0, 0);
+
+  if (!sameRoute) {
+    window.scrollTo(0, 0);
+  }
+
   window.dispatchEvent(new PopStateEvent('popstate'));
+
+  if (targetHash && targetHash !== currentHash) {
+    setTimeout(() => scrollToHash(targetHash), 0);
+  } else if (targetHash) {
+    scrollToHash(targetHash);
+  }
 }
 
 /**

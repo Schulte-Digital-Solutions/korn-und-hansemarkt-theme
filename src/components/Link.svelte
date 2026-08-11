@@ -21,7 +21,14 @@
 
   const fullHref = $derived(base + (href.startsWith('/') ? href : '/' + href));
 
+  const isExternal = $derived(/^https?:\/\//i.test(href));
+  const isHashOnly = $derived(href.startsWith('#'));
+
   function handleClick(e: MouseEvent) {
+    if (isExternal || isHashOnly) {
+      return;
+    }
+
     e.preventDefault();
     navigate(href);
   }
