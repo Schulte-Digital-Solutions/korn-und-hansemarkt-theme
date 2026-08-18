@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import Link from './Link.svelte';
+  import BrandTitle from './BrandTitle.svelte';
   import ThemeToggle from './ThemeToggle.svelte';
   import { theme } from '../lib/theme.svelte';
   import { getCurrentPath } from '../lib/router';
@@ -40,24 +41,6 @@
     el.innerHTML = html;
     return el.value;
   }
-
-  function getHeaderSiteTitle(): string {
-    const decoded = decodeHtml(config.siteName || 'Korn- und Hansemarkt');
-    return decoded.replace(/[\u2011\u2013\u2014\u2212]/g, '-');
-  }
-
-  function getHeaderTitleParts(): { left: string; right: string } | null {
-    const title = getHeaderSiteTitle();
-    const separatorIndex = title.indexOf('-');
-    if (separatorIndex === -1) return null;
-
-    return {
-      left: title.slice(0, separatorIndex),
-      right: title.slice(separatorIndex + 1),
-    };
-  }
-
-  const headerTitleParts = $derived(getHeaderTitleParts());
 
   function toggleMobileMenu() {
     const willOpen = !mobileMenuOpen;
@@ -262,11 +245,7 @@
             class="block font-normal text-emerald-900 dark:text-primary font-headline tracking-tight leading-none whitespace-nowrap"
             style:font-size="clamp(1rem, 6.5vw, {config.header?.titleSize ?? 1.5}rem)"
           >
-            {#if headerTitleParts}
-              <span>{headerTitleParts.left}</span><span class="font-body">-</span><span>{headerTitleParts.right}</span>
-            {:else}
-              {getHeaderSiteTitle()}
-            {/if}
+            <BrandTitle title={config.siteName || 'Korn- und Hansemarkt'} />
           </span>
         {/if}
       </Link>
