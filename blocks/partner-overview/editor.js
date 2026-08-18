@@ -11,7 +11,7 @@ const ServerSideRender = wp.serverSideRender;
 
 registerBlockType('kuh/partner-overview', {
   edit({ attributes, setAttributes }) {
-    const { title, showTitle, logoHeight } = attributes;
+    const { title, showTitle, logoMinWidth } = attributes;
 
     const blockProps = useBlockProps({
       style: {
@@ -43,12 +43,13 @@ registerBlockType('kuh/partner-overview', {
             onChange: function (val) { setAttributes({ title: val }); },
           }),
           el(RangeControl, {
-            label: 'Logo-Höhe (px)',
-            value: logoHeight,
-            onChange: function (val) { setAttributes({ logoHeight: val }); },
-            min: 24,
-            max: 96,
-            step: 4,
+            label: 'Minimale Logo-Breite (px)',
+            help: 'Die Spaltenanzahl passt sich automatisch an den verfügbaren Platz an.',
+            value: logoMinWidth,
+            onChange: function (val) { setAttributes({ logoMinWidth: val }); },
+            min: 80,
+            max: 480,
+            step: 10,
           })
         )
       ),

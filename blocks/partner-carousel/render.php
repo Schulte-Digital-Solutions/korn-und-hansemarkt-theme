@@ -14,8 +14,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 $title      = $attributes['title'] ?? 'Unsere Partner & Unterstützer';
 $show_title = $attributes['showTitle'] ?? true;
 $logo_height = absint( $attributes['logoHeight'] ?? 48 );
+$logo_min_width = min( 480, max( 80, absint( $attributes['logoMinWidth'] ?? 160 ) ) );
 $speed      = absint( $attributes['speed'] ?? 30 );
 $variant    = $attributes['variant'] ?? 'carousel';
+$noscript_layout_style = 'grid' === $variant
+    ? sprintf( 'display:grid;grid-template-columns:repeat(auto-fit,minmax(%dpx,1fr));gap:2rem;align-items:center;max-width:80rem;margin:0 auto;', $logo_min_width )
+    : 'display:flex;flex-wrap:wrap;gap:2rem;justify-content:center;align-items:center;max-width:80rem;margin:0 auto;';
+$noscript_logo_style = 'grid' === $variant
+    ? 'display:block;width:100%;height:auto;object-fit:contain;'
+    : sprintf( 'height:%dpx;width:auto;object-fit:contain;', $logo_height );
 
 $partners = kuh_get_partners_data();
 
@@ -33,6 +40,7 @@ $block_data = array(
     'title'      => $title,
     'showTitle'  => $show_title,
     'logoHeight' => $logo_height,
+    'logoMinWidth' => $logo_min_width,
     'speed'      => $speed,
     'variant'    => $variant,
     'partners'   => $partners,
@@ -51,19 +59,19 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                     <?php echo esc_html( $title ); ?>
                 </h2>
             <?php endif; ?>
-            <div style="display:flex;flex-wrap:wrap;gap:2rem;justify-content:center;align-items:center;max-width:80rem;margin:0 auto;">
+            <div style="<?php echo esc_attr( $noscript_layout_style ); ?>">
                 <?php foreach ( $partners as $partner ) : ?>
                     <?php if ( $partner['logo'] ) : ?>
                         <?php if ( $partner['url'] ) : ?>
-                            <a href="<?php echo esc_url( $partner['url'] ); ?>" target="_blank" rel="noopener noreferrer" style="filter:grayscale(1);opacity:0.6;">
+                            <a href="<?php echo esc_url( $partner['url'] ); ?>" target="_blank" rel="noopener noreferrer" style="display:block;filter:grayscale(1);opacity:0.6;">
                                 <img src="<?php echo esc_url( $partner['logo'] ); ?>"
                                      alt="<?php echo esc_attr( $partner['name'] ); ?>"
-                                     style="height:<?php echo $logo_height; ?>px;width:auto;object-fit:contain;" />
+                                     style="<?php echo esc_attr( $noscript_logo_style ); ?>" />
                             </a>
                         <?php else : ?>
                             <img src="<?php echo esc_url( $partner['logo'] ); ?>"
                                  alt="<?php echo esc_attr( $partner['name'] ); ?>"
-                                 style="height:<?php echo $logo_height; ?>px;width:auto;object-fit:contain;filter:grayscale(1);opacity:0.6;" />
+                                 style="<?php echo esc_attr( $noscript_logo_style ); ?>filter:grayscale(1);opacity:0.6;" />
                         <?php endif; ?>
                     <?php endif; ?>
                 <?php endforeach; ?>

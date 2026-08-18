@@ -12,6 +12,7 @@
     title?: string;
     showTitle?: boolean;
     logoHeight?: number;
+    logoMinWidth?: number;
     speed?: number;
     variant?: 'carousel' | 'grid';
     partners: Partner[];
@@ -21,6 +22,7 @@
     title = 'Unsere Partner & Unterstützer',
     showTitle = true,
     logoHeight = 48,
+    logoMinWidth = 160,
     speed = 30,
     variant = 'carousel',
     partners,
@@ -152,20 +154,22 @@
     {:else}
       <!-- Grid variant -->
       <div class="max-w-7xl mx-auto px-6">
-        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-8 items-center justify-items-center">
+        <div
+          class="partner-grid grid gap-8 items-center"
+          style:--logo-min-width={`${logoMinWidth}px`}
+        >
           {#each visiblePartners as partner (partner.id)}
             {#if partner.url}
               <a
                 href={partner.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
+                class="block w-full grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
               >
                 <img
                   src={partner.logo}
                   alt={partner.name}
-                  class="w-auto object-contain"
-                  style:height="{logoHeight}px"
+                  class="block w-full h-auto object-contain"
                   loading="lazy"
                 />
               </a>
@@ -173,8 +177,7 @@
               <img
                 src={partner.logo}
                 alt={partner.name}
-                class="w-auto object-contain grayscale opacity-60"
-                style:height="{logoHeight}px"
+                class="block w-full h-auto object-contain grayscale opacity-60"
                 loading="lazy"
               />
             {/if}
@@ -202,5 +205,9 @@
 
   .carousel-track:hover {
     animation-play-state: paused;
+  }
+
+  .partner-grid {
+    grid-template-columns: repeat(auto-fit, minmax(var(--logo-min-width, 160px), 1fr));
   }
 </style>

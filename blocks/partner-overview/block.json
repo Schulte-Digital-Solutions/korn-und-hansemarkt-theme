@@ -22,9 +22,9 @@
       "type": "boolean",
       "default": true
     },
-    "logoHeight": {
+    "logoMinWidth": {
       "type": "number",
-      "default": 64
+      "default": 160
     }
   },
   "textdomain": "korn-und-hansemarkt",
