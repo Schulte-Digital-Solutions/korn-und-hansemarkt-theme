@@ -79,6 +79,7 @@ interface WPPage {
   } | null;
   meta?: {
     kuh_hide_title?: boolean;
+    kuh_full_width?: boolean;
   };
 }
 
