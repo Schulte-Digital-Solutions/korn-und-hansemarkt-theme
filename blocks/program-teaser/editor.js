@@ -15,7 +15,7 @@ const INNER_BLOCKS_TEMPLATE = [
 registerBlockType('kuh/program-teaser', {
   edit({ attributes, setAttributes }) {
     const blockProps = useBlockProps();
-    const { days } = attributes;
+    const { days, title } = attributes;
     const [activeDay, setActiveDay] = useState(0);
 
     function updateDay(dayIndex, field, value) {
@@ -71,6 +71,15 @@ registerBlockType('kuh/program-teaser', {
       el(
         InspectorControls,
         null,
+        el(
+          PanelBody,
+          { title: 'Teaser-Einstellungen', initialOpen: true },
+          el(TextControl, {
+            label: 'Überschrift',
+            value: title,
+            onChange: (value) => setAttributes({ title: value }),
+          })
+        ),
         days.map((day, di) =>
           el(
             PanelBody,
@@ -100,7 +109,7 @@ registerBlockType('kuh/program-teaser', {
       el(
         'div',
         blockProps,
-        el('h2', { style: { fontSize: '3rem', color: '#011e08', marginBottom: '2rem' } }, 'Programm'),
+        el('h2', { style: { fontSize: '3rem', color: '#011e08', marginBottom: '2rem' } }, title),
         el(
           'div',
           { style: { display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' } },

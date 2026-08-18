@@ -14,9 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 $days = ! empty( $attributes['days'] ) && is_array( $attributes['days'] )
     ? $attributes['days']
     : array();
+$title = isset( $attributes['title'] ) ? (string) $attributes['title'] : 'Programm';
 
 $block_data = array(
     'days'        => $days,
+    'title'       => $title,
     'contentHtml' => $content,
 );
 
@@ -28,7 +30,9 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
 <div <?php echo $wrapper_attributes; // phpcs:ignore ?>>
     <noscript>
         <div style="max-width:80rem;margin:0 auto;padding:6rem 1.5rem;">
-            <h2 style="font-size:3rem;color:#011e08;margin-bottom:3rem;">Programm</h2>
+            <?php if ( $title ) : ?>
+                <h2 style="font-size:3rem;color:#011e08;margin-bottom:3rem;"><?php echo esc_html( $title ); ?></h2>
+            <?php endif; ?>
             <?php foreach ( $days as $day ) : ?>
                 <div style="margin-bottom:2rem;">
                     <h3 style="font-size:1.5rem;font-weight:bold;color:#011e08;"><?php echo esc_html( $day['label'] ?? '' ); ?> – <?php echo esc_html( $day['date'] ?? '' ); ?></h3>

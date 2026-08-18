@@ -13,24 +13,27 @@
 
   interface Props {
     days: ProgramDay[];
+    title?: string;
     /** Gerenderter InnerBlocks-HTML-Content (z.B. Link "Ganzes Programm") */
     contentHtml: string;
   }
 
-  let { days, contentHtml }: Props = $props();
+  let { days, title = 'Programm', contentHtml }: Props = $props();
 
   let activeDay = $state(0);
 </script>
 
 <section class="py-24 px-6 max-w-7xl mx-auto">
-  <h2 class="text-5xl font-headline text-primary mb-12">Programm</h2>
+  {#if title}
+    <h2 class="text-5xl font-headline text-primary mb-12">{title}</h2>
+  {/if}
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
     <!-- Day tabs -->
-    <div class="lg:col-span-4 space-y-4">
+    <div class="-mx-6 flex gap-2 overflow-x-auto px-6 pb-2 lg:col-span-4 lg:mx-0 lg:flex-col lg:gap-4 lg:overflow-visible lg:px-0 lg:pb-0">
       {#each days as day, i}
         <button
           onclick={() => activeDay = i}
-          class="w-full text-left p-6 rounded-lg transition-all {activeDay === i
+          class="min-w-36 shrink-0 text-left p-4 rounded-lg transition-all lg:w-full lg:p-6 {activeDay === i
             ? 'bg-emerald-50 dark:bg-primary-container dark:text-on-primary-container border-l-4 border-secondary'
             : 'hover:bg-surface-container border-l-4 border-transparent'}"
         >
