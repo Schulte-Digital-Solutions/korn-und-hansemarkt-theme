@@ -1,0 +1,33 @@
+{
+  "apiVersion": 3,
+  "name": "kuh/partner-overview",
+  "version": "1.0.0",
+  "title": "Partnerübersicht",
+  "category": "design",
+  "icon": "groups",
+  "description": "Übersichtliche Logo-Liste aller Partner und Unterstützer.",
+  "keywords": ["partner", "sponsor", "logo", "übersicht", "unterstützer"],
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"],
+    "anchor": true,
+    "multiple": true
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "default": "Unsere Partner & Unterstützer"
+    },
+    "showTitle": {
+      "type": "boolean",
+      "default": true
+    },
+    "logoHeight": {
+      "type": "number",
+      "default": 64
+    }
+  },
+  "textdomain": "korn-und-hansemarkt",
+  "editorScript": "file:./editor.js",
+  "render": "file:./render.php"
+}
