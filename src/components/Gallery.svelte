@@ -206,6 +206,30 @@
     lightboxIndex = (lightboxIndex + direction + loaded.length) % loaded.length;
   }
 
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  function onTouchstart(event: TouchEvent) {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+  }
+
+  function onTouchend(event: TouchEvent) {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+
+    const horizontalDistance = touch.clientX - touchStartX;
+    const verticalDistance = touch.clientY - touchStartY;
+
+    if (Math.abs(horizontalDistance) < 48 || Math.abs(horizontalDistance) <= Math.abs(verticalDistance)) {
+      return;
+    }
+
+    step(horizontalDistance < 0 ? 1 : -1);
+  }
+
   function onKeydown(event: KeyboardEvent) {
     if (lightboxIndex < 0) return;
     if (event.key === 'Escape') closeLightbox();
@@ -437,10 +461,13 @@
 
 {#if lightboxItem}
   <div
-    class="fixed inset-0 z-1000 flex flex-col bg-black/90 p-4"
+    class="fixed inset-0 z-1000 flex flex-col bg-black/90 p-3 sm:p-4"
     role="dialog"
     aria-modal="true"
+    tabindex="-1"
     aria-label={lightboxItem.type === 'video' ? 'Videoansicht' : 'Bildansicht'}
+    ontouchstart={onTouchstart}
+    ontouchend={onTouchend}
   >
     <div class="flex justify-end">
       <button
@@ -453,11 +480,11 @@
       </button>
     </div>
 
-    <div class="flex flex-1 items-center gap-2 min-h-0">
+    <div class="relative flex flex-1 items-center min-h-0">
       <button
         type="button"
         onclick={() => step(-1)}
-        class="shrink-0 rounded-full p-2 text-white/80 hover:text-white"
+        class="absolute left-0 z-10 rounded-full bg-black/45 p-2 text-white/80 hover:text-white sm:left-2"
         aria-label="Vorheriger Beitrag"
       >
         <span class="material-symbols-outlined">chevron_left</span>
@@ -466,7 +493,7 @@
       {#if lightboxItem.type === 'video'}
         <!-- Frisches Element je Video, sonst greift Complianz' cmplz-activated-Sperre. -->
         {#key lightboxItem.id}
-          <div class="mx-auto aspect-video w-full max-w-5xl">
+          <div class="mx-auto aspect-video w-full max-w-5xl px-8 sm:px-12">
             <iframe
               bind:this={iframeEl}
               src="about:blank"
@@ -487,14 +514,14 @@
         <img
           src={lightboxItem.full}
           alt={lightboxItem.alt || lightboxItem.title}
-          class="mx-auto max-h-full max-w-full object-contain"
+          class="mx-auto max-h-full max-w-full px-8 object-contain sm:px-12"
         />
       {/if}
 
       <button
         type="button"
         onclick={() => step(1)}
-        class="shrink-0 rounded-full p-2 text-white/80 hover:text-white"
+        class="absolute right-0 z-10 rounded-full bg-black/45 p-2 text-white/80 hover:text-white sm:right-2"
         aria-label="Nächster Beitrag"
       >
         <span class="material-symbols-outlined">chevron_right</span>
@@ -540,7 +567,13 @@
   .gallery-grid {
     display: grid;
     gap: 1rem;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 480px) {
+    .gallery-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 
   @media (min-width: 640px) {
