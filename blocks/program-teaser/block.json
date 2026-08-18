@@ -17,6 +17,14 @@
       "type": "string",
       "default": "Programm"
     },
+    "padding": {
+      "type": "string",
+      "default": "standard"
+    },
+    "margin": {
+      "type": "string",
+      "default": "none"
+    },
     "days": {
       "type": "array",
       "items": {

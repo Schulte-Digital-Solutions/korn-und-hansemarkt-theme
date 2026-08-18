@@ -5,17 +5,24 @@
 (function () {
 const { registerBlockType } = wp.blocks;
 const { useBlockProps, InspectorControls, InnerBlocks } = wp.blockEditor;
-const { PanelBody, TextControl, Button } = wp.components;
+const { PanelBody, TextControl, SelectControl, Button } = wp.components;
 const { createElement: el, Fragment, useState } = wp.element;
 
 const INNER_BLOCKS_TEMPLATE = [
   ['core/paragraph', { placeholder: 'z.B. Link zum vollen Programm', align: 'left' }],
 ];
 
+const SPACING_OPTIONS = [
+  { label: 'Kein Abstand', value: 'none' },
+  { label: 'Kompakt', value: 'compact' },
+  { label: 'Standard', value: 'standard' },
+  { label: 'Großzügig', value: 'spacious' },
+];
+
 registerBlockType('kuh/program-teaser', {
   edit({ attributes, setAttributes }) {
     const blockProps = useBlockProps();
-    const { days, title } = attributes;
+    const { days, title, padding, margin } = attributes;
     const [activeDay, setActiveDay] = useState(0);
 
     function updateDay(dayIndex, field, value) {
@@ -78,6 +85,18 @@ registerBlockType('kuh/program-teaser', {
             label: 'Überschrift',
             value: title,
             onChange: (value) => setAttributes({ title: value }),
+          }),
+          el(SelectControl, {
+            label: 'Innenabstand',
+            value: padding,
+            options: SPACING_OPTIONS,
+            onChange: (value) => setAttributes({ padding: value }),
+          }),
+          el(SelectControl, {
+            label: 'Außenabstand oben/unten',
+            value: margin,
+            options: SPACING_OPTIONS,
+            onChange: (value) => setAttributes({ margin: value }),
           })
         ),
         days.map((day, di) =>

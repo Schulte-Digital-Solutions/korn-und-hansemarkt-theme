@@ -14,16 +14,31 @@
   interface Props {
     days: ProgramDay[];
     title?: string;
+    padding?: string;
+    margin?: string;
     /** Gerenderter InnerBlocks-HTML-Content (z.B. Link "Ganzes Programm") */
     contentHtml: string;
   }
 
-  let { days, title = 'Programm', contentHtml }: Props = $props();
+  let { days, title = 'Programm', padding = 'standard', margin = 'none', contentHtml }: Props = $props();
 
   let activeDay = $state(0);
+
+  const paddingClasses: Record<string, string> = {
+    none: 'p-0',
+    compact: 'p-4 sm:p-6',
+    standard: 'py-24 px-6',
+    spacious: 'p-8 sm:p-12',
+  };
+  const marginClasses: Record<string, string> = {
+    none: 'my-0',
+    compact: 'my-8',
+    standard: 'my-16',
+    spacious: 'my-24',
+  };
 </script>
 
-<section class="py-24 px-6 max-w-7xl mx-auto">
+<section class={`max-w-7xl mx-auto ${paddingClasses[padding] ?? paddingClasses.standard} ${marginClasses[margin] ?? marginClasses.none}`}>
   {#if title}
     <h2 class="text-5xl font-headline text-primary mb-12">{title}</h2>
   {/if}
@@ -33,7 +48,7 @@
       {#each days as day, i}
         <button
           onclick={() => activeDay = i}
-          class="min-w-36 shrink-0 text-left p-4 rounded-lg transition-all lg:w-full lg:p-6 {activeDay === i
+          class="min-w-36 shrink-0 text-left p-4 sm:p-1 rounded-lg transition-all lg:w-full lg:p-6 {activeDay === i
             ? 'bg-emerald-50 dark:bg-primary-container dark:text-on-primary-container border-l-4 border-secondary'
             : 'hover:bg-surface-container border-l-4 border-transparent'}"
         >

@@ -15,10 +15,14 @@ $days = ! empty( $attributes['days'] ) && is_array( $attributes['days'] )
     ? $attributes['days']
     : array();
 $title = isset( $attributes['title'] ) ? (string) $attributes['title'] : 'Programm';
+$padding = isset( $attributes['padding'] ) ? (string) $attributes['padding'] : 'standard';
+$margin = isset( $attributes['margin'] ) ? (string) $attributes['margin'] : 'none';
 
 $block_data = array(
     'days'        => $days,
     'title'       => $title,
+    'padding'     => $padding,
+    'margin'      => $margin,
     'contentHtml' => $content,
 );
 
