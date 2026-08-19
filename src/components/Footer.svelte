@@ -24,7 +24,7 @@
     <!-- Navigation -->
     {#if footerMenuItems.length > 0}
     <div>
-      <p class="font-bold text-emerald-900 dark:text-primary mb-6 text-sm uppercase tracking-widest">Navigation</p>
+      <p class="font-bold text-emerald-900 dark:text-primary mb-6 text-sm uppercase tracking-widest">Dabei sein & folgen</p>
       <ul class="space-y-4">
         {#each footerMenuItems as item}
           <li>
