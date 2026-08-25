@@ -114,7 +114,8 @@ function kuh_preload_material_symbols_font() {
     $font_key = 'src/assets/fonts/material-symbols-outlined.woff2';
 
     if ( isset( $manifest[ $font_key ]['file'] ) ) {
-            $font_url = esc_url( add_query_arg( 'ver', (string) filemtime( $manifest_path ), KUH_THEME_URI . '/dist/' . $manifest[ $font_key ]['file'] ) );
+        // Kein ?ver=-Parameter: Muss exakt mit der URL aus main.css übereinstimmen, sonst matched der Browser den Preload nicht.
+        $font_url = esc_url( KUH_THEME_URI . '/dist/' . $manifest[ $font_key ]['file'] );
         printf(
             '<link rel="preload" href="%s" as="font" type="font/woff2" crossorigin="anonymous">' . "\n",
             $font_url
