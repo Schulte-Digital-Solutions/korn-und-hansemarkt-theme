@@ -132,3 +132,42 @@ function kuh_complianz_rest_blocking( $response, $post, $request ) {
 }
 add_filter( 'rest_prepare_post', 'kuh_complianz_rest_blocking', 99, 3 );
 add_filter( 'rest_prepare_page', 'kuh_complianz_rest_blocking', 99, 3 );
+
+/**
+ * Block-Support-Styles in die REST-Response einbetten.
+ *
+ * WordPress erzeugt beim Rendern eines Blocks Regeln wie
+ * `.wp-container-core-group-is-layout-xyz { grid-template-columns: … }` und gibt sie
+ * ausschließlich über wp_head/wp_footer aus. Bei REST-Requests entfällt dieser Schritt,
+ * dadurch bleiben Layout-Einstellungen (Grid-Spaltenanzahl, Mindestbreite, Flex-Gap,
+ * Breite in constrained Layouts) in der SPA wirkungslos.
+ *
+ * @param WP_REST_Response $response Response-Objekt.
+ * @param WP_Post          $post     Post-Objekt.
+ * @param WP_REST_Request  $request  Request-Objekt.
+ * @return WP_REST_Response
+ */
+function kuh_inline_block_support_styles( $response, $post, $request ) {
+    // Nur Einzelabrufe: bei Listen würde jeder Eintrag dieselben Regeln erneut mitschleppen.
+    if ( empty( $request['slug'] ) && empty( $request['id'] ) ) {
+        return $response;
+    }
+
+    $data = $response->get_data();
+    if ( empty( $data['content']['rendered'] ) ) {
+        return $response;
+    }
+
+    $css = wp_style_engine_get_stylesheet_from_context( 'block-supports', array( 'optimize' => true ) );
+    if ( empty( $css ) ) {
+        return $response;
+    }
+
+    $data['content']['rendered'] = '<style data-kuh-block-supports>' . wp_strip_all_tags( $css ) . '</style>'
+        . $data['content']['rendered'];
+    $response->set_data( $data );
+
+    return $response;
+}
+add_filter( 'rest_prepare_post', 'kuh_inline_block_support_styles', 20, 3 );
+add_filter( 'rest_prepare_page', 'kuh_inline_block_support_styles', 20, 3 );
