@@ -1,0 +1,19 @@
+/* Responsive Sichtbarkeit (Breakpoints wie Tailwind: md = 768px, lg = 1024px) */
+
+@media (max-width: 767.98px) {
+	.kuh-hide-mobile {
+		display: none !important;
+	}
+}
+
+@media (min-width: 768px) and (max-width: 1023.98px) {
+	.kuh-hide-tablet {
+		display: none !important;
+	}
+}
+
+@media (min-width: 1024px) {
+	.kuh-hide-desktop {
+		display: none !important;
+	}
+}

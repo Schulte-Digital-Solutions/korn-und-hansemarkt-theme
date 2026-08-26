@@ -1,0 +1,7 @@
+/* Blöcke mit Sichtbarkeitsregeln im Editor kennzeichnen (nicht ausblenden) */
+
+.editor-styles-wrapper .kuh-has-visibility-rules,
+.block-editor-block-list__layout .kuh-has-visibility-rules {
+	outline: 1px dashed var(--wp-admin-theme-color, #3858e9);
+	outline-offset: 2px;
+}
