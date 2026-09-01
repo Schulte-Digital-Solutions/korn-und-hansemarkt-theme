@@ -12,6 +12,42 @@ const INNER_BLOCKS_TEMPLATE = [
   ['core/paragraph', { placeholder: 'z.B. Link zum vollen Programm', align: 'left' }],
 ];
 
+/**
+ * Uhrzeit ("17:00", "9.30") in Minuten seit Mitternacht umrechnen.
+ * Nicht parsebare/leere Zeiten landen beim Sortieren am Ende.
+ */
+function timeToMinutes(time) {
+  const match = /^(\d{1,2})[:.](\d{2})/.exec(String(time || '').trim());
+  if (!match) return Number.MAX_SAFE_INTEGER;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+/** ▲/▼-Buttonpaar zum Verschieben eines Eintrags. */
+function reorderButtons(config) {
+  return el(
+    'div',
+    { style: { display: 'flex', gap: '4px' } },
+    el(Button, {
+      icon: 'arrow-up-alt2',
+      label: config.upLabel,
+      showTooltip: true,
+      size: 'small',
+      variant: 'secondary',
+      disabled: !config.canMoveUp,
+      onClick: config.onMoveUp,
+    }),
+    el(Button, {
+      icon: 'arrow-down-alt2',
+      label: config.downLabel,
+      showTooltip: true,
+      size: 'small',
+      variant: 'secondary',
+      disabled: !config.canMoveDown,
+      onClick: config.onMoveDown,
+    })
+  );
+}
+
 const SPACING_OPTIONS = [
   { label: 'Kein Abstand', value: 'none' },
   { label: 'Kompakt', value: 'compact' },
@@ -61,6 +97,44 @@ registerBlockType('kuh/program-teaser', {
       setAttributes({ days: updated });
     }
 
+    /** Tag um offset Positionen verschieben; activeDay folgt dem Tag. */
+    function moveDay(dayIndex, offset) {
+      const target = dayIndex + offset;
+      if (target < 0 || target >= days.length) return;
+      const updated = days.slice();
+      updated[dayIndex] = days[target];
+      updated[target] = days[dayIndex];
+      setAttributes({ days: updated });
+      if (activeDay === dayIndex) setActiveDay(target);
+      else if (activeDay === target) setActiveDay(dayIndex);
+    }
+
+    /** Event innerhalb seines Tages um offset Positionen verschieben. */
+    function moveEvent(dayIndex, eventIndex, offset) {
+      const events = days[dayIndex] && days[dayIndex].events ? days[dayIndex].events : [];
+      const target = eventIndex + offset;
+      if (target < 0 || target >= events.length) return;
+      const reordered = events.slice();
+      reordered[eventIndex] = events[target];
+      reordered[target] = events[eventIndex];
+      setAttributes({
+        days: days.map((day, i) => (i === dayIndex ? { ...day, events: reordered } : day)),
+      });
+    }
+
+    /** Events eines Tages chronologisch sortieren; gleiche Zeiten behalten ihre Reihenfolge. */
+    function sortEventsByTime(dayIndex) {
+      const updated = days.map((day, i) => {
+        if (i !== dayIndex) return day;
+        const sorted = day.events
+          .map((ev, ei) => ({ ev, ei }))
+          .sort((a, b) => timeToMinutes(a.ev.time) - timeToMinutes(b.ev.time) || a.ei - b.ei)
+          .map((entry) => entry.ev);
+        return { ...day, events: sorted };
+      });
+      setAttributes({ days: updated });
+    }
+
     function addDay() {
       setAttributes({
         days: [...days, { label: 'Neuer Tag', date: '', events: [] }],
@@ -103,6 +177,19 @@ registerBlockType('kuh/program-teaser', {
           el(
             PanelBody,
             { key: di, title: day.label || `Tag ${di + 1}`, initialOpen: di === activeDay },
+            el(
+              'div',
+              { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' } },
+              el('strong', { style: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#666' } }, `Tag ${di + 1} von ${days.length}`),
+              reorderButtons({
+                upLabel: 'Tag nach oben',
+                downLabel: 'Tag nach unten',
+                canMoveUp: di > 0,
+                canMoveDown: di < days.length - 1,
+                onMoveUp: () => moveDay(di, -1),
+                onMoveDown: () => moveDay(di, 1),
+              })
+            ),
             el(TextControl, { label: 'Bezeichnung', value: day.label, onChange: (v) => updateDay(di, 'label', v) }),
             el(TextControl, { label: 'Datum', value: day.date, onChange: (v) => updateDay(di, 'date', v) }),
             el('hr'),
@@ -110,13 +197,40 @@ registerBlockType('kuh/program-teaser', {
               el(
                 'div',
                 { key: ei, style: { marginBottom: '12px', padding: '8px', background: '#f5f5f5', borderRadius: '4px' } },
+                el(
+                  'div',
+                  { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' } },
+                  el('strong', { style: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#666' } }, `Event ${ei + 1}`),
+                  reorderButtons({
+                    upLabel: 'Event nach oben',
+                    downLabel: 'Event nach unten',
+                    canMoveUp: ei > 0,
+                    canMoveDown: ei < day.events.length - 1,
+                    onMoveUp: () => moveEvent(di, ei, -1),
+                    onMoveDown: () => moveEvent(di, ei, 1),
+                  })
+                ),
                 el(TextControl, { label: 'Uhrzeit', value: ev.time, onChange: (v) => updateEvent(di, ei, 'time', v) }),
                 el(TextControl, { label: 'Titel', value: ev.title, onChange: (v) => updateEvent(di, ei, 'title', v) }),
                 el(TextControl, { label: 'Beschreibung', value: ev.description, onChange: (v) => updateEvent(di, ei, 'description', v) }),
                 el(Button, { isDestructive: true, variant: 'link', onClick: () => removeEvent(di, ei) }, 'Event entfernen')
               )
             ),
-            el(Button, { variant: 'secondary', onClick: () => addEvent(di), style: { marginTop: '8px' } }, 'Event hinzufügen'),
+            el(
+              'div',
+              { style: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' } },
+              el(Button, { variant: 'secondary', onClick: () => addEvent(di) }, 'Event hinzufügen'),
+              el(
+                Button,
+                {
+                  variant: 'tertiary',
+                  icon: 'clock',
+                  disabled: day.events.length < 2,
+                  onClick: () => sortEventsByTime(di),
+                },
+                'Nach Uhrzeit sortieren'
+              )
+            ),
             el('hr'),
             el(Button, { isDestructive: true, variant: 'secondary', onClick: () => removeDay(di) }, 'Tag entfernen')
           )
