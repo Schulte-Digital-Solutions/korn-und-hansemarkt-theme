@@ -11,8 +11,25 @@
 (function () {
 const { registerBlockType } = wp.blocks;
 const { useBlockProps, MediaUpload, MediaUploadCheck, InspectorControls, InnerBlocks } = wp.blockEditor;
-const { PanelBody, RangeControl, Button } = wp.components;
+const { PanelBody, RangeControl, SelectControl, Button } = wp.components;
 const { createElement: el, Fragment } = wp.element;
+
+/** Auswahl für den Höhen-Modus des Hero */
+const HEIGHT_MODE_OPTIONS = [
+  { label: 'Feste Höhe (px)', value: 'fixed' },
+  { label: 'Anteil der Bildschirmhöhe (vh)', value: 'viewport' },
+  { label: 'Automatisch (Inhaltshöhe)', value: 'auto' },
+];
+
+/**
+ * min-height-Wert aus Modus und Werten berechnen.
+ * Identische Logik wie in HeroSection.svelte und render.php.
+ */
+function resolveMinHeight(mode, px, vh) {
+  if (mode === 'auto') return 'auto';
+  if (mode === 'viewport') return (vh || 80) + 'vh';
+  return (px || 751) + 'px';
+}
 
 /** Standard-Template für InnerBlocks (Heading + Paragraph + Button) */
 const INNER_BLOCKS_TEMPLATE = [
@@ -61,7 +78,7 @@ registerBlockType('kuh/hero-section', {
   ],
   edit({ attributes, setAttributes }) {
     const blockProps = useBlockProps({ className: 'kuh-hero-section-editor' });
-    const { imageId, imageUrl, imageAlt, overlayOpacity } = attributes;
+    const { imageId, imageUrl, imageAlt, overlayOpacity, heightMode, heightPx, heightVh } = attributes;
 
     function onSelectImage(media) {
       setAttributes({
@@ -121,6 +138,38 @@ registerBlockType('kuh/hero-section', {
         ),
         el(
           PanelBody,
+          { title: 'Höhe', initialOpen: true },
+          el(SelectControl, {
+            label: 'Höhen-Modus',
+            value: heightMode,
+            options: HEIGHT_MODE_OPTIONS,
+            onChange: (val) => setAttributes({ heightMode: val }),
+            help:
+              heightMode === 'auto'
+                ? 'Die Höhe richtet sich nach dem Inhalt.'
+                : 'Mindesthöhe – wächst mit, wenn der Inhalt mehr Platz braucht.',
+          }),
+          heightMode === 'fixed' &&
+            el(RangeControl, {
+              label: 'Höhe in Pixel',
+              value: heightPx,
+              onChange: (val) => setAttributes({ heightPx: val }),
+              min: 200,
+              max: 1200,
+              step: 10,
+            }),
+          heightMode === 'viewport' &&
+            el(RangeControl, {
+              label: 'Höhe in % der Bildschirmhöhe',
+              value: heightVh,
+              onChange: (val) => setAttributes({ heightVh: val }),
+              min: 20,
+              max: 100,
+              step: 5,
+            })
+        ),
+        el(
+          PanelBody,
           { title: 'Overlay', initialOpen: true },
           el(RangeControl, {
             label: 'Overlay-Deckkraft',
@@ -141,7 +190,9 @@ registerBlockType('kuh/hero-section', {
           {
             style: {
               position: 'relative',
-              minHeight: '500px',
+              minHeight: resolveMinHeight(heightMode, heightPx, heightVh),
+              paddingTop: heightMode === 'auto' ? '6rem' : 0,
+              paddingBottom: heightMode === 'auto' ? '6rem' : 0,
               borderRadius: '8px',
               overflow: 'hidden',
               display: 'flex',

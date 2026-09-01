@@ -31,11 +31,31 @@ if ( $image_id ) {
     $image_alt = get_post_meta( $image_id, '_wp_attachment_image_alt', true ) ?: '';
 }
 
+// Höhe: Modus + Wert je Einheit
+$height_mode = (string) ( $attributes['heightMode'] ?? 'fixed' );
+if ( ! in_array( $height_mode, array( 'fixed', 'viewport', 'auto' ), true ) ) {
+    $height_mode = 'fixed';
+}
+$height_px = absint( $attributes['heightPx'] ?? 751 );
+$height_vh = absint( $attributes['heightVh'] ?? 80 );
+
+// min-height fuer das noscript-Fallback
+if ( 'auto' === $height_mode ) {
+    $fallback_min_height = 'auto';
+} elseif ( 'viewport' === $height_mode ) {
+    $fallback_min_height = $height_vh . 'vh';
+} else {
+    $fallback_min_height = $height_px . 'px';
+}
+
 $block_data = array(
     'imageUrl'       => $image_url,
     'imageAlt'       => $image_alt,
     'contentHtml'    => $content,
     'overlayOpacity' => absint( $attributes['overlayOpacity'] ?? 40 ),
+    'heightMode'     => $height_mode,
+    'heightPx'       => $height_px,
+    'heightVh'       => $height_vh,
 );
 
 $wrapper_attributes = get_block_wrapper_attributes( array(
@@ -46,7 +66,7 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
 <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes escapes ?>>
     <!-- Fallback / Noscript: statische Darstellung -->
     <noscript>
-        <div style="position:relative;min-height:80vh;display:flex;align-items:center;overflow:hidden;">
+        <div style="position:relative;min-height:<?php echo esc_attr( $fallback_min_height ); ?>;display:flex;align-items:center;overflow:hidden;">
             <?php if ( $image_url ) : ?>
                 <img src="<?php echo esc_url( $image_url ); ?>"
                      alt="<?php echo esc_attr( $image_alt ); ?>"

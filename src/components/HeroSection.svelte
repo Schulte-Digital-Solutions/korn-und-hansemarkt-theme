@@ -8,6 +8,12 @@
     contentHtml: string;
     /** Overlay-Deckkraft (0–100) */
     overlayOpacity: number;
+    /** Höhen-Modus: fixed = feste px-Höhe, viewport = Anteil der Bildschirmhöhe, auto = Inhaltshöhe */
+    heightMode?: 'fixed' | 'viewport' | 'auto';
+    /** Mindesthöhe in px (nur bei heightMode = 'fixed') */
+    heightPx?: number;
+    /** Mindesthöhe in vh (nur bei heightMode = 'viewport') */
+    heightVh?: number;
   }
 
   let {
@@ -15,10 +21,26 @@
     imageAlt,
     contentHtml,
     overlayOpacity,
+    heightMode = 'fixed',
+    heightPx = 751,
+    heightVh = 80,
   }: Props = $props();
+
+  /** Bei 'auto' bleibt min-height ungesetzt – die Höhe ergibt sich aus dem Inhalt. */
+  const minHeight = $derived(
+    heightMode === 'auto'
+      ? undefined
+      : heightMode === 'viewport'
+        ? `${heightVh}vh`
+        : `${heightPx}px`
+  );
 </script>
 
-<section class="relative min-h-[751px] flex items-center overflow-hidden">
+<section
+  class="relative flex items-center overflow-hidden"
+  class:py-24={heightMode === 'auto'}
+  style:min-height={minHeight}
+>
   <!-- Fullscreen Hintergrundbild -->
   <div class="absolute inset-0 z-0">
     {#if imageUrl}

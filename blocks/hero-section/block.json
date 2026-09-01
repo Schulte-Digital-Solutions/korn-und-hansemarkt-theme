@@ -28,6 +28,18 @@
     "overlayOpacity": {
       "type": "number",
       "default": 40
+    },
+    "heightMode": {
+      "type": "string",
+      "default": "fixed"
+    },
+    "heightPx": {
+      "type": "number",
+      "default": 751
+    },
+    "heightVh": {
+      "type": "number",
+      "default": 80
     }
   },
   "textdomain": "korn-und-hansemarkt",
