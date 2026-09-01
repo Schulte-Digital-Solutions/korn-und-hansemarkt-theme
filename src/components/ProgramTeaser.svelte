@@ -40,7 +40,7 @@
 
 <section class={`max-w-7xl mx-auto ${paddingClasses[padding] ?? paddingClasses.standard} ${marginClasses[margin] ?? marginClasses.none}`}>
   {#if title}
-    <h2 class="text-5xl font-headline text-primary mb-12">{title}</h2>
+    <h2 class="text-5xl font-headline mb-12">{title}</h2>
   {/if}
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
     <!-- Day tabs -->
