@@ -31,6 +31,15 @@ if ( $image_id ) {
     $image_alt = get_post_meta( $image_id, '_wp_attachment_image_alt', true ) ?: '';
 }
 
+// Bildposition (Focal Point): je Achse 0–1, Standard Mitte.
+// Bewusst ohne Hilfsfunktion – render.php wird pro Block-Instanz eingebunden.
+$focal_point = isset( $attributes['focalPoint'] ) && is_array( $attributes['focalPoint'] )
+    ? $attributes['focalPoint']
+    : array();
+$focal_x = min( 1.0, max( 0.0, (float) ( $focal_point['x'] ?? 0.5 ) ) );
+$focal_y = min( 1.0, max( 0.0, (float) ( $focal_point['y'] ?? 0.5 ) ) );
+$object_position = round( $focal_x * 100, 2 ) . '% ' . round( $focal_y * 100, 2 ) . '%';
+
 // Höhe: Modus + Wert je Einheit
 $height_mode = (string) ( $attributes['heightMode'] ?? 'fixed' );
 if ( ! in_array( $height_mode, array( 'fixed', 'viewport', 'auto' ), true ) ) {
@@ -53,6 +62,10 @@ $block_data = array(
     'imageAlt'       => $image_alt,
     'contentHtml'    => $content,
     'overlayOpacity' => absint( $attributes['overlayOpacity'] ?? 40 ),
+    'focalPoint'     => array(
+        'x' => $focal_x,
+        'y' => $focal_y,
+    ),
     'heightMode'     => $height_mode,
     'heightPx'       => $height_px,
     'heightVh'       => $height_vh,
@@ -70,7 +83,7 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
             <?php if ( $image_url ) : ?>
                 <img src="<?php echo esc_url( $image_url ); ?>"
                      alt="<?php echo esc_attr( $image_alt ); ?>"
-                     style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="lazy" />
+                     style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:<?php echo esc_attr( $object_position ); ?>;" loading="lazy" />
             <?php endif; ?>
             <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(30,58,30,0.8),rgba(30,58,30,0.4),transparent);"></div>
             <div style="position:relative;z-index:10;max-width:42rem;padding:3rem;color:#fff;">

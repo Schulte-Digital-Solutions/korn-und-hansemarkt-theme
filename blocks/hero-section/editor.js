@@ -11,8 +11,21 @@
 (function () {
 const { registerBlockType } = wp.blocks;
 const { useBlockProps, MediaUpload, MediaUploadCheck, InspectorControls, InnerBlocks } = wp.blockEditor;
-const { PanelBody, RangeControl, SelectControl, Button } = wp.components;
+const { PanelBody, RangeControl, SelectControl, FocalPointPicker, Button } = wp.components;
 const { createElement: el, Fragment } = wp.element;
+
+/**
+ * focalPoint (0–1 je Achse) in einen object-position-Wert umrechnen.
+ * Identische Logik wie in HeroSection.svelte und render.php.
+ */
+function focalPointToPosition(focalPoint) {
+  const toPercent = (value) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? Math.min(100, Math.max(0, num * 100)) : 50;
+  };
+  const point = focalPoint || {};
+  return toPercent(point.x ?? 0.5) + '% ' + toPercent(point.y ?? 0.5) + '%';
+}
 
 /** Auswahl für den Höhen-Modus des Hero */
 const HEIGHT_MODE_OPTIONS = [
@@ -78,7 +91,7 @@ registerBlockType('kuh/hero-section', {
   ],
   edit({ attributes, setAttributes }) {
     const blockProps = useBlockProps({ className: 'kuh-hero-section-editor' });
-    const { imageId, imageUrl, imageAlt, overlayOpacity, heightMode, heightPx, heightVh } = attributes;
+    const { imageId, imageUrl, imageAlt, focalPoint, overlayOpacity, heightMode, heightPx, heightVh } = attributes;
 
     function onSelectImage(media) {
       setAttributes({
@@ -118,23 +131,23 @@ registerBlockType('kuh/hero-section', {
                   imageUrl
                     ? el(
                         'div',
-                        { style: { marginBottom: '8px' } },
-                        el('img', {
-                          src: imageUrl,
-                          alt: imageAlt,
-                          style: { width: '100%', height: 'auto', borderRadius: '4px', display: 'block' },
-                        }),
-                        el(
-                          'div',
-                          { style: { display: 'flex', gap: '8px', marginTop: '8px' } },
-                          el(Button, { variant: 'secondary', onClick: open }, 'Bild ändern'),
-                          el(Button, { isDestructive: true, variant: 'link', onClick: onRemoveImage }, 'Entfernen')
-                        )
+                        { style: { display: 'flex', gap: '8px', marginBottom: '8px' } },
+                        el(Button, { variant: 'secondary', onClick: open }, 'Bild ändern'),
+                        el(Button, { isDestructive: true, variant: 'link', onClick: onRemoveImage }, 'Entfernen')
                       )
                     : el(Button, { variant: 'secondary', onClick: open }, 'Hintergrundbild auswählen')
                 ),
             })
-          )
+          ),
+          imageUrl &&
+            el(FocalPointPicker, {
+              label: 'Bildposition',
+              url: imageUrl,
+              value: focalPoint,
+              onChange: (value) =>
+                setAttributes({ focalPoint: { x: Number(value.x), y: Number(value.y) } }),
+              help: 'Punkt, der beim Zuschneiden immer sichtbar bleibt.',
+            })
         ),
         el(
           PanelBody,
@@ -210,6 +223,7 @@ registerBlockType('kuh/hero-section', {
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
+                  objectPosition: focalPointToPosition(focalPoint),
                   display: 'block',
                 },
               })

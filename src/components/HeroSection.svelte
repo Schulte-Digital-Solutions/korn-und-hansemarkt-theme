@@ -14,6 +14,8 @@
     heightPx?: number;
     /** Mindesthöhe in vh (nur bei heightMode = 'viewport') */
     heightVh?: number;
+    /** Bildfokus je Achse (0–1); bestimmt, welcher Bildausschnitt beim Zuschneiden sichtbar bleibt */
+    focalPoint?: { x: number; y: number };
   }
 
   let {
@@ -24,7 +26,19 @@
     heightMode = 'fixed',
     heightPx = 751,
     heightVh = 80,
+    focalPoint,
   }: Props = $props();
+
+  /** Focal-Point-Achse (0–1) in Prozent umrechnen; ungültige Werte fallen auf die Mitte zurück. */
+  function toPercent(value: number | undefined): number {
+    return typeof value === 'number' && Number.isFinite(value)
+      ? Math.min(100, Math.max(0, value * 100))
+      : 50;
+  }
+
+  const objectPosition = $derived(
+    `${toPercent(focalPoint?.x)}% ${toPercent(focalPoint?.y)}%`
+  );
 
   /** Bei 'auto' bleibt min-height ungesetzt – die Höhe ergibt sich aus dem Inhalt. */
   const minHeight = $derived(
@@ -48,6 +62,7 @@
         src={imageUrl}
         alt={imageAlt}
         class="absolute inset-0 w-full h-full object-cover"
+        style:object-position={objectPosition}
         loading="eager"
       />
     {/if}

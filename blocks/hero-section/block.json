@@ -1,7 +1,7 @@
 {
   "apiVersion": 3,
   "name": "kuh/hero-section",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "title": "Hero Section",
   "category": "design",
   "icon": "cover-image",
@@ -24,6 +24,10 @@
     "imageAlt": {
       "type": "string",
       "default": ""
+    },
+    "focalPoint": {
+      "type": "object",
+      "default": { "x": 0.5, "y": 0.5 }
     },
     "overlayOpacity": {
       "type": "number",
