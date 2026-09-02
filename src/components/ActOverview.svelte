@@ -1,5 +1,7 @@
 <script lang="ts">
   import Link from './Link.svelte';
+  import ActDetailPanel from './ActDetailPanel.svelte';
+  import type { PanelShow } from './ActDetailPanel.svelte';
 
   interface Show {
     date: string;
@@ -75,19 +77,21 @@
     });
   });
 
-  /** Hintergrund nicht mitscrollen lassen, solange das Panel offen ist. */
-  $effect(() => {
-    if (!selected) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  });
-
   function showTime(show: Show): string {
     return show.end ? `${show.start}–${show.end}` : `ab ${show.start}`;
   }
+
+  /** Auftritte in die Form bringen, die ActDetailPanel erwartet. */
+  const panelShows = $derived<PanelShow[]>(
+    (selected?.shows ?? []).map((show) => ({
+      dayShort: show.dayLabel,
+      dateShort: show.dateLabel,
+      start: show.start,
+      end: show.end,
+      stageName: show.stage ?? '',
+      locationSlug: show.location,
+    })),
+  );
 
   const fontClass: Record<string, string> = {
     headline: 'font-headline',
@@ -238,120 +242,15 @@
   {/if}
 </section>
 
-<svelte:window
-  onkeydown={(event) => {
-    if (selected && event.key === 'Escape') selected = null;
-  }}
-/>
-
-<!-- Detailpanel -->
+<!-- Detailpanel: gemeinsame Komponente, damit es im Bühnenplan identisch aussieht. -->
 {#if selected}
-  <!-- z-80: über dem Seiten-Header (z-70) und der mobilen Bottom-Nav (z-50),
-     damit der Scrim beide verdeckt und der Schatten nicht abgeschnitten wird. -->
-  <div class="fixed inset-0 z-80 flex items-end md:items-center justify-center">
-    <button
-      type="button"
-      aria-label="Schließen"
-      class="absolute inset-0 bg-scrim/50"
-      onclick={() => (selected = null)}
-    ></button>
-
-    <div
-      class="relative w-full md:max-w-2xl max-h-[92dvh] md:max-h-[85vh] overflow-y-auto overscroll-contain
-             bg-surface-container-lowest rounded-t-3xl md:rounded-3xl shadow-xl"
-      role="dialog"
-      aria-modal="true"
-      aria-label={selected.name}
-    >
-      <!-- Griff: macht mobil erkennbar, dass sich das Panel nach unten wegwischen
-           lässt bzw. dass es ein eigenes Overlay ist. -->
-      <div
-        class="md:hidden sticky top-0 z-20 flex justify-center bg-surface-container-lowest pt-3 pb-2"
-      >
-        <span class="h-1.5 w-12 rounded-full bg-on-surface/25"></span>
-      </div>
-
-      <button
-        type="button"
-        onclick={() => (selected = null)}
-        class="absolute top-3 right-3 md:top-4 md:right-4 z-30 flex h-11 w-11 items-center justify-center
-               rounded-full bg-surface/90 text-on-surface/70 shadow-sm backdrop-blur-sm
-               hover:text-on-surface"
-        aria-label="Schließen"
-      >
-        <span class="material-symbols-outlined">close</span>
-      </button>
-
-      {#if selected.image}
-        <img
-          src={selected.image}
-          alt={selected.imageAlt || selected.name}
-          width={selected.imageWidth || undefined}
-          height={selected.imageHeight || undefined}
-          class="block w-full h-auto"
-        />
-      {/if}
-
-      <div class="px-5 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:p-6">
-        <h3 class="{fontClass[titleFont] || 'font-headline'} text-2xl md:text-3xl text-primary dark:text-on-primary-container leading-tight pr-12">
-          {selected.name}
-        </h3>
-        {#if selected.genre}
-          <p class="text-xs uppercase tracking-wider font-semibold text-secondary dark:text-on-secondary-container mt-1">
-            {selected.genre}
-          </p>
-        {/if}
-
-        {#if selected.text}
-          <p class="text-sm text-on-surface/75 leading-relaxed mt-4 whitespace-pre-line">{selected.text}</p>
-        {:else if selected.excerpt}
-          <p class="text-sm text-on-surface/75 leading-relaxed mt-4">{selected.excerpt}</p>
-        {/if}
-
-        {#if selected.url}
-          <a
-            href={selected.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-1 text-sm text-secondary dark:text-on-secondary-container mt-4"
-          >
-            <span class="material-symbols-outlined text-[1rem]">open_in_new</span>Website
-          </a>
-        {/if}
-
-        {#if selected.shows.length}
-          <!-- Größe und Abstand inline: die globalen h4-Regeln aus den WordPress-
-             Global-Styles sind unlayered und schlagen sonst die Tailwind-Klassen. -->
-          <h4
-            class="font-body font-bold uppercase tracking-wider text-on-surface/60"
-            style="font-size:0.8125rem; margin:1.5rem 0 0.5rem;"
-          >
-            Auftritte
-          </h4>
-          <ul class="space-y-2">
-            {#each selected.shows as show}
-              <li class="flex flex-wrap gap-x-3 gap-y-1 text-sm bg-surface-container-low rounded-lg px-3 py-2">
-                <span class="font-semibold text-primary dark:text-on-primary-container w-28 shrink-0">
-                  {show.dayLabel}, {show.dateLabel}
-                </span>
-                <span class="tabular-nums w-24 shrink-0">{showTime(show)}</span>
-                {#if show.stage}
-                  {#if show.location}
-                    <Link href="{mapPath}#{show.location}" class="no-underline text-on-surface/70 inline-flex items-center gap-1">
-                      <span class="material-symbols-outlined text-[0.9rem]">location_on</span>
-                      <span class="underline decoration-dotted underline-offset-2">{show.stage}</span>
-                    </Link>
-                  {:else}
-                    <span class="text-on-surface/70">{show.stage}</span>
-                  {/if}
-                {/if}
-              </li>
-            {/each}
-          </ul>
-        {/if}
-      </div>
-    </div>
-  </div>
+  <ActDetailPanel
+    act={selected}
+    shows={panelShows}
+    {titleFont}
+    {mapPath}
+    onclose={() => (selected = null)}
+  />
 {/if}
 
 <style>
