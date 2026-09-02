@@ -635,9 +635,10 @@ function kuh_output_darkmode_css() {
         if ( isset( $bg_map[ $header_bg ] ) ) {
             list( $bg, $fg ) = $bg_map[ $header_bg ];
             $title_color = ! empty( $header_text ) ? $header_text : $fg;
-            // Header hat Inline-Styles aus dem Light-Customizer – per !important überschreiben.
+            // Header und mobiler Menu-Drawer haben Inline-Styles aus dem
+            // Light-Customizer – per !important überschreiben.
             printf(
-                "html.dark header { background-color: %s !important; color: %s !important; }\n",
+                "html.dark header, html.dark #mobile-navigation-drawer { background-color: %s !important; color: %s !important; }\n",
                 $bg, $fg
             );
             // Site-Titel (Span im Header) – Farbe kann separat überschrieben werden.
