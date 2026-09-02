@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 /* Class-basierter Darkmode: `.dark` auf <html> aktiviert die `dark:`-Utilities. */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -164,6 +165,67 @@ a:has(.material-symbols-outlined) {
 .prose :where(.wp-block-buttons) {
   list-style: none;
   padding-left: 0;
+}
+
+/* ============================================================
+   Tailwind-Typography (`prose`) an die Theme-Tokens koppeln
+   ============================================================
+   Das Plugin (`@plugin "@tailwindcss/typography"` ganz oben) liefert die
+   Fliesstext-Abstaende (p, ul, ol, blockquote, figure ...), die durch
+   Preflight (`* { margin: 0 }`) verloren gehen. Die Farben kommen aus den
+   Material-Tokens, damit der Darkmode automatisch mitzieht – dort
+   ueberschreibt `html.dark` (siehe inc/customizer.php) die `--color-*`
+   Variablen, `prose-invert` wird deshalb nicht gebraucht.
+
+   Wichtig fuer die Kaskade: die Plugin-Regeln landen in `@layer utilities`.
+   Alles in dieser Datei steht ausserhalb jeder Layer und gewinnt deshalb
+   unabhaengig von der Spezifitaet. Die Theme-Styles fuer Ueberschriften
+   (Headline-Font, `font-weight: normal`, feste Groessen), Tabellen und
+   Buttons bleiben dadurch unveraendert – `prose` steuert nur die Abstaende.
+   ============================================================ */
+
+.prose {
+  --tw-prose-body: var(--color-on-surface);
+  --tw-prose-headings: var(--color-on-surface);
+  --tw-prose-lead: var(--color-on-surface-variant);
+  --tw-prose-links: var(--color-primary);
+  --tw-prose-bold: var(--color-on-surface);
+  --tw-prose-counters: var(--color-on-surface-variant);
+  --tw-prose-bullets: var(--color-outline);
+  --tw-prose-hr: var(--color-outline-variant);
+  --tw-prose-quotes: var(--color-on-surface);
+  --tw-prose-quote-borders: var(--color-primary);
+  --tw-prose-captions: var(--color-on-surface-variant);
+  --tw-prose-kbd: var(--color-on-surface);
+  --tw-prose-kbd-shadows: var(--color-shadow);
+  --tw-prose-code: var(--color-on-surface);
+  --tw-prose-pre-code: var(--color-inverse-on-surface);
+  --tw-prose-pre-bg: var(--color-inverse-surface);
+  --tw-prose-th-borders: var(--color-outline-variant);
+  --tw-prose-td-borders: var(--color-outline-variant);
+}
+
+/* Der Darkmode-Generator (kuh_material_palette_dark) haelt `--color-primary`
+   bewusst dunkel (#004f3b, nur 1.5:1 gegen `--color-surface`). Links und
+   Zitat-Rahmen wechseln dort deshalb auf lesbare Tokens. */
+html.dark .prose {
+  --tw-prose-links: var(--color-on-surface);
+  --tw-prose-quote-borders: var(--color-outline);
+}
+
+/* Voll-Breite-Layouts (`.wp-content` in Home.svelte / Page.svelte) bekommen
+   bewusst kein volles `prose`: dort liegen Full-Bleed-Bloecke (Hero, Grids,
+   Teaser), die die 65ch-Containerbreite von `prose` nicht vertragen.
+   Reine Textelemente auf oberster Ebene erhalten aber denselben Rhythmus. */
+.wp-content > :where(p, ul, ol, dl, blockquote, pre, figure, hr) {
+  margin-block: 1.25em;
+}
+.wp-content > :where(h1, h2, h3, h4, h5, h6) {
+  margin-block-start: 1.6em;
+  margin-block-end: 0.6em;
+}
+.wp-content > :where(p, ul, ol, dl, blockquote, pre, figure, hr, h1, h2, h3, h4, h5, h6):first-child {
+  margin-block-start: 0;
 }
 
 /* Konfigurierbare Tokens für Button-Effekte */
