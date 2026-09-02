@@ -21,6 +21,8 @@
     excerpt?: string;
     text?: string;
     image?: string;
+    imageWidth?: number;
+    imageHeight?: number;
     imageAlt?: string;
     shows: Show[];
   }
@@ -71,6 +73,16 @@
         act.shows.some((s) => (s.stage ?? '').toLowerCase().includes(needle))
       );
     });
+  });
+
+  /** Hintergrund nicht mitscrollen lassen, solange das Panel offen ist. */
+  $effect(() => {
+    if (!selected) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
   });
 
   function showTime(show: Show): string {
@@ -145,12 +157,22 @@
             aria-label="Details zu {act.name}"
           >
             {#if act.image}
-              <img
-                src={act.image}
-                alt={act.imageAlt || act.name}
-                loading="lazy"
-                class="w-full h-44 object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-              />
+              <div class="relative overflow-hidden">
+                <!-- Vollflächig ohne Zuschnitt: Höhe ergibt sich aus dem Seitenverhältnis.
+                     width/height reservieren den Platz, damit nichts nachspringt. -->
+                <img
+                  src={act.image}
+                  alt={act.imageAlt || act.name}
+                  loading="lazy"
+                  width={act.imageWidth || undefined}
+                  height={act.imageHeight || undefined}
+                  class="block w-full h-auto transition-transform duration-300 group-hover:scale-[1.03]"
+                />
+                <span
+                  class="material-symbols-outlined absolute top-2 right-2 rounded-full bg-surface/85 p-1
+                         text-[1.1rem] text-on-surface/70 shadow-sm"
+                  aria-hidden="true">open_in_full</span>
+              </div>
             {:else}
               <div class="w-full h-44 bg-surface-container-high flex items-center justify-center">
                 <span class="material-symbols-outlined text-[2.5rem] text-on-surface/20">music_note</span>
@@ -164,18 +186,31 @@
                 {act.name}
               </h3>
               {#if act.genre}
-                <p class="text-[0.7rem] uppercase tracking-wider font-semibold text-secondary dark:text-secondary-container mt-1">
+                <p class="text-[0.7rem] uppercase tracking-wider font-semibold text-secondary dark:text-on-secondary-container mt-1">
                   {act.genre}
                 </p>
               {/if}
               {#if act.excerpt}
                 <p class="text-sm text-on-surface/70 leading-relaxed mt-2">{act.excerpt}</p>
               {/if}
+
+              <!-- Als Pille gestaltet, damit die Karte klar als anklickbar lesbar ist.
+                   Bewusst ein span: das umgebende Element ist schon ein <button>. -->
+              <span
+                class="mt-3 inline-flex items-center gap-1.5 rounded-full bg-secondary-container
+                       px-3 py-1.5 text-[0.8rem] font-semibold text-on-secondary-container
+                       transition-all group-hover:gap-2.5"
+              >
+                Details ansehen
+                <span class="material-symbols-outlined text-[1rem]" aria-hidden="true">arrow_forward</span>
+              </span>
             </div>
           </button>
 
           {#if showShows && act.shows.length}
-            <ul class="px-4 pb-4 space-y-1">
+            <!-- mt-auto: hält die Auftrittsliste an der Kartenunterkante, damit sie
+                 bei unterschiedlich langen Beschreibungen auf einer Linie liegt. -->
+            <ul class="mt-auto px-4 pb-4 space-y-1">
               {#each act.shows as show}
                 <!-- Umbrechen statt kürzen: Bühnennamen sind länger als die Kartenbreite. -->
                 <li class="flex flex-wrap gap-x-2 text-[0.8rem] text-on-surface/70">
@@ -203,9 +238,17 @@
   {/if}
 </section>
 
+<svelte:window
+  onkeydown={(event) => {
+    if (selected && event.key === 'Escape') selected = null;
+  }}
+/>
+
 <!-- Detailpanel -->
 {#if selected}
-  <div class="fixed inset-0 z-[60] flex items-end md:items-center justify-center">
+  <!-- z-80: über dem Seiten-Header (z-70) und der mobilen Bottom-Nav (z-50),
+     damit der Scrim beide verdeckt und der Schatten nicht abgeschnitten wird. -->
+  <div class="fixed inset-0 z-80 flex items-end md:items-center justify-center">
     <button
       type="button"
       aria-label="Schließen"
@@ -214,28 +257,47 @@
     ></button>
 
     <div
-      class="relative w-full md:max-w-2xl max-h-[85vh] overflow-y-auto bg-surface-container-lowest
-             rounded-t-3xl md:rounded-3xl shadow-xl"
+      class="relative w-full md:max-w-2xl max-h-[92dvh] md:max-h-[85vh] overflow-y-auto overscroll-contain
+             bg-surface-container-lowest rounded-t-3xl md:rounded-3xl shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-label={selected.name}
     >
+      <!-- Griff: macht mobil erkennbar, dass sich das Panel nach unten wegwischen
+           lässt bzw. dass es ein eigenes Overlay ist. -->
+      <div
+        class="md:hidden sticky top-0 z-20 flex justify-center bg-surface-container-lowest pt-3 pb-2"
+      >
+        <span class="h-1.5 w-12 rounded-full bg-on-surface/25"></span>
+      </div>
+
       <button
         type="button"
         onclick={() => (selected = null)}
-        class="absolute top-4 right-4 z-10 rounded-full bg-surface/80 p-1 text-on-surface/70 hover:text-on-surface"
+        class="absolute top-3 right-3 md:top-4 md:right-4 z-30 flex h-11 w-11 items-center justify-center
+               rounded-full bg-surface/90 text-on-surface/70 shadow-sm backdrop-blur-sm
+               hover:text-on-surface"
         aria-label="Schließen"
       >
         <span class="material-symbols-outlined">close</span>
       </button>
 
       {#if selected.image}
-        <img src={selected.image} alt={selected.imageAlt || selected.name} class="w-full h-56 object-cover" />
+        <img
+          src={selected.image}
+          alt={selected.imageAlt || selected.name}
+          width={selected.imageWidth || undefined}
+          height={selected.imageHeight || undefined}
+          class="block w-full h-auto"
+        />
       {/if}
 
-      <div class="p-6">
-        <h3 class="{fontClass[titleFont] || 'font-headline'} text-3xl text-primary dark:text-on-primary-container leading-tight pr-8">
+      <div class="px-5 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:p-6">
+        <h3 class="{fontClass[titleFont] || 'font-headline'} text-2xl md:text-3xl text-primary dark:text-on-primary-container leading-tight pr-12">
           {selected.name}
         </h3>
         {#if selected.genre}
-          <p class="text-xs uppercase tracking-wider font-semibold text-secondary dark:text-secondary-container mt-1">
+          <p class="text-xs uppercase tracking-wider font-semibold text-secondary dark:text-on-secondary-container mt-1">
             {selected.genre}
           </p>
         {/if}
@@ -251,14 +313,19 @@
             href={selected.url}
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-1 text-sm text-secondary dark:text-secondary-container mt-4"
+            class="inline-flex items-center gap-1 text-sm text-secondary dark:text-on-secondary-container mt-4"
           >
             <span class="material-symbols-outlined text-[1rem]">open_in_new</span>Website
           </a>
         {/if}
 
         {#if selected.shows.length}
-          <h4 class="font-body text-sm font-bold uppercase tracking-wider text-on-surface/60 mt-6 mb-2">
+          <!-- Größe und Abstand inline: die globalen h4-Regeln aus den WordPress-
+             Global-Styles sind unlayered und schlagen sonst die Tailwind-Klassen. -->
+          <h4
+            class="font-body font-bold uppercase tracking-wider text-on-surface/60"
+            style="font-size:0.8125rem; margin:1.5rem 0 0.5rem;"
+          >
             Auftritte
           </h4>
           <ul class="space-y-2">

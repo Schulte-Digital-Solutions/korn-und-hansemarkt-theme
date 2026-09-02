@@ -42,7 +42,9 @@ function kuh_register_program_cpts() {
         'rest_base'     => 'acts',
         'menu_icon'     => 'dashicons-calendar-alt',
         'menu_position' => 26,
-        'supports'      => array( 'title', 'editor', 'excerpt', 'thumbnail' ),
+        // page-attributes liefert das Feld „Reihenfolge" (menu_order), mit dem sich
+        // die Sortierung der Acts-Übersicht von Hand festlegen lässt.
+        'supports'      => array( 'title', 'editor', 'excerpt', 'thumbnail', 'page-attributes' ),
         'has_archive'   => false,
         'rewrite'       => false,
     ) );
@@ -658,6 +660,7 @@ function kuh_act_admin_columns( $columns ) {
     $new['title']     = __( 'Act', 'korn-und-hansemarkt' );
     $new['act_genre'] = __( 'Genre', 'korn-und-hansemarkt' );
     $new['act_color'] = __( 'Farbe', 'korn-und-hansemarkt' );
+    $new['act_order'] = __( 'Reihenfolge', 'korn-und-hansemarkt' );
     $new['act_shows'] = __( 'Auftritte', 'korn-und-hansemarkt' );
     $new['act_url']   = __( 'Website', 'korn-und-hansemarkt' );
     return $new;
@@ -720,6 +723,13 @@ function kuh_act_admin_column_content( $column, $post_id ) {
             );
             break;
 
+        case 'act_order':
+            $order = (int) get_post_field( 'menu_order', $post_id );
+            echo $order
+                ? esc_html( (string) $order )
+                : '<span style="color:#a7aaad;" title="' . esc_attr__( 'ohne Wert – alphabetisch einsortiert', 'korn-und-hansemarkt' ) . '">0</span>';
+            break;
+
         case 'act_url':
             $url = (string) get_post_meta( $post_id, 'kuh_act_url', true );
             echo $url
@@ -729,6 +739,57 @@ function kuh_act_admin_column_content( $column, $post_id ) {
     }
 }
 add_action( 'manage_kuh_act_posts_custom_column', 'kuh_act_admin_column_content', 10, 2 );
+
+/**
+ * Spalte „Reihenfolge" sortierbar machen.
+ *
+ * @param array $columns Sortierbare Spalten.
+ * @return array
+ */
+function kuh_act_sortable_columns( $columns ) {
+    $columns['act_order'] = 'menu_order';
+    return $columns;
+}
+add_filter( 'manage_edit-kuh_act_sortable_columns', 'kuh_act_sortable_columns' );
+
+/**
+ * Acts-Liste im Admin in derselben Reihenfolge zeigen wie im Frontend.
+ *
+ * @param WP_Query $query Aktuelle Query.
+ */
+function kuh_act_admin_order( $query ) {
+    if ( ! is_admin() || ! $query->is_main_query() || 'kuh_act' !== $query->get( 'post_type' ) ) {
+        return;
+    }
+    if ( $query->get( 'orderby' ) ) {
+        return;
+    }
+    // Eigene ORDER BY-Klausel, weil sich „0 zuletzt" mit orderby nicht ausdrücken lässt.
+    $query->set( 'kuh_order_by_menu_order', true );
+}
+add_action( 'pre_get_posts', 'kuh_act_admin_order' );
+
+/**
+ * ORDER BY der Acts-Liste: gesetzte Reihenfolge zuerst, dann alphabetisch.
+ *
+ * Spiegelt kuh_compare_act_order(), damit die Liste im Backend dieselbe
+ * Reihenfolge zeigt wie die Acts-Übersicht im Frontend.
+ *
+ * @param string   $orderby Bisherige Klausel.
+ * @param WP_Query $query   Aktuelle Query.
+ * @return string
+ */
+function kuh_act_admin_orderby_clause( $orderby, $query ) {
+    if ( ! $query->get( 'kuh_order_by_menu_order' ) ) {
+        return $orderby;
+    }
+
+    global $wpdb;
+
+    return "CASE WHEN {$wpdb->posts}.menu_order = 0 THEN 1 ELSE 0 END ASC, "
+        . "{$wpdb->posts}.menu_order ASC, {$wpdb->posts}.post_title ASC";
+}
+add_filter( 'posts_orderby', 'kuh_act_admin_orderby_clause', 10, 2 );
 
 /**
  * IDs aller Programmpunkte eines Acts.
@@ -1081,6 +1142,10 @@ function kuh_get_program_data() {
     foreach ( array_keys( $used_act ) as $act_id ) {
         $acts[] = kuh_format_act( $act_id );
     }
+    // Bewusst alphabetisch und nicht nach „Reihenfolge": diese Liste steuert im
+    // Bühnenplan die automatische Farbvergabe. Würde sie der manuellen Sortierung
+    // folgen, würden sich beim Umsortieren der Acts-Übersicht die Farben im
+    // Zeitraster mitverschieben.
     usort( $acts, static function ( $a, $b ) {
         return strcasecmp( $a['name'], $b['name'] );
     } );
@@ -1109,6 +1174,10 @@ function kuh_format_act( $act_id ) {
     $color   = (string) get_post_meta( $act_id, 'kuh_act_color', true );
     $palette = kuh_get_act_palette();
 
+    // Maße mitliefern: die Bilder werden ungeschnitten mit automatischer Höhe
+    // dargestellt – ohne width/height gäbe es beim Nachladen einen Layout-Sprung.
+    $image = $thumb_id ? wp_get_attachment_image_src( $thumb_id, 'medium_large' ) : false;
+
     return array(
         'id'        => (int) $act_id,
         'slug'      => get_post_field( 'post_name', $act_id ),
@@ -1119,8 +1188,11 @@ function kuh_format_act( $act_id ) {
         'color'     => isset( $palette[ $color ] ) ? $color : '',
         'excerpt'   => $excerpt ? wp_strip_all_tags( $excerpt ) : wp_trim_words( wp_strip_all_tags( $content ), 28 ),
         'text'      => wp_strip_all_tags( $content ),
-        'image'     => $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'medium_large' ) : '',
-        'imageAlt'  => $thumb_id ? (string) get_post_meta( $thumb_id, '_wp_attachment_image_alt', true ) : '',
+        'image'       => $image ? $image[0] : '',
+        'imageWidth'  => $image ? (int) $image[1] : 0,
+        'imageHeight' => $image ? (int) $image[2] : 0,
+        'imageAlt'    => $thumb_id ? (string) get_post_meta( $thumb_id, '_wp_attachment_image_alt', true ) : '',
+        'order'     => (int) get_post_field( 'menu_order', $act_id ),
     );
 }
 
@@ -1196,9 +1268,30 @@ function kuh_get_acts_overview_data() {
         $acts[] = $entry;
     }
 
+    usort( $acts, 'kuh_compare_act_order' );
+
     wp_cache_set( 'kuh_acts_overview', $acts, '', 300 );
 
     return $acts;
+}
+
+/**
+ * Acts nach dem Feld „Reihenfolge" sortieren.
+ *
+ * WordPress setzt `menu_order` standardmäßig auf 0. Sortierte man einfach
+ * aufsteigend, landeten alle gepflegten Acts (1, 2, 3 …) hinter den
+ * ungepflegten. Deshalb gilt 0 als „nicht gepflegt" und kommt zuletzt;
+ * innerhalb einer Gruppe wird alphabetisch sortiert.
+ *
+ * @param array $a Erster Act.
+ * @param array $b Zweiter Act.
+ * @return int
+ */
+function kuh_compare_act_order( $a, $b ) {
+    $order_a = ( $a['order'] ?? 0 ) > 0 ? (int) $a['order'] : PHP_INT_MAX;
+    $order_b = ( $b['order'] ?? 0 ) > 0 ? (int) $b['order'] : PHP_INT_MAX;
+
+    return ( $order_a <=> $order_b ) ?: strcasecmp( $a['name'], $b['name'] );
 }
 
 /**

@@ -366,6 +366,16 @@
 
   const selectedActData = $derived(selectedAct ? actBySlug.get(selectedAct) : undefined);
 
+  /** Hintergrund nicht mitscrollen lassen, solange das Panel offen ist. */
+  $effect(() => {
+    if (!selectedActData) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  });
+
   const selectedActShows = $derived.by(() => {
     if (!selectedAct) return [];
     const result: { day: Day; slot: Slot }[] = [];
@@ -586,13 +596,21 @@
                         onclick={() => openAct(slot)}
                         disabled={!showActPanel || !slot.act}
                         title="{timeLabel(slot)} Uhr · {slotLabel(slot)}"
-                        class="kuh-slot absolute overflow-hidden rounded-lg px-2 py-1 text-left transition-shadow
+                        class="kuh-slot group absolute overflow-hidden rounded-lg px-2 py-1 text-left transition-shadow
                           {slot.act && showActPanel ? 'cursor-pointer hover:shadow-md' : 'cursor-default'}
                           {isRunning(slot) ? 'ring-2 ring-error' : ''}"
                         data-color={colorIndex(slot)}
                         style="top: {offsetPx(slotStart(slot))}px; height: {height}px; left: {lane *
                           width}%; width: calc({width}% - 4px); margin-left: 2px;"
                       >
+                        {#if slot.act && showActPanel && height >= 38}
+                          <!-- Zeigt an, dass sich der Slot öffnen lässt. -->
+                          <span
+                            class="material-symbols-outlined absolute top-1 right-1 text-[0.9rem] opacity-40
+                                   transition-opacity group-hover:opacity-90"
+                            aria-hidden="true">info</span>
+                        {/if}
+
                         {#if height < 38}
                           <!-- Sehr kurze Slots: Zeit und Titel in eine Zeile. -->
                           <span class="block truncate text-[0.7rem] leading-tight">
@@ -680,11 +698,18 @@
                 type="button"
                 onclick={() => openAct(slot)}
                 disabled={!showActPanel || !slot.act}
-                class="text-left font-semibold leading-tight {slot.act && showActPanel
-                  ? 'hover:underline underline-offset-2'
+                class="group text-left font-semibold leading-tight {slot.act && showActPanel
+                  ? 'cursor-pointer hover:underline underline-offset-2'
                   : 'cursor-default'}"
               >
                 {slotLabel(slot)}
+                {#if slot.act && showActPanel}
+                  <!-- Zeigt an, dass sich der Eintrag öffnen lässt. -->
+                  <span
+                    class="material-symbols-outlined align-[-0.15em] text-[1rem] opacity-50
+                           transition-opacity group-hover:opacity-90"
+                    aria-hidden="true">info</span>
+                {/if}
               </button>
               {#if slot.note}
                 <p class="text-xs opacity-70 mt-0.5">{slot.note}</p>
@@ -697,10 +722,9 @@
                       <span class="underline decoration-dotted underline-offset-2">{stage.name}</span>
                     </Link>
                   {:else}
-                    <span class="inline-flex items-center gap-1">
-                      <span class="material-symbols-outlined text-[0.85rem]">location_on</span>
-                      {stage?.name ?? ''}
-                    </span>
+                    <!-- Ohne verknüpften Ort kein Pin – das Icon soll nur dort stehen,
+                         wo es auch auf die Karte führt. -->
+                    <span>{stage?.name ?? ''}</span>
                   {/if}
                 </p>
               {/if}
@@ -713,9 +737,17 @@
   {/if}
 </section>
 
+<svelte:window
+  onkeydown={(event) => {
+    if (selectedAct && event.key === 'Escape') selectedAct = null;
+  }}
+/>
+
 <!-- Act-Detailpanel -->
 {#if selectedActData}
-  <div class="fixed inset-0 z-[60] flex items-end md:items-center justify-center">
+  <!-- z-80: über dem Seiten-Header (z-70) und der mobilen Bottom-Nav (z-50),
+     damit der Scrim beide verdeckt und der Schatten nicht abgeschnitten wird. -->
+  <div class="fixed inset-0 z-80 flex items-end md:items-center justify-center">
     <button
       type="button"
       aria-label="Schließen"
@@ -724,16 +756,29 @@
     ></button>
 
     <div
-      class="relative w-full md:max-w-lg max-h-[85vh] overflow-y-auto bg-surface-container-lowest rounded-t-3xl md:rounded-3xl shadow-xl p-6"
+      class="relative w-full md:max-w-lg max-h-[92dvh] md:max-h-[85vh] overflow-y-auto overscroll-contain
+             bg-surface-container-lowest rounded-t-3xl md:rounded-3xl shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-label={selectedActData.name}
     >
+      <!-- Griff: macht mobil erkennbar, dass es ein eigenes Overlay ist. -->
+      <div class="md:hidden sticky top-0 z-20 flex justify-center bg-surface-container-lowest pt-3 pb-2">
+        <span class="h-1.5 w-12 rounded-full bg-on-surface/25"></span>
+      </div>
+
       <button
         type="button"
         onclick={() => (selectedAct = null)}
-        class="absolute top-4 right-4 text-on-surface/50 hover:text-on-surface"
+        class="absolute top-3 right-3 md:top-4 md:right-4 z-30 flex h-11 w-11 items-center justify-center
+               rounded-full bg-surface/90 text-on-surface/70 shadow-sm backdrop-blur-sm
+               hover:text-on-surface"
         aria-label="Schließen"
       >
         <span class="material-symbols-outlined">close</span>
       </button>
+
+      <div class="px-5 pt-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:p-6">
 
       {#if selectedActData.image}
         <img
@@ -743,11 +788,11 @@
         />
       {/if}
 
-      <h3 class="{fontClass[titleFont] || 'font-headline'} text-2xl text-primary dark:text-on-primary-container leading-tight pr-8">
+      <h3 class="{fontClass[titleFont] || 'font-headline'} text-2xl text-primary dark:text-on-primary-container leading-tight pr-12">
         {selectedActData.name}
       </h3>
       {#if selectedActData.genre}
-        <p class="text-xs uppercase tracking-wider font-semibold text-secondary dark:text-secondary-container mt-1">
+        <p class="text-xs uppercase tracking-wider font-semibold text-secondary dark:text-on-secondary-container mt-1">
           {selectedActData.genre}
         </p>
       {/if}
@@ -759,27 +804,43 @@
           href={selectedActData.url}
           target="_blank"
           rel="noopener noreferrer"
-          class="inline-flex items-center gap-1 text-sm text-secondary dark:text-secondary-container mt-3"
+          class="inline-flex items-center gap-1 text-sm text-secondary dark:text-on-secondary-container mt-3"
         >
           <span class="material-symbols-outlined text-[1rem]">open_in_new</span>Website
         </a>
       {/if}
 
-      <h4 class="font-body text-sm font-bold uppercase tracking-wider text-on-surface/60 mt-6 mb-2">
+      <!-- Größe und Abstand inline: die globalen h4-Regeln aus den WordPress-
+             Global-Styles sind unlayered und schlagen sonst die Tailwind-Klassen. -->
+          <h4
+            class="font-body font-bold uppercase tracking-wider text-on-surface/60"
+            style="font-size:0.8125rem; margin:1.5rem 0 0.5rem;"
+          >
         Alle Auftritte
       </h4>
       <ul class="space-y-2">
         {#each selectedActShows as show}
           {@const stage = show.day.stages.find((s) => s.slug === show.slot.stage)}
-          <li class="flex gap-3 text-sm bg-surface-container-low rounded-lg px-3 py-2">
+          <li class="flex flex-wrap gap-x-3 gap-y-1 text-sm bg-surface-container-low rounded-lg px-3 py-2">
             <span class="shrink-0 font-semibold text-primary dark:text-on-primary-container w-16">
               {show.day.label.slice(0, 2)}.
             </span>
             <span class="shrink-0 tabular-nums w-24">{timeLabel(show.slot)}</span>
-            <span class="min-w-0 flex-1 text-on-surface/70">{stage?.name ?? ''}</span>
+            {#if stage && stage.locationSlug}
+              <Link
+                href={stageHref(stage)}
+                class="no-underline inline-flex items-center gap-1 text-on-surface/70"
+              >
+                <span class="material-symbols-outlined text-[0.9rem]">location_on</span>
+                <span class="underline decoration-dotted underline-offset-2">{stage.name}</span>
+              </Link>
+            {:else}
+              <span class="text-on-surface/70">{stage?.name ?? ''}</span>
+            {/if}
           </li>
         {/each}
       </ul>
+      </div>
     </div>
   </div>
 {/if}
