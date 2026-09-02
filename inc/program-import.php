@@ -89,14 +89,29 @@ add_action( 'admin_post_kuh_program_template', 'kuh_program_download_template' )
 /**
  * Spalten der Export-/Import-CSV.
  *
- * Dieselben Felder wie in der JSON-Vorlage; `stage_name` und `act_name` sind
+ * Dieselben Felder wie in der JSON-Vorlage. `stage_name` und `act_name` sind
  * zusätzliche Klartextspalten, damit die Datei in Excel lesbar bleibt und neue
- * Bühnen oder Acts einen Namen mitbringen können.
+ * Bühnen oder Acts einen Namen mitbringen können. Die drei `stage_*`-Spalten
+ * tragen die Bühnen-Einstellungen mit, damit ein Export auf einer frischen
+ * Installation vollständig wiederherstellbar ist.
  *
  * @return string[]
  */
 function kuh_program_csv_columns() {
-    return array( 'date', 'start', 'end', 'stage', 'stage_name', 'act', 'act_name', 'title', 'note' );
+    return array(
+        'date',
+        'start',
+        'end',
+        'stage',
+        'stage_name',
+        'stage_order',
+        'stage_subtitle',
+        'stage_location',
+        'act',
+        'act_name',
+        'title',
+        'note',
+    );
 }
 
 /**
@@ -135,16 +150,19 @@ function kuh_program_export_rows() {
         $title    = get_the_title( $slot->ID );
 
         $rows[] = array(
-            'date'       => $date,
-            'start'      => $start,
-            'end'        => (string) get_post_meta( $slot->ID, 'kuh_slot_end', true ),
-            'stage'      => $stage ? $stage['slug'] : '',
-            'stage_name' => $stage ? $stage['name'] : '',
-            'act'        => $act_id ? get_post_field( 'post_name', $act_id ) : '',
-            'act_name'   => $act_name,
+            'date'           => $date,
+            'start'          => $start,
+            'end'            => (string) get_post_meta( $slot->ID, 'kuh_slot_end', true ),
+            'stage'          => $stage ? $stage['slug'] : '',
+            'stage_name'     => $stage ? $stage['name'] : '',
+            'stage_order'    => $stage ? (string) $stage['order'] : '',
+            'stage_subtitle' => $stage ? $stage['subtitle'] : '',
+            'stage_location' => $stage ? $stage['locationSlug'] : '',
+            'act'            => $act_id ? get_post_field( 'post_name', $act_id ) : '',
+            'act_name'       => $act_name,
             // Wie in der JSON-Vorlage: nur setzen, wenn er vom Act-Namen abweicht.
-            'title'      => ( $act_name && $title === $act_name ) ? '' : $title,
-            'note'       => (string) get_post_meta( $slot->ID, 'kuh_slot_note', true ),
+            'title'          => ( $act_name && $title === $act_name ) ? '' : $title,
+            'note'           => (string) get_post_meta( $slot->ID, 'kuh_slot_note', true ),
         );
     }
 
@@ -179,9 +197,15 @@ function kuh_program_export_csv() {
     fwrite( $out, "\xEF\xBB\xBF" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
 
     // Semikolon: Excel erwartet in deutscher Locale kein Komma.
-    fputcsv( $out, kuh_program_csv_columns(), ';' );
+    $columns = kuh_program_csv_columns();
+    fputcsv( $out, $columns, ';' );
     foreach ( $rows as $row ) {
-        fputcsv( $out, array_values( $row ), ';' );
+        // Reihenfolge aus der Spaltenliste, nicht aus der Array-Reihenfolge.
+        $line = array();
+        foreach ( $columns as $column ) {
+            $line[] = $row[ $column ] ?? '';
+        }
+        fputcsv( $out, $line, ';' );
     }
 
     fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
@@ -238,6 +262,10 @@ function kuh_program_parse_csv( $raw ) {
         'bühne'       => 'stage',
         'buehne_name' => 'stage_name',
         'bühne_name'  => 'stage_name',
+        'reihenfolge' => 'stage_order',
+        'untertitel'  => 'stage_subtitle',
+        'karte'       => 'stage_location',
+        'poi'         => 'stage_location',
         'titel'       => 'title',
         'hinweis'     => 'note',
         'notiz'       => 'note',
@@ -289,7 +317,25 @@ function kuh_program_parse_csv( $raw ) {
         }
 
         if ( $stage_slug && ! isset( $stages[ $stage_slug ] ) ) {
-            $stages[ $stage_slug ] = array( 'slug' => $stage_slug, 'name' => $stage_name ?: $stage_slug );
+            $entry = array( 'slug' => $stage_slug, 'name' => $stage_name ?: $stage_slug );
+
+            // Nur gefüllte Zellen übernehmen: eine leere Spalte soll bestehende
+            // Einstellungen im Backend nicht überschreiben.
+            foreach ( array(
+                'stage_order'    => 'order',
+                'stage_subtitle' => 'subtitle',
+                'stage_location' => 'locationSlug',
+            ) as $column => $key ) {
+                if ( ! isset( $map[ $column ] ) ) {
+                    continue;
+                }
+                $value = $cell( $row, $map[ $column ] );
+                if ( '' !== $value ) {
+                    $entry[ $key ] = $value;
+                }
+            }
+
+            $stages[ $stage_slug ] = $entry;
         }
         if ( $act_slug && ! isset( $acts[ $act_slug ] ) ) {
             $acts[ $act_slug ] = array( 'slug' => $act_slug, 'name' => $act_name ?: $act_slug );
@@ -474,7 +520,7 @@ function kuh_program_import_page_html() {
             <?php
             printf(
                 /* translators: %d: Anzahl der Programmpunkte */
-                esc_html__( 'Lädt alle %d Programmpunkte als CSV mit denselben Feldern wie die Import-Vorlage. Die Datei lässt sich in Excel bearbeiten und hier wieder einlesen.', 'korn-und-hansemarkt' ),
+                esc_html__( 'Lädt alle %d Programmpunkte als CSV – inklusive Reihenfolge, Untertitel und Karten-Verknüpfung der Bühnen. Die Datei lässt sich in Excel bearbeiten und hier wieder einlesen; damit ist auch ein vollständiger Umzug auf eine andere Installation möglich.', 'korn-und-hansemarkt' ),
                 count( kuh_program_export_rows() )
             );
             ?>
@@ -1077,14 +1123,15 @@ function kuh_program_apply_import( array $data, $mode ) {
             continue;
         }
         $meta = $stage_meta[ $slug ];
-        if ( isset( $meta['order'] ) ) {
+        // Durchgehend gilt: nur gefüllte Werte werden übernommen. Im Backend
+        // gepflegte Reihenfolge, Untertitel und Karten-Verknüpfung sollen von
+        // einer Datei ohne diese Angaben nicht überschrieben werden.
+        if ( isset( $meta['order'] ) && '' !== $meta['order'] ) {
             update_term_meta( $term_id, 'kuh_stage_order', absint( $meta['order'] ) );
         }
-        if ( isset( $meta['subtitle'] ) ) {
+        if ( ! empty( $meta['subtitle'] ) ) {
             update_term_meta( $term_id, 'kuh_stage_subtitle', sanitize_text_field( $meta['subtitle'] ) );
         }
-        // locationSlug nur setzen, wenn die Datei einen liefert – im Backend
-        // gepflegte Karten-Verknüpfungen sollen nicht verloren gehen.
         if ( ! empty( $meta['locationSlug'] ) ) {
             update_term_meta( $term_id, 'kuh_stage_location', sanitize_title( $meta['locationSlug'] ) );
         }
