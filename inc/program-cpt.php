@@ -1097,6 +1097,10 @@ function kuh_get_program_data() {
                 'slug'      => sanitize_title( $ts ? date_i18n( 'l', $ts ) : $date ),
                 'label'     => $ts ? date_i18n( 'l', $ts ) : $date,
                 'dateLabel' => $ts ? date_i18n( 'j. F Y', $ts ) : $date,
+                // Kurzformen für das Act-Panel – dieselben Formate wie in
+                // kuh_get_acts_overview_data(), damit beide Blöcke identisch aussehen.
+                'dayShort'  => $ts ? date_i18n( 'D', $ts ) : $date,
+                'dateShort' => $ts ? date_i18n( 'j. F', $ts ) : $date,
                 'stages'    => array(),
                 'slots'     => array(),
             );

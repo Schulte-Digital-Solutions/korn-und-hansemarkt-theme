@@ -1,6 +1,8 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import Link from './Link.svelte';
+  import ActDetailPanel from './ActDetailPanel.svelte';
+  import type { PanelShow } from './ActDetailPanel.svelte';
 
   interface Stage {
     slug: string;
@@ -26,6 +28,8 @@
     slug: string;
     label: string;
     dateLabel: string;
+    dayShort: string;
+    dateShort: string;
     stages: Stage[];
     slots: Slot[];
   }
@@ -40,6 +44,9 @@
     color?: string;
     text?: string;
     image?: string;
+    imageWidth?: number;
+    imageHeight?: number;
+    imageAlt?: string;
   }
 
   interface Props {
@@ -366,15 +373,6 @@
 
   const selectedActData = $derived(selectedAct ? actBySlug.get(selectedAct) : undefined);
 
-  /** Hintergrund nicht mitscrollen lassen, solange das Panel offen ist. */
-  $effect(() => {
-    if (!selectedActData) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  });
 
   const selectedActShows = $derived.by(() => {
     if (!selectedAct) return [];
@@ -388,6 +386,21 @@
       (a, b) => a.day.date.localeCompare(b.day.date) || slotStart(a.slot) - slotStart(b.slot),
     );
   });
+
+  /** Auftritte in die Form bringen, die ActDetailPanel erwartet. */
+  const panelShows = $derived<PanelShow[]>(
+    selectedActShows.map(({ day: showDay, slot }) => {
+      const stage = showDay.stages.find((s) => s.slug === slot.stage);
+      return {
+        dayShort: showDay.dayShort,
+        dateShort: showDay.dateShort,
+        start: slot.start,
+        end: slot.end,
+        stageName: stage?.name ?? '',
+        locationSlug: stage?.locationSlug,
+      };
+    }),
+  );
 
   const fontClass: Record<string, string> = {
     headline: 'font-headline',
@@ -737,112 +750,15 @@
   {/if}
 </section>
 
-<svelte:window
-  onkeydown={(event) => {
-    if (selectedAct && event.key === 'Escape') selectedAct = null;
-  }}
-/>
-
-<!-- Act-Detailpanel -->
+<!-- Detailpanel: gemeinsame Komponente, damit es in der Acts-Übersicht identisch aussieht. -->
 {#if selectedActData}
-  <!-- z-80: über dem Seiten-Header (z-70) und der mobilen Bottom-Nav (z-50),
-     damit der Scrim beide verdeckt und der Schatten nicht abgeschnitten wird. -->
-  <div class="fixed inset-0 z-80 flex items-end md:items-center justify-center">
-    <button
-      type="button"
-      aria-label="Schließen"
-      class="absolute inset-0 bg-scrim/50"
-      onclick={() => (selectedAct = null)}
-    ></button>
-
-    <div
-      class="relative w-full md:max-w-lg max-h-[92dvh] md:max-h-[85vh] overflow-y-auto overscroll-contain
-             bg-surface-container-lowest rounded-t-3xl md:rounded-3xl shadow-xl"
-      role="dialog"
-      aria-modal="true"
-      aria-label={selectedActData.name}
-    >
-      <!-- Griff: macht mobil erkennbar, dass es ein eigenes Overlay ist. -->
-      <div class="md:hidden sticky top-0 z-20 flex justify-center bg-surface-container-lowest pt-3 pb-2">
-        <span class="h-1.5 w-12 rounded-full bg-on-surface/25"></span>
-      </div>
-
-      <button
-        type="button"
-        onclick={() => (selectedAct = null)}
-        class="absolute top-3 right-3 md:top-4 md:right-4 z-30 flex h-11 w-11 items-center justify-center
-               rounded-full bg-surface/90 text-on-surface/70 shadow-sm backdrop-blur-sm
-               hover:text-on-surface"
-        aria-label="Schließen"
-      >
-        <span class="material-symbols-outlined">close</span>
-      </button>
-
-      <div class="px-5 pt-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:p-6">
-
-      {#if selectedActData.image}
-        <img
-          src={selectedActData.image}
-          alt={selectedActData.name}
-          class="w-full h-40 object-cover rounded-2xl mb-4"
-        />
-      {/if}
-
-      <h3 class="{fontClass[titleFont] || 'font-headline'} text-2xl text-primary dark:text-on-primary-container leading-tight pr-12">
-        {selectedActData.name}
-      </h3>
-      {#if selectedActData.genre}
-        <p class="text-xs uppercase tracking-wider font-semibold text-secondary dark:text-on-secondary-container mt-1">
-          {selectedActData.genre}
-        </p>
-      {/if}
-      {#if selectedActData.text}
-        <p class="text-sm text-on-surface/70 leading-relaxed mt-3 whitespace-pre-line">{selectedActData.text}</p>
-      {/if}
-      {#if selectedActData.url}
-        <a
-          href={selectedActData.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="inline-flex items-center gap-1 text-sm text-secondary dark:text-on-secondary-container mt-3"
-        >
-          <span class="material-symbols-outlined text-[1rem]">open_in_new</span>Website
-        </a>
-      {/if}
-
-      <!-- Größe und Abstand inline: die globalen h4-Regeln aus den WordPress-
-             Global-Styles sind unlayered und schlagen sonst die Tailwind-Klassen. -->
-          <h4
-            class="font-body font-bold uppercase tracking-wider text-on-surface/60"
-            style="font-size:0.8125rem; margin:1.5rem 0 0.5rem;"
-          >
-        Alle Auftritte
-      </h4>
-      <ul class="space-y-2">
-        {#each selectedActShows as show}
-          {@const stage = show.day.stages.find((s) => s.slug === show.slot.stage)}
-          <li class="flex flex-wrap gap-x-3 gap-y-1 text-sm bg-surface-container-low rounded-lg px-3 py-2">
-            <span class="shrink-0 font-semibold text-primary dark:text-on-primary-container w-16">
-              {show.day.label.slice(0, 2)}.
-            </span>
-            <span class="shrink-0 tabular-nums w-24">{timeLabel(show.slot)}</span>
-            {#if stage && stage.locationSlug}
-              <Link
-                href={stageHref(stage)}
-                class="no-underline inline-flex items-center gap-1 text-on-surface/70"
-              >
-                <span class="material-symbols-outlined text-[0.9rem]">location_on</span>
-                <span class="underline decoration-dotted underline-offset-2">{stage.name}</span>
-              </Link>
-            {:else}
-              <span class="text-on-surface/70">{stage?.name ?? ''}</span>
-            {/if}
-          </li>
-        {/each}
-      </ul>
-      </div>
-    </div>
-  </div>
+  <ActDetailPanel
+    act={selectedActData}
+    shows={panelShows}
+    {titleFont}
+    {mapPath}
+    onclose={() => (selectedAct = null)}
+  />
 {/if}
 
 <style>
