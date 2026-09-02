@@ -764,3 +764,31 @@ function kuh_render_event_map_admin_page() {
     </div>
     <?php
 }
+
+/**
+ * POIs des Geländeplans als Auswahlliste: POI-ID => „Name (Kategorie)".
+ *
+ * Wird für die Verknüpfung von Bühnen mit der Karte genutzt.
+ *
+ * @return array<string,string>
+ */
+function kuh_get_event_map_poi_choices() {
+    $geojson = kuh_get_event_map_geojson();
+    $choices = array();
+
+    foreach ( $geojson['features'] ?? array() as $feature ) {
+        $props = $feature['properties'] ?? array();
+        $id    = isset( $props['id'] ) ? (string) $props['id'] : '';
+        $name  = isset( $props['name'] ) ? (string) $props['name'] : '';
+        if ( ! $id || ! $name ) {
+            continue;
+        }
+
+        $category = isset( $props['category'] ) ? (string) $props['category'] : '';
+        $choices[ $id ] = $category ? sprintf( '%s (%s)', $name, $category ) : $name;
+    }
+
+    asort( $choices );
+
+    return $choices;
+}
