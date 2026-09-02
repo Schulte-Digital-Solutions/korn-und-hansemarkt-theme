@@ -1,0 +1,52 @@
+{
+  "apiVersion": 3,
+  "name": "kuh/act-overview",
+  "version": "1.0.0",
+  "title": "Acts-Übersicht",
+  "category": "design",
+  "icon": "groups",
+  "description": "Übersicht aller Künstler und Gruppen mit Bild, Beschreibung und ihren Auftritten. Die Daten kommen aus Programm → Acts.",
+  "keywords": ["acts", "künstler", "bands", "gruppen", "programm", "übersicht"],
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"],
+    "anchor": true
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "default": "Künstler & Gruppen"
+    },
+    "showTitle": {
+      "type": "boolean",
+      "default": true
+    },
+    "titleFont": {
+      "type": "string",
+      "default": "headline"
+    },
+    "cardMinWidth": {
+      "type": "number",
+      "default": 260
+    },
+    "showSearch": {
+      "type": "boolean",
+      "default": true
+    },
+    "showShows": {
+      "type": "boolean",
+      "default": true
+    },
+    "hideWithoutShows": {
+      "type": "boolean",
+      "default": false
+    },
+    "mapPath": {
+      "type": "string",
+      "default": "/karte"
+    }
+  },
+  "textdomain": "korn-und-hansemarkt",
+  "editorScript": "file:./editor.js",
+  "render": "file:./render.php"
+}

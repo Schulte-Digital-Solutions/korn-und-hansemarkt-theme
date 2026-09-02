@@ -169,6 +169,8 @@
   let mapContainer: HTMLDivElement | null = null;
   let map: Map | null = null;
   const markers: Marker[] = [];
+  /** POI-ID -> Marker, damit Deep-Links wie /karte#buehne-rosche einen Ort anspringen können. */
+  const markersById = new Map<string, { marker: Marker; popup: Popup }>();
   let userLocationMarker: Marker | null = null;
   let userLocationPending = false;
   let customImageObjectUrl: string | null = null;
@@ -719,6 +721,7 @@
     // Bestehende Marker entfernen
     markers.forEach((m) => m.remove());
     markers.length = 0;
+    markersById.clear();
 
     const features = Array.isArray(poisData?.features) ? poisData.features : [];
 
@@ -778,7 +781,42 @@
       });
 
       markers.push(marker);
+
+      const poiId = feature?.properties?.id;
+      if (typeof poiId === 'string' && poiId) {
+        markersById.set(poiId, { marker, popup });
+      }
     }
+
+    focusPoiFromHash();
+  }
+
+  // ─── Deep-Link: /karte#<poi-id> ───────────────────────────────────────────
+  /**
+   * Springt zu dem POI, dessen ID im URL-Hash steht, und öffnet sein Popup.
+   * Wird nach jedem Marker-Rendern und bei jeder Hash-Änderung aufgerufen.
+   */
+  function focusPoiFromHash() {
+    if (!map || typeof window === 'undefined') return;
+
+    const id = decodeURIComponent(window.location.hash.replace(/^#/, '')).trim();
+    if (!id) return;
+
+    const entry = markersById.get(id);
+    if (!entry) return;
+
+    const lngLat = entry.marker.getLngLat();
+    map.flyTo({ center: [lngLat.lng, lngLat.lat], zoom: Math.max(map.getZoom(), 17), duration: 800 });
+
+    if (activePopup && activePopup !== entry.popup) {
+      activePopup.remove();
+    }
+    entry.popup.addTo(map);
+    activePopup = entry.popup;
+
+    // Die Karte in den sichtbaren Bereich holen – der Link kommt oft von weit
+    // oberhalb auf einer anderen Seite.
+    mapContainer?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   // ─── Map initialisieren ───────────────────────────────────────────────────
@@ -944,6 +982,11 @@
     }
     document.addEventListener('cmplz_set_cookie', onCmplzSetCookie);
 
+    function onHashChange() {
+      focusPoiFromHash();
+    }
+    window.addEventListener('hashchange', onHashChange);
+
     initialConsentChecked = true;
 
     if (canLoadExternalMapContent) {
@@ -952,7 +995,9 @@
 
     return () => {
       document.removeEventListener('cmplz_set_cookie', onCmplzSetCookie);
+      window.removeEventListener('hashchange', onHashChange);
       markers.forEach((m) => m.remove());
+      markersById.clear();
       userLocationMarker?.remove();
       userLocationMarker = null;
       if (customImageObjectUrl) {

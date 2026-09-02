@@ -1,0 +1,74 @@
+{
+  "_hinweis": "Beispiel für das Importformat des Bühnenplans. Nicht die echten Programmdaten – die liegen unter Programm → Programmpunkte in der Datenbank. Diese Datei dient nur als Vorlage.",
+  "_felder": {
+    "date": "Pflicht, YYYY-MM-DD",
+    "start": "Pflicht, HH:MM (24 Stunden)",
+    "end": "optional – leer lassen, wenn die Vorlage kein Ende nennt („ab 19:00“)",
+    "stage": "Slug der Bühne. Leer lassen nur für Punkte ohne Bühne – die erscheinen NICHT im Bühnenplan.",
+    "act": "Slug des Acts. Leer lassen, wenn es kein Act ist (z. B. Gottesdienst).",
+    "title": "nur nötig, wenn abweichend vom Act-Namen oder wenn „act“ leer ist",
+    "note": "kurzer Zusatz, z. B. „im Anschluss an den Umzug“"
+  },
+
+  "stages": [
+    {
+      "slug": "buehne-rosche",
+      "name": "Bühne Rosche",
+      "order": 20,
+      "subtitle": "",
+      "locationSlug": "rosche"
+    },
+    {
+      "slug": "walking-act",
+      "name": "Walking Act",
+      "order": 60,
+      "subtitle": "auf dem Gelände",
+      "locationSlug": ""
+    }
+  ],
+
+  "acts": [
+    { "slug": "reigenwillig", "name": "Reigenwillig", "genre": "" },
+    { "slug": "sandwitch", "name": "Sandwitch", "genre": "" },
+    { "slug": "klampflinge", "name": "Klampflinge", "genre": "" }
+  ],
+
+  "days": [
+    { "date": "2026-09-12", "label": "Samstag" }
+  ],
+
+  "slots": [
+    {
+      "date": "2026-09-12",
+      "stage": "buehne-rosche",
+      "start": "11:00",
+      "end": "11:30",
+      "act": "reigenwillig",
+      "note": ""
+    },
+    {
+      "date": "2026-09-12",
+      "stage": "buehne-rosche",
+      "start": "12:15",
+      "end": "12:45",
+      "act": "sandwitch",
+      "note": ""
+    },
+    {
+      "date": "2026-09-12",
+      "stage": "buehne-rosche",
+      "start": "22:00",
+      "end": "",
+      "act": "reigenwillig",
+      "note": "letzter Auftritt, offenes Ende"
+    },
+    {
+      "date": "2026-09-12",
+      "stage": "walking-act",
+      "start": "10:00",
+      "end": "18:00",
+      "act": "klampflinge",
+      "note": "mehrere Acts im selben Zeitfenster erhalten je einen eigenen Slot"
+    }
+  ]
+}
