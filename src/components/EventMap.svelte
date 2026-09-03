@@ -6,9 +6,16 @@
 
   interface PoiFeature {
     properties?: {
+      id?: string;
       category?: string;
       name?: string;
       description?: string;
+      /** 'label' zeigt nur den Namen als Text, 'pin' den Marker mit Icon. */
+      display?: 'pin' | 'label';
+      /** Überschreibt das Kategorie-Emoji. */
+      emoji?: string;
+      /** Überschreibt die Kategoriefarbe (simplestyle-spec). */
+      'marker-color'?: string;
     };
     geometry?: {
       type?: string;
@@ -53,6 +60,9 @@
     areaFillColor: string;
     areaFillOpacity: number;
     areaLineColor: string;
+    routeColor: string;
+    routeWidth: number;
+    showRoutes: boolean;
     locationColor: string;
     entranceColor: string;
     stageColor: string;
@@ -98,6 +108,9 @@
     areaFillColor = '#9ccf9c',
     areaFillOpacity = 28,
     areaLineColor = '#4a8a4a',
+    routeColor = '#8a5a2b',
+    routeWidth = 4,
+    showRoutes = true,
     locationColor = '#15331b',
     entranceColor = '#725c0c',
     stageColor = '#8b1a1a',
@@ -150,6 +163,7 @@
 
   let legendVisibility = $state({
     area: true,
+    route: true,
     userLocation: false,
     location: true,
     entrance: true,
@@ -166,12 +180,13 @@
     legendVisibility.parking = showParking;
     legendVisibility.toilet = showToilets;
     legendVisibility.info = showInfo;
+    legendVisibility.route = showRoutes;
   });
 
   function toggleLegendItem(key: keyof typeof legendVisibility): void {
     legendVisibility[key] = !legendVisibility[key];
     if (map?.loaded()) {
-      renderAreas();
+      renderShapes();
       renderMarkers();
       renderUserLocation();
     }
@@ -194,6 +209,9 @@
   const areaSourceId = 'kuh-area-source';
   const areaFillLayerId = 'kuh-area-fill';
   const areaLineLayerId = 'kuh-area-line';
+  const routeCasingLayerId = 'kuh-route-casing';
+  const routeLineLayerId = 'kuh-route-line';
+  const routeDashLayerId = 'kuh-route-dash';
   const customImageSourceId = 'kuh-custom-image-source';
   const customImageLayerId = 'kuh-custom-image-layer';
 
@@ -594,41 +612,56 @@
     }
   }
 
-  function renderAreas() {
+  /**
+   * Flächen (Polygon) und Strecken (LineString) liegen in einer gemeinsamen
+   * Quelle; die Layer trennen sie über den Geometrie-Typ. Einzelne Features
+   * dürfen ihr Aussehen per simplestyle-Eigenschaften überschreiben
+   * (`fill`, `fill-opacity`, `stroke`, `stroke-width`, `dashed`) – so gepflegt
+   * unter Design → Event-Karte.
+   */
+  function renderShapes() {
     if (!map || !map.loaded()) return;
 
     const features = Array.isArray(poisData?.features) ? poisData.features : [];
-    const areaFeatures = legendVisibility.area
-      ? features.filter((feature) => {
-          const type = feature?.geometry?.type;
-          return type === 'Polygon' || type === 'MultiPolygon';
-        })
-      : [];
+    const shapeFeatures = features.filter((feature) => {
+      const type = feature?.geometry?.type;
 
-    const areaGeoJson = {
+      if (type === 'Polygon' || type === 'MultiPolygon') {
+        return legendVisibility.area;
+      }
+
+      if (type === 'LineString' || type === 'MultiLineString') {
+        return legendVisibility.route;
+      }
+
+      return false;
+    });
+
+    const shapeGeoJson = {
       type: 'FeatureCollection',
-      features: areaFeatures,
+      features: shapeFeatures,
     } as const;
 
     const existingSource = map.getSource(areaSourceId) as maplibregl.GeoJSONSource | undefined;
 
     if (existingSource) {
-      existingSource.setData(areaGeoJson as any);
+      existingSource.setData(shapeGeoJson as any);
       return;
     }
 
     map.addSource(areaSourceId, {
       type: 'geojson',
-      data: areaGeoJson as any,
+      data: shapeGeoJson as any,
     });
 
     map.addLayer({
       id: areaFillLayerId,
       type: 'fill',
       source: areaSourceId,
+      filter: ['==', ['geometry-type'], 'Polygon'],
       paint: {
-        'fill-color': areaFillColor,
-        'fill-opacity': clamp(areaFillOpacity, 0, 100) / 100,
+        'fill-color': ['coalesce', ['get', 'fill'], areaFillColor],
+        'fill-opacity': ['coalesce', ['get', 'fill-opacity'], clamp(areaFillOpacity, 0, 100) / 100],
       },
     });
 
@@ -636,10 +669,50 @@
       id: areaLineLayerId,
       type: 'line',
       source: areaSourceId,
+      filter: ['==', ['geometry-type'], 'Polygon'],
       paint: {
-        'line-color': areaLineColor,
-        'line-width': 2,
+        'line-color': ['coalesce', ['get', 'stroke'], areaLineColor],
+        'line-width': ['coalesce', ['get', 'stroke-width'], 2],
         'line-opacity': 0.75,
+      },
+    });
+
+    // Weißer Saum: hebt Wege vom Kartenhintergrund ab.
+    map.addLayer({
+      id: routeCasingLayerId,
+      type: 'line',
+      source: areaSourceId,
+      filter: ['==', ['geometry-type'], 'LineString'],
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': '#ffffff',
+        'line-width': ['+', ['coalesce', ['get', 'stroke-width'], routeWidth], 3],
+        'line-opacity': 0.55,
+      },
+    });
+
+    map.addLayer({
+      id: routeLineLayerId,
+      type: 'line',
+      source: areaSourceId,
+      filter: ['all', ['==', ['geometry-type'], 'LineString'], ['!=', ['get', 'dashed'], true]],
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': ['coalesce', ['get', 'stroke'], routeColor],
+        'line-width': ['coalesce', ['get', 'stroke-width'], routeWidth],
+      },
+    });
+
+    map.addLayer({
+      id: routeDashLayerId,
+      type: 'line',
+      source: areaSourceId,
+      filter: ['all', ['==', ['geometry-type'], 'LineString'], ['==', ['get', 'dashed'], true]],
+      layout: { 'line-cap': 'butt', 'line-join': 'round' },
+      paint: {
+        'line-color': ['coalesce', ['get', 'stroke'], routeColor],
+        'line-width': ['coalesce', ['get', 'stroke-width'], routeWidth],
+        'line-dasharray': [2, 1.6],
       },
     });
   }
@@ -671,7 +744,7 @@
   }
 
   // ─── Marker-SVG erstellen ─────────────────────────────────────────────────
-  function createMarkerEl(category: string): HTMLElement {
+  function createMarkerEl(category: string, color: string, emoji: string): HTMLElement {
     const cat = categories[category];
     const el = document.createElement('div');
     el.className = 'kuh-map-marker';
@@ -693,7 +766,7 @@
       width: 34px;
       height: 34px;
       border-radius: 50%;
-      background: ${cat?.color ?? '#011e08'};
+      background: ${color};
       border: 2px solid rgba(0,0,0,0.25);
       box-shadow: 0 2px 8px rgba(0,0,0,0.4);
       display: flex;
@@ -708,14 +781,14 @@
       line-height: 1;
       user-select: none;
     `;
-    inner.textContent = cat?.emoji ?? '📍';
+    inner.textContent = emoji;
     circle.appendChild(inner);
 
     const pointer = document.createElement('div');
     pointer.style.cssText = `
       width: 10px;
       height: 7px;
-      background: ${cat?.color ?? '#011e08'};
+      background: ${color};
       clip-path: polygon(50% 100%, 0 0, 100% 0);
       flex-shrink: 0;
     `;
@@ -754,19 +827,25 @@
 
       const lng = coords[0];
       const lat = coords[1];
-      const isLocation = category === 'location';
-      const el = isLocation ? createTextLabelEl(name, cat.color) : createMarkerEl(category);
+
+      // Aussehen: Feature-Eigenschaften schlagen die Kategorie-Vorgabe.
+      const color = feature?.properties?.['marker-color'] ?? cat.color;
+      const emoji = feature?.properties?.emoji ?? cat.emoji;
+      const display = feature?.properties?.display;
+      const isLabel = display === 'label' || (display !== 'pin' && category === 'location');
+
+      const el = isLabel ? createTextLabelEl(name, color) : createMarkerEl(category, color, emoji);
 
       // Popup
       const popup = new maplibregl.Popup({
-        offset: isLocation ? [0, -12] : [0, -40],
+        offset: isLabel ? [0, -12] : [0, -40],
         closeButton: true,
         closeOnClick: false,
         maxWidth: '260px',
         className: 'kuh-map-popup',
       }).setHTML(`
         <div class="kuh-popup-inner">
-          <span class="kuh-popup-emoji">${cat.emoji}</span>
+          <span class="kuh-popup-emoji">${emoji}</span>
           <div class="kuh-popup-text">
             <strong class="kuh-popup-name">${name}</strong>
             <p class="kuh-popup-desc">${description}</p>
@@ -777,7 +856,7 @@
       // Pins: transform-freier Wrapper (36x44), Spitze liegt mittig unten -> anchor 'bottom'
       // Text-Labels: anchor 'center' damit Text auf der Koordinate zentriert ist
       const marker = new maplibregl.Marker(
-        isLocation
+        isLabel
           ? { element: el, anchor: 'center' }
           : { element: el, anchor: 'bottom' }
       )
@@ -959,7 +1038,7 @@
 
     const renderAllMapOverlays = () => {
       void renderCustomImageLayer();
-      renderAreas();
+      renderShapes();
       renderMarkers();
       renderUserLocation();
     };
@@ -1050,12 +1129,12 @@
   $effect(() => {
     // Reaktivität auf alle show-Props
     void showLocations; void showEntrances; void showStages;
-    void showParking; void showToilets; void showInfo;
+    void showParking; void showToilets; void showInfo; void showRoutes;
     void effectiveCustomMapImageUrl; void effectiveCustomMapImageOpacity;
     void poisData?.meta?.imageBounds;
     if (map?.loaded()) {
       void renderCustomImageLayer();
-      renderAreas();
+      renderShapes();
       renderMarkers();
       renderUserLocation();
     }
@@ -1066,6 +1145,13 @@
     Object.entries(categories).filter(([, cat]) => cat.show)
   );
 
+  const hasRoutes = $derived(
+    (Array.isArray(poisData?.features) ? poisData.features : []).some((feature) => {
+      const type = feature?.geometry?.type;
+      return type === 'LineString' || type === 'MultiLineString';
+    })
+  );
+
   const legendItems = $derived([
     {
       key: 'area',
@@ -1074,6 +1160,17 @@
       color: '#9ccf9c',
       isVisible: true,
     },
+    ...(hasRoutes && showRoutes
+      ? [
+          {
+            key: 'route',
+            label: 'Wege & Strecken',
+            emoji: '🚶',
+            color: routeColor,
+            isVisible: true,
+          },
+        ]
+      : []),
     {
       key: 'userLocation',
       label: 'Meine Position',

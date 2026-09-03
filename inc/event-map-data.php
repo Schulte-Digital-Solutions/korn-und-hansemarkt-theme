@@ -12,6 +12,80 @@ if ( ! defined( 'ABSPATH' ) ) {
 const KUH_EVENT_MAP_OPTION_KEY = 'kuh_event_map_geojson';
 
 /**
+ * POI-Kategorien der Event-Karte.
+ *
+ * Label, Farbe und Emoji spiegeln die Standardwerte des Blocks
+ * (siehe blocks/event-map/block.json und src/components/EventMap.svelte),
+ * damit der Backend-Editor zeigt, was im Frontend erscheint.
+ *
+ * @return array<string,array{label:string,newLabel:string,color:string,emoji:string,icon:string,display:string}>
+ */
+function kuh_get_event_map_categories() {
+    return array(
+        'location' => array(
+            'label'    => 'Benannte Orte',
+            'newLabel' => 'Neuer Ort',
+            'color'    => '#15331b',
+            'emoji'    => '🏛️',
+            'icon'     => 'building',
+            'display'  => 'label',
+        ),
+        'entrance' => array(
+            'label'    => 'Eingänge',
+            'newLabel' => 'Neuer Eingang',
+            'color'    => '#725c0c',
+            'emoji'    => '🚪',
+            'icon'     => 'entrance',
+            'display'  => 'pin',
+        ),
+        'stage'    => array(
+            'label'    => 'Bühnen',
+            'newLabel' => 'Neue Bühne',
+            'color'    => '#8b1a1a',
+            'emoji'    => '🎭',
+            'icon'     => 'stage',
+            'display'  => 'pin',
+        ),
+        'parking'  => array(
+            'label'    => 'Parkplätze',
+            'newLabel' => 'Neuer Parkplatz',
+            'color'    => '#1a4a6b',
+            'emoji'    => '🅿️',
+            'icon'     => 'parking',
+            'display'  => 'pin',
+        ),
+        'toilet'   => array(
+            'label'    => 'Toiletten',
+            'newLabel' => 'Neue Toilette',
+            'color'    => '#4a4a6b',
+            'emoji'    => '🚻',
+            'icon'     => 'toilet',
+            'display'  => 'pin',
+        ),
+        'info'     => array(
+            'label'    => 'Info & Hilfe',
+            'newLabel' => 'Neuer Info-Punkt',
+            'color'    => '#2d6b4a',
+            'emoji'    => 'ℹ️',
+            'icon'     => 'info',
+            'display'  => 'pin',
+        ),
+    );
+}
+
+/**
+ * Asset-Version anhand der Dateizeit ermitteln.
+ *
+ * @param string $relative_path Pfad relativ zum Theme-Verzeichnis.
+ * @return string
+ */
+function kuh_event_map_asset_version( $relative_path ) {
+    $file = KUH_THEME_DIR . $relative_path;
+
+    return file_exists( $file ) ? (string) filemtime( $file ) : KUH_THEME_VERSION;
+}
+
+/**
  * Liest das Default-GeoJSON aus der Theme-Datei.
  */
 function kuh_get_event_map_default_geojson_raw() {
@@ -205,6 +279,51 @@ function kuh_enqueue_event_map_admin_assets( $hook_suffix ) {
         '5.23.0',
         true
     );
+
+    // Für die Bildauswahl des Hintergrundbildes.
+    wp_enqueue_media();
+
+    wp_enqueue_style(
+        'kuh-event-map-admin',
+        KUH_THEME_URI . '/assets/event-map-admin/editor.css',
+        array( 'kuh-maplibre-admin' ),
+        kuh_event_map_asset_version( '/assets/event-map-admin/editor.css' )
+    );
+
+    wp_enqueue_script(
+        'kuh-event-map-admin',
+        KUH_THEME_URI . '/assets/event-map-admin/editor.js',
+        array( 'kuh-maplibre-admin' ),
+        kuh_event_map_asset_version( '/assets/event-map-admin/editor.js' ),
+        true
+    );
+
+    // Straßenlabels im Editor mitladen: erleichtert das Einnorden des Plans.
+    wp_localize_script(
+        'kuh-event-map-admin',
+        'kuhEventMapAdmin',
+        array(
+            'tiles'              => kuh_get_event_map_tiles_config( true, true ),
+            'categories'         => kuh_get_event_map_categories(),
+            'areaDefaults'       => array(
+                'fillColor'   => '#9ccf9c',
+                'fillOpacity' => 28,
+                'lineColor'   => '#4a8a4a',
+            ),
+            'routeDefaults'      => array(
+                'color' => '#8a5a2b',
+                'width' => 4,
+            ),
+            'mapBackgroundColor' => '#f3efe6',
+            'defaultCenter'      => array( 7.4836, 52.6742 ),
+            'defaultZoom'        => 15,
+            'emojiPresets'       => array(
+                '📍', '🏛️', '🚪', '🎭', '🅿️', '🚻', 'ℹ️', '🍺', '🍔', '🎡',
+                '🎪', '🛍️', '🚑', '🚒', '♿', '🚰', '🎠', '🐎', '🎤', '🎻',
+                '🔥', '📸', '🧒', '🚌', '🚲', '⛺', '🌿',
+            ),
+        )
+    );
 }
 add_action( 'admin_enqueue_scripts', 'kuh_enqueue_event_map_admin_assets' );
 
@@ -234,18 +353,26 @@ function kuh_handle_event_map_reset_action() {
 add_action( 'admin_post_kuh_event_map_reset', 'kuh_handle_event_map_reset_action' );
 
 /**
- * Admin-View: JSON bearbeiten.
+ * Admin-View: Interaktiver Karten-Editor.
+ *
+ * Die Karte selbst ist das Bedienelement: Elemente lassen sich aus der Palette
+ * per Drag & Drop absetzen, direkt verschieben und rechts feinjustieren.
+ * Gespeichert wird weiterhin das GeoJSON im Feld KUH_EVENT_MAP_OPTION_KEY.
  */
 function kuh_render_event_map_admin_page() {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
     }
 
-    $raw = kuh_get_event_map_geojson_raw();
+    // Bewusst die effektiven Daten laden (inkl. der aus der Theme-Datei
+    // ergänzten Bild-Meta): Der Editor soll zeigen, was das Frontend zeigt.
+    // Beim Speichern werden diese Werte damit auch in der Datenbank festgeschrieben.
+    $raw = wp_json_encode(
+        kuh_get_event_map_geojson(),
+        JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+    );
 
-    if ( '' === trim( $raw ) ) {
-        $raw = kuh_get_event_map_default_geojson_raw();
-    }
+    $categories = kuh_get_event_map_categories();
 
     settings_errors( KUH_EVENT_MAP_OPTION_KEY );
 
@@ -256,518 +383,222 @@ function kuh_render_event_map_admin_page() {
     <div class="wrap">
         <h1>Event-Karte</h1>
         <p>
-            Bearbeite hier das GeoJSON für den Karten-Block.
-            Bei leerem Wert oder Reset werden die Daten aus
-            <code>src/assets/map/event-map-pois.json</code> verwendet.
+            Der Geländeplan wird direkt auf der Karte bearbeitet: Elemente aus der Palette
+            per Drag &amp; Drop in die Karte ziehen, mit der Maus verschieben und rechts
+            feinjustieren. Gespeichert wird ein GeoJSON – nach einem Reset gelten wieder
+            die Daten aus <code>src/assets/map/event-map-pois.json</code>.
         </p>
 
-        <div class="notice notice-info" style="margin:12px 0 16px 0;">
-            <p>
-                Die POI-Maske unten bearbeitet sichtbar das JSON-Feld.
-                Du kannst weiterhin direkt im JSON arbeiten und eigene Felder oder Feature-Typen ergänzen.
-            </p>
-        </div>
+        <div id="kuh-map-editor" class="kuh-map-editor">
+            <form method="post" action="options.php" id="kuh-map-form">
+                <?php settings_fields( 'kuh_event_map_settings' ); ?>
 
-        <?php kuh_render_event_map_tiles_settings_form(); ?>
+                <div class="kuh-map-editor__bar">
+                    <div class="kuh-map-editor__tools" id="kuh-map-tools">
+                        <?php
+                        $kuh_tools = array(
+                            'select' => array( 'label' => '↖ Auswählen', 'key' => 'V' ),
+                            'poi'    => array( 'label' => '📍 Marker setzen', 'key' => 'P' ),
+                            'text'   => array( 'label' => '🅣 Text setzen', 'key' => 'T' ),
+                            'area'   => array( 'label' => '▧ Fläche zeichnen', 'key' => 'F' ),
+                            'route'  => array( 'label' => '╱ Strecke zeichnen', 'key' => 'S' ),
+                        );
 
-        <h2>Vorschau</h2>
-        <p class="description" style="margin-bottom:8px;">
-            Vorschau basiert direkt auf dem aktuellen JSON-Inhalt (auch ohne Speichern).
-        </p>
-        <div style="display:flex;gap:8px;align-items:center;margin:8px 0 12px 0;">
-            <button type="button" class="button" id="kuh_preview_refresh">Vorschau aktualisieren</button>
-            <span id="kuh_preview_status" style="color:#50575e;"></span>
-        </div>
-        <div
-            id="kuh_event_map_preview"
-            style="height:380px;border:1px solid #dcdcde;border-radius:6px;overflow:hidden;margin-bottom:16px;background:#f6f7f7;"
-        ></div>
+                        foreach ( $kuh_tools as $kuh_tool => $kuh_tool_data ) :
+                            ?>
+                            <button
+                                type="button"
+                                class="kuh-map-tool"
+                                data-kuh-tool="<?php echo esc_attr( $kuh_tool ); ?>"
+                                aria-pressed="<?php echo 'select' === $kuh_tool ? 'true' : 'false'; ?>"
+                            >
+                                <span><?php echo esc_html( $kuh_tool_data['label'] ); ?></span>
+                                <span class="kuh-map-tool__key"><?php echo esc_html( $kuh_tool_data['key'] ); ?></span>
+                            </button>
+                        <?php endforeach; ?>
+                    </div>
 
-        <form method="post" action="options.php">
-            <?php settings_fields( 'kuh_event_map_settings' ); ?>
+                    <button type="button" class="button" id="kuh-map-finish" hidden>Zeichnen abschließen</button>
+                    <button type="button" class="button" id="kuh-map-cancel" hidden>Zeichnen abbrechen</button>
 
-            <h2>POI-Maske (optional)</h2>
-            <p class="description" style="margin-bottom:8px;">
-                Für schnelle Pflege von Punkt-Markern. Eigene/komplexe Features bitte direkt im JSON bearbeiten.
-            </p>
+                    <span class="kuh-map-editor__bar-spacer"></span>
 
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px 0;">
-                <button type="button" class="button" id="kuh_poi_import_from_json">POIs aus JSON laden</button>
-                <button type="button" class="button" id="kuh_poi_add_row">POI hinzufügen</button>
-                <button type="button" class="button button-secondary" id="kuh_poi_apply_to_json">POI-Maske ins JSON übernehmen</button>
-                <span id="kuh_poi_status" style="align-self:center;color:#50575e;"></span>
-            </div>
+                    <span class="kuh-map-editor__dirty">Nicht gespeichert</span>
+                    <button type="button" class="button" id="kuh-map-undo" title="Strg+Z">&#8630; Rückgängig</button>
+                    <button type="button" class="button" id="kuh-map-redo" title="Strg+Umschalt+Z">&#8631; Wiederholen</button>
+                    <button type="submit" class="button button-primary" id="kuh-map-save" title="Strg+S">Karte speichern</button>
+                </div>
 
-            <table class="widefat striped" id="kuh_poi_table" style="margin-bottom:16px;">
-                <thead>
-                    <tr>
-                        <th style="width:14%;">ID</th>
-                        <th style="width:16%;">Name</th>
-                        <th style="width:12%;">Kategorie</th>
-                        <th style="width:10%;">Lat</th>
-                        <th style="width:10%;">Lng</th>
-                        <th>Beschreibung</th>
-                        <th style="width:90px;">Aktion</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+                <p class="kuh-map-editor__status" id="kuh-map-status"></p>
 
-            <table class="form-table" role="presentation">
-                <tbody>
-                    <tr>
-                        <th scope="row">
-                            <label for="kuh_event_map_geojson">GeoJSON</label>
-                        </th>
-                        <td>
+                <div class="kuh-map-editor__layout">
+                    <div>
+                        <div class="kuh-map-frame">
+                            <div id="kuh-map-canvas" class="kuh-map-canvas">
+                                <div id="kuh-map-hint" class="kuh-map-hint"></div>
+                            </div>
+                            <div id="kuh-map-legend" class="kuh-map-legend" aria-label="Kartenlegende"></div>
+                        </div>
+                    </div>
+
+                    <div class="kuh-map-editor__sidebar">
+                        <div class="kuh-map-panel">
+                            <h3>Elemente hinzufügen</h3>
+                            <p class="kuh-map-panel__hint">
+                                In die Karte ziehen oder anklicken und dann in die Karte klicken.
+                            </p>
+                            <div class="kuh-map-palette" id="kuh-map-palette">
+                                <?php foreach ( $categories as $kuh_key => $kuh_category ) : ?>
+                                    <span
+                                        class="kuh-map-palette__chip"
+                                        draggable="true"
+                                        role="button"
+                                        tabindex="0"
+                                        data-kuh-create="poi"
+                                        data-kuh-category="<?php echo esc_attr( $kuh_key ); ?>"
+                                        title="<?php echo esc_attr( $kuh_category['label'] ); ?> in die Karte ziehen"
+                                    >
+                                        <span
+                                            class="kuh-map-palette__dot"
+                                            style="background: <?php echo esc_attr( $kuh_category['color'] ); ?>;"
+                                        ><?php echo esc_html( $kuh_category['emoji'] ); ?></span>
+                                        <?php echo esc_html( $kuh_category['label'] ); ?>
+                                    </span>
+                                <?php endforeach; ?>
+
+                                <span
+                                    class="kuh-map-palette__chip"
+                                    draggable="true"
+                                    role="button"
+                                    tabindex="0"
+                                    data-kuh-create="text"
+                                    data-kuh-category="location"
+                                    title="Textbeschriftung in die Karte ziehen"
+                                >
+                                    <span class="kuh-map-palette__dot kuh-map-palette__dot--text" style="color:#15331b;">T</span>
+                                    Textbeschriftung
+                                </span>
+
+                                <span
+                                    class="kuh-map-palette__chip"
+                                    draggable="true"
+                                    role="button"
+                                    tabindex="0"
+                                    data-kuh-create="area"
+                                    title="Fläche in die Karte ziehen (danach Eckpunkte verschieben)"
+                                >
+                                    <span class="kuh-map-palette__dot" style="background:#9ccf9c;">▧</span>
+                                    Bereich / Fläche
+                                </span>
+
+                                <span
+                                    class="kuh-map-palette__chip"
+                                    draggable="true"
+                                    role="button"
+                                    tabindex="0"
+                                    data-kuh-create="route"
+                                    title="Strecke in die Karte ziehen (danach Punkte verschieben)"
+                                >
+                                    <span class="kuh-map-palette__dot" style="background:#8a5a2b;">╱</span>
+                                    Strecke / Weg
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="kuh-map-panel">
+                            <h3>Eigenschaften</h3>
+                            <div class="kuh-map-props" id="kuh-map-props"></div>
+                        </div>
+
+                        <div class="kuh-map-panel">
+                            <h3>Elemente</h3>
+                            <div class="kuh-map-list" id="kuh-map-list"></div>
+                        </div>
+
+                        <div class="kuh-map-panel">
+                            <h3>Startansicht</h3>
+                            <p class="kuh-map-panel__hint" id="kuh-map-view-info"></p>
+                            <button type="button" class="button" id="kuh-map-view-save">
+                                Aktuelle Ansicht als Startansicht übernehmen
+                            </button>
+                        </div>
+
+                        <div class="kuh-map-panel">
+                            <h3>Hintergrundbild</h3>
+                            <p class="kuh-map-panel__hint">
+                                Liegt als Bild-Layer unter den Markern – z. B. der gezeichnete Geländeplan.
+                            </p>
+
+                            <div class="kuh-map-field">
+                                <label for="kuh-map-image-url">Bild-URL</label>
+                                <input type="text" id="kuh-map-image-url" class="code" placeholder="https://…" spellcheck="false" />
+                            </div>
+
+                            <p>
+                                <button type="button" class="button" id="kuh-map-image-pick">Aus Mediathek wählen</button>
+                                <button type="button" class="button" id="kuh-map-image-clear">Entfernen</button>
+                            </p>
+
+                            <div class="kuh-map-field">
+                                <label for="kuh-map-image-opacity">
+                                    Deckkraft <output id="kuh-map-image-opacity-out">30%</output>
+                                </label>
+                                <input type="range" id="kuh-map-image-opacity" min="0" max="100" step="1" value="30" />
+                            </div>
+
+                            <p>
+                                <button type="button" class="button" id="kuh-map-image-align" aria-pressed="false">Bild ausrichten</button>
+                                <button type="button" class="button" id="kuh-map-image-fit-area">An Fläche</button>
+                                <button type="button" class="button" id="kuh-map-image-fit-view">An Ansicht</button>
+                            </p>
+                            <p class="kuh-map-panel__hint">
+                                „Bild ausrichten" zeigt vier gelbe Ecken-Griffe, mit denen das Bild
+                                passgenau über die Karte gelegt wird.
+                            </p>
+                        </div>
+
+                        <details class="kuh-map-panel">
+                            <summary><strong>Erweitert: GeoJSON direkt bearbeiten</strong></summary>
+                            <p class="kuh-map-panel__hint">
+                                Erlaubt ist GeoJSON vom Typ <strong>FeatureCollection</strong> mit
+                                <strong>features</strong>-Array. Eigene Zusatzfelder bleiben beim
+                                Bearbeiten in der Karte erhalten.
+                            </p>
                             <textarea
                                 id="kuh_event_map_geojson"
                                 name="<?php echo esc_attr( KUH_EVENT_MAP_OPTION_KEY ); ?>"
-                                rows="28"
+                                rows="18"
                                 class="large-text code"
+                                spellcheck="false"
                                 style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;"
                             ><?php echo esc_textarea( $raw ); ?></textarea>
-                            <p class="description">
-                                Erlaubt ist GeoJSON vom Typ <strong>FeatureCollection</strong> mit <strong>features</strong>-Array.
+                            <p>
+                                <button type="button" class="button" id="kuh-map-json-apply">JSON in die Karte übernehmen</button>
                             </p>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-            <?php submit_button( 'GeoJSON speichern' ); ?>
-        </form>
+                        </details>
+                    </div>
+                </div>
+            </form>
 
-        <script>
-        (function () {
-            // Tile-Konfiguration aus den Theme-Optionen, damit die Vorschau
-            // dieselben Kacheln (inkl. API-Key) zeigt wie das Frontend.
-            const TILE_CONFIG = <?php echo wp_json_encode( kuh_get_event_map_tiles_config( true, false ) ); ?>;
-
-            const jsonField = document.getElementById('kuh_event_map_geojson');
-            const tbody = document.querySelector('#kuh_poi_table tbody');
-            const status = document.getElementById('kuh_poi_status');
-            const importBtn = document.getElementById('kuh_poi_import_from_json');
-            const addBtn = document.getElementById('kuh_poi_add_row');
-            const applyBtn = document.getElementById('kuh_poi_apply_to_json');
-            const previewBtn = document.getElementById('kuh_preview_refresh');
-            const previewStatus = document.getElementById('kuh_preview_status');
-            const previewContainer = document.getElementById('kuh_event_map_preview');
-
-            const CATEGORY_OPTIONS = [
-                { value: 'location', label: 'Benannte Orte' },
-                { value: 'entrance', label: 'Eingänge' },
-                { value: 'stage', label: 'Bühnen' },
-                { value: 'parking', label: 'Parkplätze' },
-                { value: 'toilet', label: 'Toiletten' },
-                { value: 'info', label: 'Info & Hilfe' },
-            ];
-
-            const ICON_BY_CATEGORY = {
-                location: 'building',
-                entrance: 'entrance',
-                stage: 'stage',
-                parking: 'parking',
-                toilet: 'toilet',
-                info: 'info',
-            };
-
-            let previewMap = null;
-            let previewMarkers = [];
-            const previewAreaSourceId = 'kuh-preview-area-source';
-            const previewAreaFillLayerId = 'kuh-preview-area-fill';
-            const previewAreaLineLayerId = 'kuh-preview-area-line';
-
-            function setStatus(text, isError) {
-                status.textContent = text || '';
-                status.style.color = isError ? '#b32d2e' : '#1d2327';
-            }
-
-            function setPreviewStatus(text, isError) {
-                previewStatus.textContent = text || '';
-                previewStatus.style.color = isError ? '#b32d2e' : '#1d2327';
-            }
-
-            function safeParseJson() {
-                try {
-                    const parsed = JSON.parse(jsonField.value || '{}');
-                    if (!parsed || typeof parsed !== 'object') {
-                        throw new Error('JSON muss ein Objekt sein.');
-                    }
-                    if (!Array.isArray(parsed.features)) {
-                        parsed.features = [];
-                    }
-                    return parsed;
-                } catch (err) {
-                    throw new Error(err && err.message ? err.message : 'Ungültiges JSON');
-                }
-            }
-
-            function createInputCell(value, placeholder) {
-                const td = document.createElement('td');
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.className = 'regular-text';
-                input.style.width = '100%';
-                input.value = value || '';
-                input.placeholder = placeholder || '';
-                td.appendChild(input);
-                return { td, input };
-            }
-
-            function createTextareaCell(value, placeholder) {
-                const td = document.createElement('td');
-                const input = document.createElement('textarea');
-                input.rows = 2;
-                input.className = 'large-text';
-                input.style.width = '100%';
-                input.value = value || '';
-                input.placeholder = placeholder || '';
-                td.appendChild(input);
-                return { td, input };
-            }
-
-            function createCategoryCell(value) {
-                const td = document.createElement('td');
-                const select = document.createElement('select');
-                select.className = 'regular-text';
-                select.style.width = '100%';
-
-                CATEGORY_OPTIONS.forEach(function (item) {
-                    const option = document.createElement('option');
-                    option.value = item.value;
-                    option.textContent = item.label;
-                    select.appendChild(option);
-                });
-
-                const current = (value || '').trim();
-                if (current && !CATEGORY_OPTIONS.some(function (item) { return item.value === current; })) {
-                    const customOption = document.createElement('option');
-                    customOption.value = current;
-                    customOption.textContent = current + ' (custom)';
-                    select.appendChild(customOption);
-                }
-
-                select.value = current || 'location';
-                td.appendChild(select);
-
-                return { td, input: select };
-            }
-
-            function iconForCategory(category) {
-                return ICON_BY_CATEGORY[category] || 'pin';
-            }
-
-            function addRow(data) {
-                const tr = document.createElement('tr');
-
-                const idCell = createInputCell(data.id || '', 'z.B. eingang-nord');
-                const nameCell = createInputCell(data.name || '', 'z.B. Eingang Nord');
-                const categoryCell = createCategoryCell(data.category || 'location');
-                const latCell = createInputCell(typeof data.lat === 'number' ? String(data.lat) : '', '52.6742');
-                const lngCell = createInputCell(typeof data.lng === 'number' ? String(data.lng) : '', '7.4836');
-                const descCell = createTextareaCell(data.description || '', 'Kurzbeschreibung');
-
-                tr.appendChild(idCell.td);
-                tr.appendChild(nameCell.td);
-                tr.appendChild(categoryCell.td);
-                tr.appendChild(latCell.td);
-                tr.appendChild(lngCell.td);
-                tr.appendChild(descCell.td);
-
-                const actionTd = document.createElement('td');
-                const removeBtn = document.createElement('button');
-                removeBtn.type = 'button';
-                removeBtn.className = 'button button-link-delete';
-                removeBtn.textContent = 'Entfernen';
-                removeBtn.addEventListener('click', function () {
-                    tr.remove();
-                    setStatus('POI entfernt. Klick auf "POI-Maske ins JSON übernehmen" zum Speichern im JSON.', false);
-                });
-                actionTd.appendChild(removeBtn);
-                tr.appendChild(actionTd);
-
-                tr._kuhPoi = {
-                    id: idCell.input,
-                    name: nameCell.input,
-                    category: categoryCell.input,
-                    lat: latCell.input,
-                    lng: lngCell.input,
-                    description: descCell.input,
-                };
-
-                tbody.appendChild(tr);
-            }
-
-            function clearRows() {
-                tbody.innerHTML = '';
-            }
-
-            function rowsToPointFeatures() {
-                const rows = Array.from(tbody.querySelectorAll('tr'));
-                const features = [];
-
-                for (const row of rows) {
-                    const ref = row._kuhPoi;
-                    if (!ref) continue;
-
-                    const lat = parseFloat(ref.lat.value);
-                    const lng = parseFloat(ref.lng.value);
-
-                    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-                        continue;
-                    }
-
-                    features.push({
-                        type: 'Feature',
-                        properties: {
-                            id: (ref.id.value || '').trim(),
-                            category: (ref.category.value || '').trim(),
-                            name: (ref.name.value || '').trim(),
-                            description: (ref.description.value || '').trim(),
-                            icon: iconForCategory((ref.category.value || '').trim()),
-                        },
-                        geometry: {
-                            type: 'Point',
-                            coordinates: [lng, lat],
-                        },
-                    });
-                }
-
-                return features;
-            }
-
-            function importFromJson() {
-                try {
-                    const geo = safeParseJson();
-                    clearRows();
-
-                    let pointCount = 0;
-                    geo.features.forEach(function (feature) {
-                        if (!feature || !feature.geometry || feature.geometry.type !== 'Point') return;
-                        const coords = feature.geometry.coordinates || [];
-                        if (!Array.isArray(coords) || coords.length < 2) return;
-
-                        const lng = Number(coords[0]);
-                        const lat = Number(coords[1]);
-                        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-
-                        addRow({
-                            id: feature.properties && feature.properties.id ? feature.properties.id : '',
-                            name: feature.properties && feature.properties.name ? feature.properties.name : '',
-                            category: feature.properties && feature.properties.category ? feature.properties.category : '',
-                            description: feature.properties && feature.properties.description ? feature.properties.description : '',
-                            lat: lat,
-                            lng: lng,
-                        });
-                        pointCount += 1;
-                    });
-
-                    setStatus(pointCount + ' Punkt-Feature(s) aus JSON geladen.', false);
-                } catch (err) {
-                    setStatus('Import fehlgeschlagen: ' + err.message, true);
-                }
-            }
-
-            function applyRowsToJson() {
-                try {
-                    const geo = safeParseJson();
-                    const newPoints = rowsToPointFeatures();
-
-                    // Nicht-Punkt-Features erhalten, damit Custom-Features nicht verloren gehen.
-                    const nonPointFeatures = geo.features.filter(function (feature) {
-                        return !feature || !feature.geometry || feature.geometry.type !== 'Point';
-                    });
-
-                    geo.features = newPoints.concat(nonPointFeatures);
-
-                    jsonField.value = JSON.stringify(geo, null, 2);
-                    setStatus(
-                        newPoints.length + ' Punkt-Feature(s) ins JSON geschrieben. Nicht-Punkt-Features wurden beibehalten.',
-                        false
-                    );
-
-                    renderPreview();
-                } catch (err) {
-                    setStatus('Übernahme fehlgeschlagen: ' + err.message, true);
-                }
-            }
-
-            function colorForCategory(category) {
-                switch (category) {
-                    case 'location': return '#15331b';
-                    case 'entrance': return '#725c0c';
-                    case 'stage': return '#8b1a1a';
-                    case 'parking': return '#1a4a6b';
-                    case 'toilet': return '#4a4a6b';
-                    case 'info': return '#2d6b4a';
-                    default: return '#444';
-                }
-            }
-
-            function clearPreviewMarkers() {
-                previewMarkers.forEach(function (marker) { marker.remove(); });
-                previewMarkers = [];
-            }
-
-            function renderPreviewAreas(geo) {
-                const areaFeatures = (geo.features || []).filter(function (feature) {
-                    if (!feature || !feature.geometry) return false;
-                    return feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon';
-                });
-
-                const areaGeo = {
-                    type: 'FeatureCollection',
-                    features: areaFeatures,
-                };
-
-                const source = previewMap.getSource(previewAreaSourceId);
-                if (source && source.setData) {
-                    source.setData(areaGeo);
-                    return;
-                }
-
-                previewMap.addSource(previewAreaSourceId, {
-                    type: 'geojson',
-                    data: areaGeo,
-                });
-
-                previewMap.addLayer({
-                    id: previewAreaFillLayerId,
-                    type: 'fill',
-                    source: previewAreaSourceId,
-                    paint: {
-                        'fill-color': '#9ccf9c',
-                        'fill-opacity': 0.28,
-                    },
-                });
-
-                previewMap.addLayer({
-                    id: previewAreaLineLayerId,
-                    type: 'line',
-                    source: previewAreaSourceId,
-                    paint: {
-                        'line-color': '#4a8a4a',
-                        'line-width': 2,
-                        'line-opacity': 0.75,
-                    },
-                });
-            }
-
-            function ensurePreviewMap(center, zoom) {
-                if (!window.maplibregl) {
-                    throw new Error('MapLibre konnte im Backend nicht geladen werden.');
-                }
-
-                if (!previewMap) {
-                    previewMap = new window.maplibregl.Map({
-                        container: previewContainer,
-                        style: {
-                            version: 8,
-                            sources: {
-                                base: {
-                                    type: 'raster',
-                                    tiles: TILE_CONFIG.baseTileUrls && TILE_CONFIG.baseTileUrls.length
-                                        ? TILE_CONFIG.baseTileUrls
-                                        : ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-                                    tileSize: 256,
-                                    attribution: TILE_CONFIG.tileAttribution || '',
-                                    maxzoom: 19,
-                                },
-                            },
-                            layers: [
-                                {
-                                    id: 'base',
-                                    type: 'raster',
-                                    source: 'base',
-                                },
-                            ],
-                        },
-                        center: center,
-                        zoom: zoom,
-                    });
-
-                    previewMap.addControl(new window.maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-                } else {
-                    previewMap.jumpTo({ center: center, zoom: zoom });
-                }
-            }
-
-            function renderPreview() {
-                try {
-                    const geo = safeParseJson();
-                    const center = Array.isArray(geo.meta && geo.meta.center) && geo.meta.center.length >= 2
-                        ? [Number(geo.meta.center[0]), Number(geo.meta.center[1])]
-                        : [7.4836, 52.6742];
-                    const zoom = typeof (geo.meta && geo.meta.zoom) === 'number' ? geo.meta.zoom : 15;
-
-                    ensurePreviewMap(center, zoom);
-                    clearPreviewMarkers();
-                    renderPreviewAreas(geo);
-
-                    let points = 0;
-                    let areas = 0;
-                    (geo.features || []).forEach(function (feature) {
-                        if (feature && feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
-                            areas += 1;
-                        }
-
-                        if (!feature || !feature.geometry || feature.geometry.type !== 'Point') return;
-                        const coords = feature.geometry.coordinates || [];
-                        if (!Array.isArray(coords) || coords.length < 2) return;
-
-                        const lng = Number(coords[0]);
-                        const lat = Number(coords[1]);
-                        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-
-                        const category = feature.properties && feature.properties.category ? String(feature.properties.category) : '';
-                        const name = feature.properties && feature.properties.name ? String(feature.properties.name) : 'Ort';
-
-                        const markerEl = document.createElement('div');
-                        markerEl.style.width = '14px';
-                        markerEl.style.height = '14px';
-                        markerEl.style.borderRadius = '50%';
-                        markerEl.style.background = colorForCategory(category);
-                        markerEl.style.border = '2px solid #fff';
-                        markerEl.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.35)';
-                        markerEl.title = name;
-
-                        const popup = new window.maplibregl.Popup({ offset: 10 }).setHTML(
-                            '<strong>' + name.replace(/</g, '&lt;') + '</strong>'
-                        );
-
-                        const marker = new window.maplibregl.Marker({ element: markerEl })
-                            .setLngLat([lng, lat])
-                            .setPopup(popup)
-                            .addTo(previewMap);
-
-                        previewMarkers.push(marker);
-                        points += 1;
-                    });
-
-                    setPreviewStatus(points + ' Punkt-Feature(s), ' + areas + ' Flaechen-Feature(s) in Vorschau.', false);
-                } catch (err) {
-                    setPreviewStatus('Vorschau fehlgeschlagen: ' + (err && err.message ? err.message : String(err)), true);
-                }
-            }
-
-            importBtn.addEventListener('click', importFromJson);
-            addBtn.addEventListener('click', function () {
-                addRow({ id: '', name: '', category: '', lat: '', lng: '', description: '' });
-                setStatus('Leere POI-Zeile hinzugefügt.', false);
-            });
-            applyBtn.addEventListener('click', applyRowsToJson);
-            previewBtn.addEventListener('click', renderPreview);
-
-            importFromJson();
-            renderPreview();
-        })();
-        </script>
+            <p class="description" style="margin-top:8px;">
+                Kurzbefehle: <code>V</code> Auswählen · <code>P</code> Marker · <code>T</code> Text ·
+                <code>F</code> Fläche · <code>S</code> Strecke · <code>Entf</code> löschen ·
+                <code>Alt+Klick</code> auf einen Punkt-Griff entfernt ihn ·
+                <code>Strg+Z</code> rückgängig · <code>Strg+S</code> speichern.
+            </p>
+        </div>
 
         <hr />
 
+        <?php kuh_render_event_map_tiles_settings_form(); ?>
+
+        <h2>Zurücksetzen</h2>
         <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
             <?php wp_nonce_field( 'kuh_event_map_reset_action' ); ?>
             <input type="hidden" name="action" value="kuh_event_map_reset" />
+            <p class="description" style="margin-bottom:8px;">
+                Verwirft alle in der Datenbank gespeicherten Kartendaten und nutzt wieder die Theme-Datei.
+            </p>
             <?php submit_button( 'Auf Datei-Standard zurücksetzen', 'secondary', 'submit', false ); ?>
         </form>
     </div>

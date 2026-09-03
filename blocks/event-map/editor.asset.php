@@ -10,5 +10,5 @@ return array(
         'wp-components',
         'wp-element',
     ),
-    'version' => '1.0.0',
+    'version' => '1.1.0',
 );

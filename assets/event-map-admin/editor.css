@@ -1,0 +1,621 @@
+/**
+ * Styles für den interaktiven Geländeplan-Editor (Design → Event-Karte).
+ *
+ * Die Marker-, Label- und Legenden-Optik ist absichtlich nah an
+ * src/components/EventMap.svelte gehalten, damit das Backend zeigt,
+ * was im Frontend erscheint.
+ */
+
+/* ── Grundlayout ──────────────────────────────────────────────────── */
+
+.kuh-map-editor {
+    --kuh-editor-border: #dcdcde;
+    --kuh-editor-surface: #fff;
+    --kuh-editor-muted: #50575e;
+    --kuh-editor-accent: #2271b1;
+    margin: 16px 0 24px;
+}
+
+.kuh-map-editor__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 16px;
+    align-items: start;
+}
+
+@media (max-width: 1200px) {
+    .kuh-map-editor__layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.kuh-map-editor__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: sticky;
+    top: 46px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+@media (max-width: 1200px) {
+    .kuh-map-editor__sidebar {
+        position: static;
+        max-height: none;
+    }
+}
+
+/* ── Werkzeugleiste ───────────────────────────────────────────────── */
+
+.kuh-map-editor__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    background: var(--kuh-editor-surface);
+    border: 1px solid var(--kuh-editor-border);
+    border-radius: 6px;
+    position: sticky;
+    top: 46px;
+    z-index: 30;
+}
+
+.kuh-map-editor__bar-spacer {
+    flex: 1 1 auto;
+}
+
+.kuh-map-editor__tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.kuh-map-tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    color: #1d2327;
+    font-size: 13px;
+    line-height: 1.4;
+    cursor: pointer;
+}
+
+.kuh-map-tool:hover {
+    background: #f0f0f1;
+    border-color: #8c8f94;
+}
+
+.kuh-map-tool[aria-pressed='true'] {
+    background: var(--kuh-editor-accent);
+    border-color: var(--kuh-editor-accent);
+    color: #fff;
+}
+
+.kuh-map-tool__key {
+    font-size: 11px;
+    opacity: 0.65;
+}
+
+.kuh-map-editor__status {
+    min-height: 20px;
+    font-size: 12px;
+    color: var(--kuh-editor-muted);
+}
+
+.kuh-map-editor__status--error {
+    color: #b32d2e;
+    font-weight: 600;
+}
+
+.kuh-map-editor__dirty {
+    display: none;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #fcf0cd;
+    border: 1px solid #dba617;
+    color: #674a00;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.kuh-map-editor--dirty .kuh-map-editor__dirty {
+    display: inline-block;
+}
+
+/* ── Kartenrahmen (Frontend-Optik) ────────────────────────────────── */
+
+.kuh-map-frame {
+    box-shadow:
+        0 0 0 3px #725c0c,
+        0 0 0 6px #011e08,
+        0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.kuh-map-canvas {
+    position: relative;
+    height: 620px;
+    width: 100%;
+    background: #f3efe6;
+    overflow: hidden;
+}
+
+/* Reduzierte Basiskarte kontrastreicher – wie im Frontend.
+   Nur das WebGL-Canvas wird gefiltert, damit Marker und Bearbeitungs-Griffe
+   im Editor farbtreu und gut greifbar bleiben. */
+.kuh-map-canvas--minimal canvas.maplibregl-canvas {
+    filter: saturate(1.08) contrast(1.1) brightness(0.92);
+}
+
+.kuh-map-canvas--drawing {
+    cursor: crosshair;
+}
+
+.kuh-map-canvas--placing {
+    cursor: copy;
+}
+
+.kuh-map-canvas--dropzone::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    border: 3px dashed #2271b1;
+    background: rgba(34, 113, 177, 0.08);
+}
+
+.kuh-map-hint {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    z-index: 4;
+    max-width: 60%;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background: rgba(1, 30, 8, 0.88);
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.5;
+    pointer-events: none;
+}
+
+.kuh-map-hint:empty {
+    display: none;
+}
+
+/* ── Legende (Frontend-Optik) ─────────────────────────────────────── */
+
+.kuh-map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    padding: 12px 16px;
+    background: #f4f4f0;
+    border: 1px solid #c2c8bf;
+    border-top: 0;
+    font-size: 12px;
+    color: #1d2327;
+}
+
+.kuh-map-legend__title {
+    margin-right: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #737971;
+}
+
+.kuh-map-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: #fff;
+    border: 1px solid #c2c8bf;
+    border-radius: 999px;
+    color: #1d2327;
+    font: inherit;
+    cursor: pointer;
+}
+
+.kuh-map-legend__item[aria-pressed='false'] {
+    opacity: 0.45;
+}
+
+.kuh-map-legend__dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 11px;
+    line-height: 1;
+}
+
+/* ── Sidebar-Karten ───────────────────────────────────────────────── */
+
+.kuh-map-panel {
+    background: var(--kuh-editor-surface);
+    border: 1px solid var(--kuh-editor-border);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.kuh-map-panel > h3 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--kuh-editor-muted);
+}
+
+.kuh-map-panel__hint {
+    margin: 0 0 8px;
+    font-size: 12px;
+    color: var(--kuh-editor-muted);
+}
+
+/* ── Palette: Elemente per Drag & Drop in die Karte ziehen ────────── */
+
+.kuh-map-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.kuh-map-palette__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px 5px 6px;
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
+    border-radius: 999px;
+    font-size: 12px;
+    color: #1d2327;
+    cursor: grab;
+    user-select: none;
+}
+
+.kuh-map-palette__chip:hover {
+    border-color: #8c8f94;
+    background: #f0f0f1;
+}
+
+.kuh-map-palette__chip:active {
+    cursor: grabbing;
+}
+
+.kuh-map-palette__chip--dragging {
+    opacity: 0.5;
+}
+
+.kuh-map-palette__dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 12px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.kuh-map-palette__dot--text {
+    border-radius: 4px;
+    background: transparent !important;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+/* ── Feature-Liste ────────────────────────────────────────────────── */
+
+.kuh-map-list {
+    max-height: 280px;
+    overflow-y: auto;
+    margin: 0;
+    border: 1px solid var(--kuh-editor-border);
+    border-radius: 4px;
+}
+
+.kuh-map-list:empty::after {
+    content: 'Noch keine Elemente.';
+    display: block;
+    padding: 10px;
+    font-size: 12px;
+    color: var(--kuh-editor-muted);
+}
+
+.kuh-map-list__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 8px;
+    background: #fff;
+    border: 0;
+    border-bottom: 1px solid #f0f0f1;
+    text-align: left;
+    font-size: 12px;
+    color: #1d2327;
+    cursor: pointer;
+}
+
+.kuh-map-list__item:last-child {
+    border-bottom: 0;
+}
+
+.kuh-map-list__item:hover {
+    background: #f6f7f7;
+}
+
+.kuh-map-list__item[aria-current='true'] {
+    background: #e8f2fb;
+    box-shadow: inset 3px 0 0 var(--kuh-editor-accent);
+}
+
+.kuh-map-list__dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 11px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.kuh-map-list__label {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.kuh-map-list__type {
+    flex-shrink: 0;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #8c8f94;
+}
+
+/* ── Eigenschaften-Formular ───────────────────────────────────────── */
+
+.kuh-map-props {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.kuh-map-props__empty {
+    margin: 0;
+    font-size: 12px;
+    color: var(--kuh-editor-muted);
+}
+
+.kuh-map-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.kuh-map-field > label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.kuh-map-field > .kuh-map-field__help {
+    font-size: 11px;
+    color: var(--kuh-editor-muted);
+}
+
+.kuh-map-field input[type='text'],
+.kuh-map-field input[type='number'],
+.kuh-map-field textarea,
+.kuh-map-field select {
+    width: 100%;
+}
+
+.kuh-map-field--inline {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.kuh-map-field--inline > label {
+    font-weight: 400;
+}
+
+.kuh-map-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.kuh-map-color {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.kuh-map-color input[type='color'] {
+    width: 38px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid #8c8f94;
+    border-radius: 3px;
+    background: none;
+    cursor: pointer;
+}
+
+.kuh-map-emoji-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.kuh-map-emoji-presets button {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.kuh-map-emoji-presets button:hover {
+    border-color: var(--kuh-editor-accent);
+}
+
+.kuh-map-props__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 4px;
+    border-top: 1px solid #f0f0f1;
+}
+
+/* ── Marker (Frontend-Optik) ──────────────────────────────────────── */
+
+.kuh-map-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 36px;
+    cursor: pointer;
+}
+
+.kuh-map-marker__circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 0, 0.25);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    font-size: 16px;
+    line-height: 1;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.kuh-map-marker__pointer {
+    width: 10px;
+    height: 7px;
+    clip-path: polygon(50% 100%, 0 0, 100% 0);
+    flex-shrink: 0;
+}
+
+.kuh-map-label {
+    display: inline-block;
+    width: fit-content;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    user-select: none;
+    text-shadow:
+        0 1px 3px rgba(255, 255, 255, 0.95),
+        0 -1px 3px rgba(255, 255, 255, 0.95),
+        1px 0 3px rgba(255, 255, 255, 0.95),
+        -1px 0 3px rgba(255, 255, 255, 0.95);
+}
+
+.kuh-map-marker--selected .kuh-map-marker__circle {
+    border-color: #2271b1;
+    box-shadow:
+        0 0 0 3px rgba(34, 113, 177, 0.9),
+        0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.kuh-map-label--selected {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* ── Bearbeitungs-Griffe ──────────────────────────────────────────── */
+
+.kuh-map-handle {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #2271b1;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    cursor: grab;
+}
+
+.kuh-map-handle:active {
+    cursor: grabbing;
+}
+
+.kuh-map-handle--mid {
+    width: 12px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.85);
+    border-style: dashed;
+    cursor: copy;
+}
+
+.kuh-map-handle--image {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    background: #fcf0cd;
+    border: 2px solid #dba617;
+}
+
+/* ── Popup-Vorschau (Frontend-Optik) ─────────────────────────────── */
+
+.kuh-map-popup .maplibregl-popup-content {
+    border: 1px solid #c2c8bf;
+    border-radius: 8px;
+    padding: 10px 14px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.kuh-map-popup__inner {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.kuh-map-popup__emoji {
+    font-size: 20px;
+    line-height: 1.2;
+    flex-shrink: 0;
+}
+
+.kuh-map-popup__name {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #011e08;
+}
+
+.kuh-map-popup__desc {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: #737971;
+}

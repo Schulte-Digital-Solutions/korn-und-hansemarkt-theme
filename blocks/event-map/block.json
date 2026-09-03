@@ -1,7 +1,7 @@
 {
   "apiVersion": 3,
   "name": "kuh/event-map",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "Geländeplan / Veranstaltungskarte",
   "category": "design",
   "icon": "location-alt",
@@ -48,6 +48,18 @@
     "areaLineColor": {
       "type": "string",
       "default": "#4a8a4a"
+    },
+    "routeColor": {
+      "type": "string",
+      "default": "#8a5a2b"
+    },
+    "routeWidth": {
+      "type": "number",
+      "default": 4
+    },
+    "showRoutes": {
+      "type": "boolean",
+      "default": true
     },
     "locationColor": {
       "type": "string",

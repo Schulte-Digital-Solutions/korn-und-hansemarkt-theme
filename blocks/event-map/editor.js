@@ -24,6 +24,9 @@ registerBlockType('kuh/event-map', {
       areaFillColor,
       areaFillOpacity,
       areaLineColor,
+      routeColor,
+      routeWidth,
+      showRoutes,
       locationColor,
       entranceColor,
       stageColor,
@@ -125,6 +128,12 @@ registerBlockType('kuh/event-map', {
             label: 'Information & Erste Hilfe',
             checked: showInfo,
             onChange: (v) => setAttributes({ showInfo: v }),
+          }),
+          el(ToggleControl, {
+            label: 'Wege & Strecken',
+            checked: showRoutes,
+            onChange: (v) => setAttributes({ showRoutes: v }),
+            help: 'Strecken werden unter Design → Event-Karte gezeichnet.',
           })
         ),
         el(
@@ -156,6 +165,19 @@ registerBlockType('kuh/event-map', {
             label: 'Marktfläche Linienfarbe (Hex)',
             value: areaLineColor,
             onChange: (v) => setAttributes({ areaLineColor: v }),
+          }),
+          el(TextControl, {
+            label: 'Strecken Farbe (Hex)',
+            value: routeColor,
+            onChange: (v) => setAttributes({ routeColor: v }),
+          }),
+          el(RangeControl, {
+            label: 'Strecken Linienbreite (px)',
+            value: routeWidth,
+            onChange: (v) => setAttributes({ routeWidth: v }),
+            min: 1,
+            max: 20,
+            step: 1,
           }),
           el(TextControl, {
             label: 'Benannte Orte Farbe (Hex)',
@@ -233,6 +255,7 @@ registerBlockType('kuh/event-map', {
               showParking && 'Parkplätze',
               showToilets && 'WC',
               showInfo && 'Info',
+              showRoutes && 'Wege',
             ]
               .filter(Boolean)
               .join(' · ')
