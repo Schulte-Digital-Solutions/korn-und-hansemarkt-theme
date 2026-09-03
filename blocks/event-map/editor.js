@@ -68,6 +68,7 @@ registerBlockType('kuh/event-map', {
             label: 'Basiskarte ohne Orts-POIs/Labels nutzen',
             checked: useMinimalBaseMap,
             onChange: (v) => setAttributes({ useMinimalBaseMap: v }),
+            help: 'Kartenanbieter und API-Key werden zentral unter Design → Event-Karte gepflegt.',
           }),
           el(ToggleControl, {
             label: 'Straßennamen auf der Basiskarte anzeigen',

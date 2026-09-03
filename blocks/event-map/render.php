@@ -15,13 +15,25 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+$kuh_use_minimal_base_map = (bool) ( $attributes['useMinimalBaseMap'] ?? true );
+$kuh_show_street_labels   = (bool) ( $attributes['showStreetLabels'] ?? false );
+
+// Anbieter und API-Key kommen zentral aus den Theme-Optionen
+// (Design → Event-Karte), nicht aus den Block-Attributen.
+$kuh_tiles = kuh_get_event_map_tiles_config( $kuh_use_minimal_base_map, $kuh_show_street_labels );
+
 $block_data = array(
     'title'          => sanitize_text_field( $attributes['title'] ?? 'Geländeplan' ),
     'subtitle'       => sanitize_text_field( $attributes['subtitle'] ?? '' ),
     'mapHeight'      => absint( $attributes['mapHeight'] ?? 580 ),
     'mobileMapHeight' => absint( $attributes['mobileMapHeight'] ?? 420 ),
-    'useMinimalBaseMap' => (bool) ( $attributes['useMinimalBaseMap'] ?? true ),
-    'showStreetLabels' => (bool) ( $attributes['showStreetLabels'] ?? false ),
+    'useMinimalBaseMap' => $kuh_use_minimal_base_map,
+    'showStreetLabels' => $kuh_show_street_labels,
+    'tileProvider'   => $kuh_tiles['provider'],
+    'baseTileUrls'   => $kuh_tiles['baseTileUrls'],
+    'labelTileUrls'  => $kuh_tiles['labelTileUrls'],
+    'tileAttribution' => $kuh_tiles['tileAttribution'],
+    'minimalBaseTiles' => $kuh_tiles['minimalBaseTiles'],
     // Hintergrundbild-Einstellungen kommen aus der GeoJSON-Meta,
     // Gutenberg-Attribute werden dafür nicht mehr genutzt.
     'customMapImageUrl' => '',

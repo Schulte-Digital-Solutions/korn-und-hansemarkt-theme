@@ -268,6 +268,8 @@ function kuh_render_event_map_admin_page() {
             </p>
         </div>
 
+        <?php kuh_render_event_map_tiles_settings_form(); ?>
+
         <h2>Vorschau</h2>
         <p class="description" style="margin-bottom:8px;">
             Vorschau basiert direkt auf dem aktuellen JSON-Inhalt (auch ohne Speichern).
@@ -337,6 +339,10 @@ function kuh_render_event_map_admin_page() {
 
         <script>
         (function () {
+            // Tile-Konfiguration aus den Theme-Optionen, damit die Vorschau
+            // dieselben Kacheln (inkl. API-Key) zeigt wie das Frontend.
+            const TILE_CONFIG = <?php echo wp_json_encode( kuh_get_event_map_tiles_config( true, false ) ); ?>;
+
             const jsonField = document.getElementById('kuh_event_map_geojson');
             const tbody = document.querySelector('#kuh_poi_table tbody');
             const status = document.getElementById('kuh_poi_status');
@@ -658,18 +664,21 @@ function kuh_render_event_map_admin_page() {
                         style: {
                             version: 8,
                             sources: {
-                                osm: {
+                                base: {
                                     type: 'raster',
-                                    tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                                    tiles: TILE_CONFIG.baseTileUrls && TILE_CONFIG.baseTileUrls.length
+                                        ? TILE_CONFIG.baseTileUrls
+                                        : ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
                                     tileSize: 256,
+                                    attribution: TILE_CONFIG.tileAttribution || '',
                                     maxzoom: 19,
                                 },
                             },
                             layers: [
                                 {
-                                    id: 'osm',
+                                    id: 'base',
                                     type: 'raster',
-                                    source: 'osm',
+                                    source: 'base',
                                 },
                             ],
                         },

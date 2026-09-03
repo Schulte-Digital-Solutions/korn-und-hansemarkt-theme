@@ -40,6 +40,13 @@
     mobileMapHeight: number;
     useMinimalBaseMap: boolean;
     showStreetLabels: boolean;
+    /** Tile-Quellen inkl. API-Key – kommen aus den WordPress-Optionen. */
+    tileProvider?: string;
+    baseTileUrls?: string[];
+    labelTileUrls?: string[];
+    tileAttribution?: string;
+    /** Liefert der Anbieter wirklich eine reduzierte Basiskarte? Steuert den Kontrast-Filter. */
+    minimalBaseTiles?: boolean | null;
     customMapImageUrl: string;
     customMapImageAlt: string;
     customMapImageOpacity: number;
@@ -80,6 +87,11 @@
     mobileMapHeight = 420,
     useMinimalBaseMap = true,
     showStreetLabels = false,
+    tileProvider = '',
+    baseTileUrls = [],
+    labelTileUrls = [],
+    tileAttribution = '',
+    minimalBaseTiles = null,
     customMapImageUrl = '',
     customMapImageAlt = '',
     customMapImageOpacity = 30,
@@ -830,25 +842,37 @@
 
     const zoom = typeof poisData?.meta?.zoom === 'number' ? poisData.meta.zoom : 15;
 
-    const baseTileUrls = useMinimalBaseMap
-      ? [
-          'https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png',
-          'https://b.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png',
-          'https://c.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png',
-          'https://d.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png',
-        ]
-      : ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'];
+    // Tile-URLs inkl. API-Key liefert WordPress (Design → Event-Karte).
+    // Die Literale greifen nur, wenn die Komponente ohne diese Daten läuft.
+    const configuredBaseTileUrls = Array.isArray(baseTileUrls) ? baseTileUrls : [];
+    const configuredLabelTileUrls = Array.isArray(labelTileUrls) ? labelTileUrls : [];
+    const tilesFromWordPress = configuredBaseTileUrls.length > 0;
 
-    const labelTileUrls = [
-      'https://a.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
-      'https://b.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
-      'https://c.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
-      'https://d.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
-    ];
+    const resolvedBaseTileUrls = tilesFromWordPress
+      ? configuredBaseTileUrls
+      : useMinimalBaseMap
+        ? [
+            'https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png',
+            'https://b.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png',
+            'https://c.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png',
+            'https://d.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png',
+          ]
+        : ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'];
 
-    const tileAttribution = useMinimalBaseMap
-      ? '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende, © <a href="https://carto.com/attributions">CARTO</a>'
-      : '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende';
+    const resolvedLabelTileUrls = tilesFromWordPress
+      ? configuredLabelTileUrls
+      : [
+          'https://a.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
+          'https://b.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
+          'https://c.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
+          'https://d.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
+        ];
+
+    const resolvedTileAttribution = tilesFromWordPress
+      ? (typeof tileAttribution === 'string' ? tileAttribution : '')
+      : useMinimalBaseMap
+        ? '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende, © <a href="https://carto.com/attributions">CARTO</a>'
+        : '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende';
 
     const styleSources: Record<string, any> = {};
     const styleLayers: any[] = [
@@ -861,12 +885,14 @@
       },
     ];
 
-    if (loadBaseTiles) {
+    const hasBaseTiles = loadBaseTiles && resolvedBaseTileUrls.length > 0;
+
+    if (hasBaseTiles) {
       styleSources.base = {
         type: 'raster',
-        tiles: baseTileUrls,
+        tiles: resolvedBaseTileUrls,
         tileSize: 256,
-        attribution: tileAttribution,
+        attribution: resolvedTileAttribution,
         maxzoom: 19,
       };
 
@@ -879,10 +905,10 @@
       });
     }
 
-    if (loadBaseTiles && useMinimalBaseMap && showStreetLabels) {
+    if (hasBaseTiles && useMinimalBaseMap && showStreetLabels && resolvedLabelTileUrls.length > 0) {
       styleSources.labels = {
         type: 'raster',
-        tiles: labelTileUrls,
+        tiles: resolvedLabelTileUrls,
         tileSize: 256,
         maxzoom: 19,
       };
@@ -915,7 +941,7 @@
       },
     });
 
-    if (loadBaseTiles) {
+    if (hasBaseTiles) {
       map.addControl(
         new maplibregl.AttributionControl({ compact: true }),
         'bottom-right'
@@ -1091,7 +1117,7 @@
       <div
         bind:this={mapContainer}
         class="kuh-event-map-canvas relative z-1 h-full w-full filter-none"
-        class:kuh-event-map-canvas--minimal={useMinimalBaseMap}
+        class:kuh-event-map-canvas--minimal={minimalBaseTiles ?? useMinimalBaseMap}
       ></div>
 
       {#if requiresExternalContentConsent && !hasExternalContentConsent}
@@ -1109,7 +1135,7 @@
                   target="_blank"
                   rel="noopener noreferrer"
                   class="underline hover:text-white"
-                >OpenStreetMap</a>{#if useMinimalBaseMap},
+                >OpenStreetMap</a>{#if tileProvider ? tileProvider === 'carto' : useMinimalBaseMap},
                 <a
                   href="https://carto.com/privacy"
                   target="_blank"
