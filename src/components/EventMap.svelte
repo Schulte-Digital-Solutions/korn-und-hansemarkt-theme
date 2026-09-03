@@ -164,7 +164,9 @@
   let legendVisibility = $state({
     area: true,
     route: true,
-    userLocation: false,
+    // Standort ist vorausgewählt: die Abfrage startet automatisch, sobald die
+    // Karte geladen ist. Bei Ablehnung schaltet renderUserLocation() zurück.
+    userLocation: true,
     location: true,
     entrance: true,
     stage: true,
@@ -1040,6 +1042,12 @@
       void renderCustomImageLayer();
       renderShapes();
       renderMarkers();
+    };
+
+    // Standortabfrage erst, wenn die Karte steht – der Marker kann dann sofort
+    // gesetzt werden. renderUserLocation() ist gegen Mehrfachabfragen geschützt.
+    const renderAllMapOverlaysWithUserLocation = () => {
+      renderAllMapOverlays();
       renderUserLocation();
     };
 
@@ -1052,8 +1060,8 @@
     // Robustes Initialisieren: je nach Timing kann 'load' bereits vorbei sein.
     renderAllMapOverlays();
     scheduleImageRenderFallback();
-    map.on('load', renderAllMapOverlays);
-    map.once('idle', renderAllMapOverlays);
+    map.on('load', renderAllMapOverlaysWithUserLocation);
+    map.once('idle', renderAllMapOverlaysWithUserLocation);
   }
 
   onMount(() => {
