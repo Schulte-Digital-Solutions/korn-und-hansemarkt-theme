@@ -202,6 +202,12 @@
   const markersById = new Map<string, { marker: Marker; popup: Popup }>();
   let userLocationMarker: Marker | null = null;
   let userLocationPending = false;
+  /** Ein Deep-Link (/karte#poi-id) hat Vorrang vor der Standort-Zentrierung. */
+  let hasFocusedPoiFromHash = false;
+  /** Hat der Nutzer die Ansicht selbst gewählt? Dann nicht mehr automatisch bewegen. */
+  let userHasMovedMap = false;
+  /** Bis zu dieser Luftlinie zum Gelände zentriert die Karte auf den Standort. */
+  const userLocationAutoFocusRadiusMeters = 1000;
   let customImageObjectUrl: string | null = null;
   let customImageRendering = false;
   let customImageRendered = false;
@@ -255,6 +261,31 @@
       && value.length >= 2
       && Number.isFinite(value[0])
       && Number.isFinite(value[1]);
+  }
+
+  /** Fallback-Mittelpunkt, wenn die JSON-Meta kein Zentrum liefert. */
+  const defaultCenter: [number, number] = [7.4836, 52.6742];
+
+  function getConfiguredCenter(): [number, number] {
+    const center = poisData?.meta?.center;
+    return isLngLatPair(center) ? [center[0], center[1]] : defaultCenter;
+  }
+
+  /** Luftlinie in Metern (Haversine) – reicht für den Näherungs-Check völlig. */
+  function distanceInMeters(from: [number, number], to: [number, number]): number {
+    const earthRadius = 6371000;
+    const toRadians = (value: number) => (value * Math.PI) / 180;
+
+    const lat1 = toRadians(from[1]);
+    const lat2 = toRadians(to[1]);
+    const deltaLat = lat2 - lat1;
+    const deltaLng = toRadians(to[0] - from[0]);
+
+    const h =
+      Math.sin(deltaLat / 2) ** 2
+      + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
+
+    return 2 * earthRadius * Math.asin(Math.min(1, Math.sqrt(h)));
   }
 
   function getCustomImageCoordinatesFromMeta(): [[number, number], [number, number], [number, number], [number, number]] | null {
@@ -503,6 +534,23 @@
     return el;
   }
 
+  /**
+   * Zentriert die Karte auf den eigenen Standort – aber nur, wenn man wirklich
+   * am Markt ist (Luftlinie zum Gelände-Mittelpunkt unter
+   * `userLocationAutoFocusRadiusMeters`). Wer von weiter weg schaut, behält die
+   * Gesamtübersicht. Deep-Links und eigene Kartenbewegungen haben Vorrang.
+   */
+  function focusUserLocationIfNearby(lngLat: [number, number]): void {
+    if (!map) return;
+    if (hasFocusedPoiFromHash || userHasMovedMap) return;
+
+    const distance = distanceInMeters(lngLat, getConfiguredCenter());
+    if (distance > userLocationAutoFocusRadiusMeters) return;
+
+    // Zoomstufe bleibt wie konfiguriert: innerhalb des Radius genügt ein Schwenk.
+    map.flyTo({ center: lngLat, duration: 900 });
+  }
+
   function renderUserLocation() {
     if (!map) return;
 
@@ -534,6 +582,8 @@
         userLocationMarker = new maplibregl.Marker({ element: createUserLocationEl(), anchor: 'center' })
           .setLngLat([lng, lat])
           .addTo(map as Map);
+
+        focusUserLocationIfNearby([lng, lat]);
       },
       () => {
         userLocationPending = false;
@@ -898,6 +948,8 @@
     const entry = markersById.get(id);
     if (!entry) return;
 
+    hasFocusedPoiFromHash = true;
+
     const lngLat = entry.marker.getLngLat();
     map.flyTo({ center: [lngLat.lng, lngLat.lat], zoom: Math.max(map.getZoom(), 17), duration: 800 });
 
@@ -916,10 +968,7 @@
   function initializeMap() {
     if (map || !mapContainer) return;
 
-    const center =
-      Array.isArray(poisData?.meta?.center) && poisData.meta.center.length >= 2
-        ? poisData.meta.center
-        : [7.4836, 52.6742];
+    const center = getConfiguredCenter();
 
     const zoom = typeof poisData?.meta?.zoom === 'number' ? poisData.meta.zoom : 15;
 
@@ -1028,6 +1077,16 @@
         'bottom-right'
       );
     }
+
+    // Eigene Kartenbewegung merken: `originalEvent` gibt es nur bei echter
+    // Nutzer-Interaktion (Ziehen, Zoom-Buttons, Tastatur), nicht bei flyTo().
+    const markUserMapInteraction = (event: { originalEvent?: unknown }) => {
+      if (event?.originalEvent) {
+        userHasMovedMap = true;
+      }
+    };
+    map.on('movestart', markUserMapInteraction);
+    map.on('zoomstart', markUserMapInteraction);
 
     map.addControl(
       new maplibregl.NavigationControl({ showCompass: false }),
