@@ -101,26 +101,134 @@ function getStickyHeaderOffset(): number {
   return Math.ceil(header.getBoundingClientRect().height + 12);
 }
 
-function scrollToHash(hash: string) {
+/** So lange auf den Anker warten – Seiteninhalte kommen per REST nachgeladen. */
+const HASH_WAIT_MS = 5000;
+/** So lange nach dem Fund nachkorrigieren – Blockmount, Bilder und Fonts verschieben das Layout. */
+const HASH_SETTLE_MS = 900;
+/** Abstand der Versuche. */
+const HASH_POLL_MS = 50;
+
+/** Laufende Anker-Verfolgung; ein neuer Wunsch bricht die vorherige ab. */
+let _hashRequestId = 0;
+
+/**
+ * Zum Anker scrollen – robust gegen die Asynchronitaet der SPA.
+ *
+ * Das Ziel existiert beim Direktaufruf von z.B. /programm#buehnenplan noch
+ * nicht: Der Router mountet zuerst, der Seiteninhalt kommt erst per REST,
+ * danach mounten die Svelte-Bloecke (reinitBlocks) und zum Schluss laden
+ * Bilder und Fonts. Deshalb wird auf den Anker gewartet und die Position
+ * anschliessend noch kurz nachkorrigiert.
+ *
+ * Bewusst setTimeout statt requestAnimationFrame: in einem Hintergrund-Tab
+ * (Link per Mittelklick geoeffnet) laufen keine Animation-Frames, der Sprung
+ * wuerde dort nie passieren. Scrollt der Nutzer selbst, bricht die
+ * Verfolgung ab.
+ */
+export function scrollToHash(hash: string, onMissing?: () => void) {
   const normalizedHash = hash && hash.startsWith('#') ? hash : '';
-  if (!normalizedHash || normalizedHash === '#') return;
+  if (!normalizedHash || normalizedHash === '#') {
+    onMissing?.();
+    return;
+  }
 
   const targetId = decodeURIComponent(normalizedHash.slice(1));
-  if (!targetId) return;
+  if (!targetId) {
+    onMissing?.();
+    return;
+  }
 
-  const scroll = () => {
-    const target = document.getElementById(targetId);
-    if (target) {
-      const offset = getStickyHeaderOffset();
-      const targetTop = target.getBoundingClientRect().top + window.scrollY;
-      const top = Math.max(0, targetTop - offset);
-      window.scrollTo({ top, behavior: 'auto' });
+  const requestId = ++_hashRequestId;
+  const startedAt = Date.now();
+  let foundAt = 0;
+  let interrupted = false;
+
+  const onUserInput = () => {
+    interrupted = true;
+  };
+  const userEvents = ['wheel', 'touchstart', 'keydown', 'mousedown'] as const;
+  const listen = (add: boolean) => {
+    for (const type of userEvents) {
+      if (add) {
+        window.addEventListener(type, onUserInput, { passive: true });
+      } else {
+        window.removeEventListener(type, onUserInput);
+      }
     }
   };
+  listen(true);
 
-  // Direkt versuchen und zusaetzlich nach dem naechsten Paint.
-  scroll();
-  requestAnimationFrame(scroll);
+  const tick = () => {
+    const now = Date.now();
+
+    // Abgeloest durch einen neueren Anker oder vom Nutzer uebersteuert.
+    if (requestId !== _hashRequestId || interrupted) {
+      listen(false);
+      return;
+    }
+
+    const target = document.getElementById(targetId);
+
+    if (!target) {
+      if (now - startedAt > HASH_WAIT_MS) {
+        listen(false);
+        onMissing?.();
+        return;
+      }
+      setTimeout(tick, HASH_POLL_MS);
+      return;
+    }
+
+    if (!foundAt) {
+      foundAt = now;
+      // Der Anker gewinnt – die gemerkte Position darf nicht dazwischenfunken.
+      try {
+        sessionStorage.removeItem(SCROLL_KEY);
+      } catch {
+        // sessionStorage nicht verfügbar
+      }
+    }
+
+    const offset = getStickyHeaderOffset();
+    const targetTop = target.getBoundingClientRect().top + window.scrollY;
+    const top = Math.max(0, targetTop - offset);
+
+    if (Math.abs(window.scrollY - top) > 1) {
+      window.scrollTo({ top, behavior: 'auto' });
+    }
+
+    if (now - foundAt < HASH_SETTLE_MS) {
+      setTimeout(tick, HASH_POLL_MS);
+      return;
+    }
+
+    listen(false);
+  };
+
+  tick();
+}
+
+/** Ist ein Anker in der URL, der angesprungen werden soll? */
+function hasHashTarget(): boolean {
+  const hash = window.location.hash || '';
+  return hash.length > 1;
+}
+
+/**
+ * Callback nach dem naechsten Layout ausfuehren.
+ *
+ * In Hintergrund-Tabs liefert der Browser keine Animation-Frames, deshalb
+ * zusaetzlich ein Timer – es gewinnt, was zuerst kommt.
+ */
+function afterLayout(fn: () => void) {
+  let done = false;
+  const run = () => {
+    if (done) return;
+    done = true;
+    fn();
+  };
+  requestAnimationFrame(run);
+  setTimeout(run, 50);
 }
 
 /**
@@ -153,7 +261,6 @@ export function navigate(path: string) {
   const targetHash = parsed.hash || '';
 
   const currentSearch = window.location.search || '';
-  const currentHash = window.location.hash || '';
 
   const sameRoute = currentPath === targetPath && currentSearch === targetSearch;
 
@@ -167,9 +274,7 @@ export function navigate(path: string) {
 
   window.dispatchEvent(new PopStateEvent('popstate'));
 
-  if (targetHash && targetHash !== currentHash) {
-    setTimeout(() => scrollToHash(targetHash), 0);
-  } else if (targetHash) {
+  if (targetHash) {
     scrollToHash(targetHash);
   }
 }
@@ -217,17 +322,35 @@ export function handlePopState() {
 export function restoreScrollPosition() {
   // Back/Forward-Navigation
   if (_pendingScrollY > 0) {
-    requestAnimationFrame(() => window.scrollTo(0, _pendingScrollY));
+    const y = _pendingScrollY;
+    afterLayout(() => window.scrollTo(0, y));
     _pendingScrollY = 0;
     return;
   }
-  // Seite wurde neu geladen (F5)
+
+  // Anker in der URL hat Vorrang vor der gemerkten Position: /programm#buehnenplan
+  // soll zum Anker springen. Jetzt ist der Inhalt im DOM – hier greift der Sprung
+  // auch beim Direktaufruf, wo der Versuch beim Router-Mount noch zu frueh kam.
+  // Gibt es zum Hash kein Element (z.B. Karten-Hashes wie /karte#markt),
+  // wird die gemerkte Position nachtraeglich wiederhergestellt.
+  if (hasHashTarget()) {
+    scrollToHash(window.location.hash, restoreSavedScroll);
+    return;
+  }
+
+  restoreSavedScroll();
+}
+
+/**
+ * Nach F5 gemerkte Scrollposition wiederherstellen.
+ */
+function restoreSavedScroll() {
   try {
     const raw = sessionStorage.getItem(SCROLL_KEY);
     if (!raw) return;
     const saved = JSON.parse(raw);
     if (saved.path === getCurrentPath()) {
-      requestAnimationFrame(() => window.scrollTo(0, saved.y));
+      afterLayout(() => window.scrollTo(0, saved.y));
     }
     sessionStorage.removeItem(SCROLL_KEY);
   } catch {
@@ -235,20 +358,30 @@ export function restoreScrollPosition() {
   }
 }
 
+let _scrollRestorationReady = false;
+
 /**
- * Scroll-Wiederherstellung initialisieren
+ * Scroll-Wiederherstellung initialisieren.
+ *
+ * Der Aufrufer (Router.svelte) ist ein $effect, der bei jedem Routenwechsel
+ * neu laeuft – deshalb nur einmal ausfuehren. Sonst haengen die Listener
+ * mehrfach am window und der Anker-Sprung wuerde bei Back/Forward die
+ * gemerkte Scrollposition ueberschreiben.
  */
 export function initScrollRestoration() {
+  if (_scrollRestorationReady) return;
+  _scrollRestorationReady = true;
+
   if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual';
   }
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('hashchange', () => {
-    setTimeout(() => scrollToHash(window.location.hash || ''), 0);
+    scrollToHash(window.location.hash || '');
   });
 
-  if (window.location.hash) {
-    setTimeout(() => scrollToHash(window.location.hash), 0);
+  if (hasHashTarget()) {
+    scrollToHash(window.location.hash);
   }
 
   window.addEventListener('beforeunload', () => {
