@@ -49,6 +49,28 @@ function kuh_register_menu_endpoint() {
 add_action( 'rest_api_init', 'kuh_register_menu_endpoint' );
 
 /**
+ * REST-Endpunkt zum Erneuern des REST-Nonce.
+ *
+ * Der in der HTML-Seite eingebettete Nonce ist nur 12–24 h gueltig. Bleibt ein
+ * Tab laenger offen oder wird die Seite aus einem Cache ausgeliefert, ist er
+ * abgelaufen und WordPress lehnt Requests mit dem Header X-WP-Nonce mit 403 ab.
+ * Dieser Endpunkt braucht selbst keinen Nonce und liefert einen frischen.
+ */
+function kuh_register_nonce_endpoint() {
+    register_rest_route( 'kuh/v1', '/nonce', array(
+        'methods'  => 'GET',
+        'callback' => function() {
+            $response = new WP_REST_Response( array( 'nonce' => wp_create_nonce( 'wp_rest' ) ), 200 );
+            // Niemals cachen – sonst wird ein abgelaufener Nonce weiterverteilt.
+            $response->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0' );
+            return $response;
+        },
+        'permission_callback' => '__return_true',
+    ) );
+}
+add_action( 'rest_api_init', 'kuh_register_nonce_endpoint' );
+
+/**
  * CORS-Header für REST API (Development)
  */
 function kuh_cors_headers() {

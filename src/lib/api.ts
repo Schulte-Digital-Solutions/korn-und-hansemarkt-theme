@@ -12,48 +12,140 @@ export function getConfig(): KuhData {
 }
 
 /**
- * Fetch-Wrapper für die WordPress REST API
+ * API-Fehler mit HTTP-Status, damit die UI 404, 403 und
+ * Netzwerkausfaelle unterscheiden kann.
+ */
+export class ApiError extends Error {
+  status: number;
+  code: string;
+
+  constructor(status: number, message: string, code = '') {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+  }
+
+  /** Kein HTTP-Status erhalten – offline oder Verbindung abgebrochen. */
+  get isOffline(): boolean {
+    return this.status === 0;
+  }
+}
+
+/**
+ * Endpoint-Pfad zur vollen REST-URL auflösen.
  *
  * Unterstützt sowohl Pretty Permalinks (/wp-json/) als auch
  * Plain Permalinks (?rest_route=/).
- * Ergebnisse werden für 1 Stunde gecacht.
  */
-async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  // Cache prüfen
-  const cached = apiCache.get(endpoint);
-  if (cached && Date.now() - cached.ts < CACHE_TTL) {
-    return cached.data as T;
-  }
-
+function buildUrl(endpoint: string): string {
   const config = getConfig();
-  let url: string;
 
   if (config.restUrl.includes('?rest_route=')) {
     // Plain Permalinks: ?rest_route=/wp/v2/posts&slug=xyz&_embed
     const [path, query] = endpoint.split('?');
-    url = `${config.restUrl}${path}`;
-    if (query) {
-      url += '&' + query;
-    }
-  } else {
-    url = `${config.restUrl}${endpoint}`;
+    return `${config.restUrl}${path}` + (query ? '&' + query : '');
   }
 
-  const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      'X-WP-Nonce': config.restNonce,
-      ...options.headers,
-    },
-    ...options,
+  return `${config.restUrl}${endpoint}`;
+}
+
+/**
+ * Frischen REST-Nonce vom Server holen.
+ *
+ * Der in der HTML-Seite eingebettete Nonce ist nur 12–24 h gueltig. Wenn ein
+ * Tab lange offen bleibt (oder die Seite aus dem Cache kommt), ist er
+ * abgelaufen und WordPress lehnt schreibende Requests mit 403 ab. Dieser
+ * Endpoint braucht selbst keinen Nonce und liefert einen neuen.
+ */
+async function refreshNonce(): Promise<string> {
+  const response = await fetch(buildUrl('kuh/v1/nonce'), {
+    headers: { Accept: 'application/json' },
+    credentials: 'same-origin',
+    cache: 'no-store',
   });
 
   if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    throw new ApiError(response.status, 'Nonce konnte nicht erneuert werden.');
+  }
+
+  const data: { nonce?: string } = await response.json();
+  if (!data.nonce) {
+    throw new ApiError(500, 'Nonce konnte nicht erneuert werden.');
+  }
+
+  window.kuhData.restNonce = data.nonce;
+  return data.nonce;
+}
+
+/**
+ * Fetch-Wrapper für die WordPress REST API
+ *
+ * Lesende Requests (GET) werden bewusst OHNE X-WP-Nonce gesendet: die
+ * Inhalte sind oeffentlich, und ein abgelaufener Nonce wuerde von WordPress
+ * mit 403 (rest_cookie_invalid_nonce) abgewiesen – ganz ohne Nonce
+ * funktionieren sie dagegen immer. Nur schreibende Requests brauchen den
+ * Nonce; laeuft er ab, wird er einmal erneuert und der Request wiederholt.
+ *
+ * GET-Ergebnisse werden für 1 Stunde im Speicher gecacht.
+ */
+async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const method = (options.method ?? 'GET').toUpperCase();
+  const isRead = method === 'GET' || method === 'HEAD';
+
+  // Cache nur für lesende Requests – ein gecachtes POST würde
+  // Formularabsendungen verschlucken.
+  if (isRead) {
+    const cached = apiCache.get(endpoint);
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      return cached.data as T;
+    }
+  }
+
+  const url = buildUrl(endpoint);
+
+  const request = async (nonce?: string): Promise<Response> => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(nonce ? { 'X-WP-Nonce': nonce } : {}),
+      ...(options.headers as Record<string, string> | undefined),
+    };
+
+    try {
+      return await fetch(url, { credentials: 'same-origin', ...options, headers });
+    } catch (e) {
+      throw new ApiError(0, 'Keine Verbindung zum Server.', 'fetch_failed');
+    }
+  };
+
+  let response = await request(isRead ? undefined : getConfig().restNonce);
+
+  // Abgelaufener Nonce bei schreibenden Requests: einmal erneuern und erneut senden.
+  if (!isRead && response.status === 403) {
+    try {
+      response = await request(await refreshNonce());
+    } catch {
+      // Erneuerung fehlgeschlagen – die ursprüngliche 403 wird unten gemeldet.
+    }
+  }
+
+  if (!response.ok) {
+    let message = `${response.status} ${response.statusText}`;
+    let code = '';
+    try {
+      const body = await response.json();
+      if (body?.message) message = String(body.message).replace(/<[^>]*>/g, '');
+      if (body?.code) code = String(body.code);
+    } catch {
+      // Kein JSON-Body – Statustext genügt.
+    }
+    throw new ApiError(response.status, message, code);
   }
 
   const data: T = await response.json();
-  apiCache.set(endpoint, { data, ts: Date.now() });
+  if (isRead) {
+    apiCache.set(endpoint, { data, ts: Date.now() });
+  }
   return data;
 }
 
