@@ -3,8 +3,10 @@
   import { updateSeo } from '../lib/seo';
   import { updateAdminBar } from '../lib/adminBar';
   import { restoreScrollPosition } from '../lib/router';
+  import { describeError, notFoundPresentation, type ErrorPresentation } from '../lib/errors';
   import Link from '../components/Link.svelte';
   import Loading from '../components/Loading.svelte';
+  import ErrorState from '../components/ErrorState.svelte';
   import type { WPPost } from '../types';
 
   interface Props {
@@ -15,7 +17,7 @@
   let categoryName = $state('');
   let posts: WPPost[] = $state([]);
   let loading = $state(true);
-  let error: string | null = $state(null);
+  let error: ErrorPresentation | null = $state(null);
   let page = $state(1);
   let hasMore = $state(true);
 
@@ -27,7 +29,7 @@
 
       const category = await getCategoryBySlug(slug);
       if (!category) {
-        error = 'Kategorie nicht gefunden';
+        error = notFoundPresentation('Kategorie');
         return;
       }
 
@@ -43,7 +45,7 @@
         canonical: window.kuhData?.homeUrl?.replace(/\/$/, '') + '/category/' + slug,
       });
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Fehler beim Laden';
+      error = describeError(e);
     } finally {
       loading = false;
     }
@@ -72,9 +74,21 @@
 {#if loading}
   <Loading />
 {:else if error}
-  <div class="max-w-4xl mx-auto px-4 py-12">
-    <p class="text-red-600">{error}</p>
-  </div>
+  <ErrorState
+    code={error.code}
+    icon={error.icon}
+    title={error.title}
+    description={error.description}
+    onRetry={error.retryable ? () => loadCategory(params.slug) : null}
+  >
+    <Link
+      href="/category"
+      class="inline-flex items-center gap-1 text-on-surface-variant underline decoration-outline-variant underline-offset-4 transition-colors hover:text-on-surface"
+    >
+      <span class="material-symbols-outlined !text-base" aria-hidden="true">arrow_back</span>
+      Alle Kategorien
+    </Link>
+  </ErrorState>
 {:else}
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
     <h1 class="text-3xl font-bold text-gray-900 mb-8">Kategorie: {categoryName}</h1>

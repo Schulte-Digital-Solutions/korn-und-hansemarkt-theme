@@ -5,7 +5,7 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import Link from '../components/Link.svelte';
+  import ErrorState from '../components/ErrorState.svelte';
 
   onMount(() => {
     const url = new URL(window.location.href);
@@ -17,18 +17,28 @@
     url.searchParams.set('wp_fallback', '1');
     window.location.replace(`${url.pathname}${url.search}${url.hash}`);
   });
+
+  function goBack() {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = window.kuhData?.homeUrl ?? '/';
+    }
+  }
 </script>
 
-<div class="max-w-4xl mx-auto px-4 py-20 text-center">
-  <h1 class="text-6xl font-bold text-gray-300 mb-4">404</h1>
-  <h2 class="text-2xl font-semibold text-gray-900 mb-4">Seite nicht gefunden</h2>
-  <p class="text-gray-600 mb-8">
-    Die angeforderte Seite konnte leider nicht gefunden werden.
-  </p>
-  <Link
-    href="/"
-    class="inline-block px-6 py-3 bg-secondary text-white rounded-lg hover:bg-primary-container transition-colors font-medium"
+<ErrorState
+  code="404"
+  icon="travel_explore"
+  title="Seite nicht gefunden"
+  description="Diese Seite gibt es nicht (mehr). Vielleicht wurde sie verschoben oder der Link enthält einen Tippfehler."
+>
+  <button
+    type="button"
+    onclick={goBack}
+    class="inline-flex items-center gap-1 text-on-surface-variant underline decoration-outline-variant underline-offset-4 transition-colors hover:text-on-surface"
   >
-    Zur Startseite
-  </Link>
-</div>
+    <span class="material-symbols-outlined !text-base" aria-hidden="true">arrow_back</span>
+    Zurück zur vorherigen Seite
+  </button>
+</ErrorState>

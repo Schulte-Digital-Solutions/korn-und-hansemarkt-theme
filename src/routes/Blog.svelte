@@ -3,19 +3,22 @@
   import { updateSeo } from '../lib/seo';
   import { updateAdminBar } from '../lib/adminBar';
   import { restoreScrollPosition } from '../lib/router';
+  import { describeError, type ErrorPresentation } from '../lib/errors';
   import Link from '../components/Link.svelte';
   import Loading from '../components/Loading.svelte';
+  import ErrorState from '../components/ErrorState.svelte';
   import type { WPPost } from '../types';
 
   let posts: WPPost[] = $state([]);
   let loading = $state(true);
-  let error: string | null = $state(null);
+  let error: ErrorPresentation | null = $state(null);
   let page = $state(1);
   let hasMore = $state(true);
 
   async function loadPosts(pageNum: number) {
     try {
       loading = true;
+      error = null;
       const newPosts = await getPosts(pageNum, 10);
       posts = pageNum === 1 ? newPosts : [...posts, ...newPosts];
       hasMore = newPosts.length === 10;
@@ -28,7 +31,7 @@
         });
       }
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Fehler beim Laden';
+      error = describeError(e);
     } finally {
       loading = false;
     }
@@ -50,11 +53,38 @@
   });
 </script>
 
+{#if error && posts.length === 0 && !loading}
+  <!-- Nichts geladen: ganzseitiger Fehlerzustand -->
+  <ErrorState
+    code={error.code}
+    icon={error.icon}
+    title={error.title}
+    description={error.description}
+    onRetry={error.retryable ? () => loadPosts(1) : null}
+  />
+{:else}
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
   <h1 class="text-3xl font-bold text-gray-900 mb-8">Blog</h1>
 
   {#if error}
-    <p class="text-red-600">Fehler: {error}</p>
+    <!-- Nachladen fehlgeschlagen: schmaler Hinweis über der bestehenden Liste -->
+    <div
+      class="mb-8 flex flex-wrap items-center gap-3 rounded-lg bg-error-container px-4 py-3 text-sm text-on-error-container"
+      role="alert"
+    >
+      <span class="material-symbols-outlined !text-xl" aria-hidden="true">{error.icon}</span>
+      <span>{error.description}</span>
+      {#if error.retryable}
+        <button
+          type="button"
+          onclick={() => loadPosts(page)}
+          class="ml-auto inline-flex items-center gap-1 rounded-full px-3 py-1 font-medium underline underline-offset-4 transition-colors hover:bg-on-error-container/10"
+        >
+          <span class="material-symbols-outlined !text-base" aria-hidden="true">refresh</span>
+          Erneut versuchen
+        </button>
+      {/if}
+    </div>
   {/if}
 
   <div class="space-y-8">
@@ -98,7 +128,7 @@
     <Loading />
   {/if}
 
-  {#if hasMore && !loading}
+  {#if hasMore && !loading && !error}
     <div class="text-center mt-8">
       <button
         onclick={loadMore}
@@ -109,3 +139,4 @@
     </div>
   {/if}
 </div>
+{/if}

@@ -4,7 +4,9 @@
   import { reinitBlocks } from '../lib/reinitBlocks';
   import { updateAdminBar } from '../lib/adminBar';
   import { restoreScrollPosition } from '../lib/router';
+  import { describeError, notFoundPresentation, type ErrorPresentation } from '../lib/errors';
   import Loading from '../components/Loading.svelte';
+  import ErrorState from '../components/ErrorState.svelte';
   import type { WPPage } from '../types';
 
   interface Props {
@@ -14,7 +16,7 @@
   let { params }: Props = $props();
   let page: WPPage | null = $state(null);
   let loading = $state(true);
-  let error: string | null = $state(null);
+  let error: ErrorPresentation | null = $state(null);
   let showTitle = $state(true);
   let fullWidth = $state(false);
 
@@ -35,10 +37,10 @@
           canonical: window.kuhData?.homeUrl?.replace(/\/$/, '') + '/' + path,
         });
       } else {
-        error = 'Seite nicht gefunden';
+        error = notFoundPresentation('Seite');
       }
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Fehler beim Laden';
+      error = describeError(e);
     } finally {
       loading = false;
     }
@@ -59,9 +61,13 @@
 {#if loading}
   <Loading />
 {:else if error}
-  <div class="max-w-4xl mx-auto px-4 py-12">
-    <p class="text-red-600">{error}</p>
-  </div>
+  <ErrorState
+    code={error.code}
+    icon={error.icon}
+    title={error.title}
+    description={error.description}
+    onRetry={error.retryable ? () => loadPage(params.path) : null}
+  />
 {:else if page}
   <article class={fullWidth ? 'w-full py-0' : 'max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-0'}>
     {#if page.featured_image_url}
