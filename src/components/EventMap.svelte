@@ -201,7 +201,7 @@
   /** POI-ID -> Marker, damit Deep-Links wie /karte#buehne-rosche einen Ort anspringen können. */
   const markersById = new Map<string, { marker: Marker; popup: Popup }>();
   let userLocationMarker: Marker | null = null;
-  let userLocationPending = false;
+  let userLocationWatchId: number | null = null;
   /** Ein Deep-Link (/karte#poi-id) hat Vorrang vor der Standort-Zentrierung. */
   let hasFocusedPoiFromHash = false;
   /** Hat der Nutzer die Ansicht selbst gewählt? Dann nicht mehr automatisch bewegen. */
@@ -555,13 +555,16 @@
     if (!map) return;
 
     if (!legendVisibility.userLocation) {
+      if (userLocationWatchId !== null) {
+        navigator.geolocation.clearWatch(userLocationWatchId);
+        userLocationWatchId = null;
+      }
       userLocationMarker?.remove();
       userLocationMarker = null;
-      userLocationPending = false;
       return;
     }
 
-    if (userLocationMarker || userLocationPending) {
+    if (userLocationWatchId !== null || userLocationMarker) {
       return;
     }
 
@@ -570,29 +573,35 @@
       return;
     }
 
-    userLocationPending = true;
-    navigator.geolocation.getCurrentPosition(
+    userLocationWatchId = navigator.geolocation.watchPosition(
       (position) => {
-        userLocationPending = false;
-
         const lng = position.coords.longitude;
         const lat = position.coords.latitude;
 
-        userLocationMarker?.remove();
-        userLocationMarker = new maplibregl.Marker({ element: createUserLocationEl(), anchor: 'center' })
-          .setLngLat([lng, lat])
-          .addTo(map as Map);
+        if (!userLocationMarker) {
+          userLocationMarker = new maplibregl.Marker({ element: createUserLocationEl(), anchor: 'center' })
+            .setLngLat([lng, lat])
+            .addTo(map as Map);
+        } else {
+          userLocationMarker.setLngLat([lng, lat]);
+        }
 
         focusUserLocationIfNearby([lng, lat]);
       },
-      () => {
-        userLocationPending = false;
+      (error) => {
+        console.warn('GPS-Ortung fehlgeschlagen:', error);
+        if (userLocationWatchId !== null) {
+          navigator.geolocation.clearWatch(userLocationWatchId);
+          userLocationWatchId = null;
+        }
+        userLocationMarker?.remove();
+        userLocationMarker = null;
         legendVisibility.userLocation = false;
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000,
+        timeout: 15000,
+        maximumAge: 2000,
       }
     );
   }
@@ -1170,6 +1179,10 @@
       window.removeEventListener('hashchange', onHashChange);
       markers.forEach((m) => m.remove());
       markersById.clear();
+      if (userLocationWatchId !== null) {
+        navigator.geolocation.clearWatch(userLocationWatchId);
+        userLocationWatchId = null;
+      }
       userLocationMarker?.remove();
       userLocationMarker = null;
       if (customImageObjectUrl) {

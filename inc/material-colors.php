@@ -340,9 +340,21 @@ function kuh_material_palette_dark( array $keys, int $intensity = 50 ) {
         return max( 0, min( 100, $base + $shift ) );
     };
 
-    // Key-Colors werden im Dark-Scheme 1:1 als primary/secondary/... übernommen,
-    // damit die im Customizer gesetzten Farben genau so erscheinen wie gewählt.
-    // Container- und On-Farben werden aus der Tonal-Palette der Key-Color abgeleitet.
+    // Key-Colors im Dark-Scheme: Falls eine Key-Color zu dunkel für das dunkle Surface ist,
+    // wird ein heller Tone (Tone 80) als Hauptrolle gewählt (M3-Standard).
+    $surface_dark = kuh_neutral_tone( $primary, $t( 10 ) );
+
+    $make_dark_role = function( $color_hex ) use ( $surface_dark ) {
+        if ( kuh_contrast_ratio( $color_hex, $surface_dark ) < 4.5 ) {
+            return kuh_tone( $color_hex, 80 );
+        }
+        return $color_hex;
+    };
+
+    $p_role = $make_dark_role( $primary );
+    $s_role = $make_dark_role( $secondary );
+    $t_role = $make_dark_role( $tertiary );
+    $e_role = $make_dark_role( $error );
 
     $primary_container   = kuh_tone( $primary, 30 );
     $secondary_container = kuh_tone( $secondary, 30 );
@@ -351,26 +363,26 @@ function kuh_material_palette_dark( array $keys, int $intensity = 50 ) {
 
     return array(
         // Primary
-        'primary'                    => $primary,
-        'on-primary'                 => kuh_on_color( $primary ),
+        'primary'                    => $p_role,
+        'on-primary'                 => kuh_on_color( $p_role ),
         'primary-container'          => $primary_container,
         'on-primary-container'       => kuh_on_color( $primary_container ),
 
         // Secondary
-        'secondary'                  => $secondary,
-        'on-secondary'               => kuh_on_color( $secondary ),
+        'secondary'                  => $s_role,
+        'on-secondary'               => kuh_on_color( $s_role ),
         'secondary-container'        => $secondary_container,
         'on-secondary-container'     => kuh_on_color( $secondary_container ),
 
         // Tertiary
-        'tertiary'                   => $tertiary,
-        'on-tertiary'                => kuh_on_color( $tertiary ),
+        'tertiary'                   => $t_role,
+        'on-tertiary'                => kuh_on_color( $t_role ),
         'tertiary-container'         => $tertiary_container,
         'on-tertiary-container'      => kuh_on_color( $tertiary_container ),
 
         // Error
-        'error'                      => $error,
-        'on-error'                   => kuh_on_color( $error ),
+        'error'                      => $e_role,
+        'on-error'                   => kuh_on_color( $e_role ),
         'error-container'            => $error_container,
         'on-error-container'         => kuh_on_color( $error_container ),
 
