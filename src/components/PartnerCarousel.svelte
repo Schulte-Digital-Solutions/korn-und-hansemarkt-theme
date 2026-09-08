@@ -15,6 +15,9 @@
     logoMinWidth?: number;
     speed?: number;
     variant?: 'carousel' | 'grid';
+    showButton?: boolean;
+    buttonLabel?: string;
+    buttonUrl?: string;
     partners: Partner[];
   }
 
@@ -25,6 +28,9 @@
     logoMinWidth = 160,
     speed = 30,
     variant = 'carousel',
+    showButton = true,
+    buttonLabel = 'Zur Partnerseite',
+    buttonUrl = 'https://kornundhansemarkt.de/verein#partner',
     partners,
   }: Props = $props();
 
@@ -78,7 +84,7 @@
   >
     {#if showTitle}
       <div class="max-w-7xl mx-auto px-6 mb-8 text-center">
-        <h2 class="text-4xl font-headline text-primary">{title}</h2>
+        <h2 class="kuh-dark-heading-fixed text-4xl font-headline text-primary dark:text-white">{title}</h2>
       </div>
     {/if}
 
@@ -183,6 +189,17 @@
             {/if}
           {/each}
         </div>
+      </div>
+    {/if}
+
+    {#if showButton && buttonUrl}
+      <div class="max-w-7xl mx-auto px-6 mt-10 text-center">
+        <a
+          href={buttonUrl}
+          class="inline-flex items-center justify-center rounded-xl bg-emerald-900 px-6 py-3 font-semibold text-white transition hover:bg-emerald-800 dark:bg-primary dark:text-on-primary dark:hover:brightness-110"
+        >
+          {buttonLabel}
+        </a>
       </div>
     {/if}
   </section>

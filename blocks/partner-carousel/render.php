@@ -17,6 +17,9 @@ $logo_height = absint( $attributes['logoHeight'] ?? 48 );
 $logo_min_width = min( 480, max( 80, absint( $attributes['logoMinWidth'] ?? 160 ) ) );
 $speed      = absint( $attributes['speed'] ?? 30 );
 $variant    = $attributes['variant'] ?? 'carousel';
+$show_button = $attributes['showButton'] ?? true;
+$button_label = $attributes['buttonLabel'] ?? 'Zur Partnerseite';
+$button_url   = $attributes['buttonUrl'] ?? 'https://kornundhansemarkt.de/verein#partner';
 $noscript_layout_style = 'grid' === $variant
     ? sprintf( 'display:grid;grid-template-columns:repeat(auto-fit,minmax(%dpx,1fr));gap:2rem;align-items:center;max-width:80rem;margin:0 auto;', $logo_min_width )
     : 'display:flex;flex-wrap:wrap;gap:2rem;justify-content:center;align-items:center;max-width:80rem;margin:0 auto;';
@@ -43,6 +46,9 @@ $block_data = array(
     'logoMinWidth' => $logo_min_width,
     'speed'      => $speed,
     'variant'    => $variant,
+    'showButton' => $show_button,
+    'buttonLabel'=> $button_label,
+    'buttonUrl'  => $button_url,
     'partners'   => $partners,
 );
 
@@ -76,6 +82,13 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                     <?php endif; ?>
                 <?php endforeach; ?>
             </div>
+            <?php if ( $show_button && $button_url ) : ?>
+                <div style="text-align:center;margin-top:2rem;">
+                    <a href="<?php echo esc_url( $button_url ); ?>" style="display:inline-flex;align-items:center;justify-content:center;border-radius:0.75rem;background:var(--wp--preset--color--primary,#011e08);color:#fff;padding:0.75rem 1.5rem;font-weight:600;text-decoration:none;">
+                        <?php echo esc_html( $button_label ); ?>
+                    </a>
+                </div>
+            <?php endif; ?>
         </section>
     </noscript>
 </div>

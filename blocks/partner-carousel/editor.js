@@ -11,7 +11,7 @@ const ServerSideRender = wp.serverSideRender;
 
 registerBlockType('kuh/partner-carousel', {
   edit({ attributes, setAttributes }) {
-    const { title, showTitle, logoHeight, speed, variant } = attributes;
+    const { title, showTitle, logoHeight, speed, variant, showButton, buttonLabel, buttonUrl } = attributes;
 
     const blockProps = useBlockProps({
       style: {
@@ -66,6 +66,21 @@ registerBlockType('kuh/partner-carousel', {
             min: 10,
             max: 120,
             step: 5,
+          }),
+          el(ToggleControl, {
+            label: 'Button zur Partnerseite anzeigen',
+            checked: showButton,
+            onChange: function (val) { setAttributes({ showButton: val }); },
+          }),
+          showButton && el(TextControl, {
+            label: 'Button-Beschriftung',
+            value: buttonLabel,
+            onChange: function (val) { setAttributes({ buttonLabel: val }); },
+          }),
+          showButton && el(TextControl, {
+            label: 'Button-URL',
+            value: buttonUrl,
+            onChange: function (val) { setAttributes({ buttonUrl: val }); },
           })
         )
       ),

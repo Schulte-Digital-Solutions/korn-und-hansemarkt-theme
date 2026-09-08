@@ -34,6 +34,18 @@
       "type": "string",
       "default": "carousel",
       "enum": ["carousel", "grid"]
+    },
+    "showButton": {
+      "type": "boolean",
+      "default": true
+    },
+    "buttonLabel": {
+      "type": "string",
+      "default": "Zur Partnerseite"
+    },
+    "buttonUrl": {
+      "type": "string",
+      "default": "https://kornundhansemarkt.de/verein#partner"
     }
   },
   "textdomain": "korn-und-hansemarkt",

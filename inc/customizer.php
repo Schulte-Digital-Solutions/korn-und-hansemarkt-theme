@@ -606,7 +606,16 @@ function kuh_output_darkmode_css() {
     // Akzentfarbe für Outline: automatisch aus Primary (M3 Tone 70) aufgehellt.
     $accent = kuh_tone( $keys['primary'], 70 );
 
-    $selectors = "html.dark h1, html.dark h2, html.dark h3, html.dark .font-headline";
+    // Goldene Akzent-Ueberschriften und explizit festgelegte Titel behalten
+    // ihre eigene Farbe und Darstellung.
+    $heading_exclusions = ':not(.text-secondary):not(.has-secondary-color):not(.kuh-dark-heading-fixed)';
+    $selectors = sprintf(
+        'html.dark h1%s, html.dark h2%s, html.dark h3%s, html.dark .font-headline%s',
+        $heading_exclusions,
+        $heading_exclusions,
+        $heading_exclusions,
+        $heading_exclusions
+    );
 
     if ( 'outline' === $style ) {
         printf(
