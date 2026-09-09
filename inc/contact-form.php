@@ -84,6 +84,7 @@ function kuh_handle_contact_submit( WP_REST_Request $request ) {
     $requested_recipient = sanitize_email( $params['recipientEmail'] ?? '' );
     $recipient_token     = sanitize_text_field( $params['recipientToken'] ?? '' );
     $fields_token        = sanitize_text_field( $params['fieldsToken'] ?? '' );
+    $confirmation_mail   = ! empty( $params['confirmationMail'] );
     $legacy_name         = sanitize_text_field( $params['name'] ?? '' );
     $legacy_email        = sanitize_email( $params['email'] ?? '' );
     $legacy_message      = sanitize_textarea_field( $params['message'] ?? '' );
@@ -115,6 +116,13 @@ function kuh_handle_contact_submit( WP_REST_Request $request ) {
 
             if ( 'number' === $field['type'] && '' !== (string) $value && ! is_numeric( str_replace( ',', '.', (string) $value ) ) ) {
                 return new WP_Error( 'invalid_number', __( 'Bitte eine gueltige Zahl angeben.', 'korn-und-hansemarkt' ), array( 'status' => 400 ) );
+            }
+
+            if ( 'date' === $field['type'] && '' !== (string) $value ) {
+                $date = \DateTime::createFromFormat( 'Y-m-d', (string) $value );
+                if ( ! $date || $date->format( 'Y-m-d' ) !== (string) $value ) {
+                    return new WP_Error( 'invalid_date', __( 'Bitte ein gueltiges Datum angeben.', 'korn-und-hansemarkt' ), array( 'status' => 400 ) );
+                }
             }
         }
     } else {
@@ -240,6 +248,63 @@ function kuh_handle_contact_submit( WP_REST_Request $request ) {
 
     kuh_increment_rate_limit( $client_ip );
 
+    if ( $confirmation_mail && ! empty( $reply_email ) ) {
+        $confirm_subject = sprintf(
+            '[%s] %s',
+            $site_name,
+            __( 'Empfangsbestaetigung deiner Anfrage', 'korn-und-hansemarkt' )
+        );
+
+        $confirm_lines = array(
+            sprintf(
+                /* translators: %s: Name des Ansprechpartners */
+                __( 'Hallo %s,', 'korn-und-hansemarkt' ),
+                $reply_name ?: $reply_email
+            ),
+            '',
+            __( 'wir haben deine Anfrage erhalten. Nachfolgend eine Kopie deiner Angaben:', 'korn-und-hansemarkt' ),
+            '',
+            'Betreff: ' . ( $subject ?: '-' ),
+            '',
+        );
+
+        foreach ( $fields as $field ) {
+            $label = $field['label'] ?: $field['name'];
+            $value = $field['value'];
+
+            if ( 'checkbox' === $field['type'] ) {
+                $value_str = $value ? __( 'Ja', 'korn-und-hansemarkt' ) : __( 'Nein', 'korn-und-hansemarkt' );
+            } else {
+                $value_str = (string) $value;
+            }
+
+            $confirm_lines[] = sprintf( '%s: %s', $label, '' === trim( $value_str ) ? '-' : $value_str );
+        }
+
+        $confirm_lines[] = '';
+        $confirm_lines[] = sprintf(
+            /* translators: %s: Datum/Uhrzeit */
+            __( 'Zeitpunkt: %s', 'korn-und-hansemarkt' ),
+            wp_date( 'd.m.Y H:i' )
+        );
+        $confirm_lines[] = '';
+        $confirm_lines[] = __( 'Freundliche Gruesse', 'korn-und-hansemarkt' );
+        $confirm_lines[] = $site_name;
+
+        $confirm_body = $confirm_lines;
+
+        $confirm_sent = wp_mail(
+            $reply_email,
+            $confirm_subject,
+            implode( "\n", $confirm_body ),
+            array( 'Content-Type: text/plain; charset=UTF-8' )
+        );
+
+        if ( ! $confirm_sent && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+            error_log( '[kuh contact-form] Bestaetigungsmail an ' . $reply_email . ' fehlgeschlagen.' );
+        }
+    }
+
     return new WP_REST_Response( array(
         'success' => true,
         'message' => __( 'Vielen Dank! Deine Nachricht wurde gesendet.', 'korn-und-hansemarkt' ),
@@ -278,7 +343,7 @@ function kuh_sanitize_contact_block_fields( $raw_fields ) {
         return array();
     }
 
-    $allowed_types = array( 'text', 'email', 'number', 'tel', 'textarea', 'select', 'checkbox' );
+    $allowed_types = array( 'text', 'email', 'number', 'tel', 'date', 'textarea', 'select', 'checkbox' );
     $clean         = array();
 
     foreach ( $raw_fields as $index => $field ) {
