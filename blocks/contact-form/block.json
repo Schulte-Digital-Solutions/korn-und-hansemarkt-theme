@@ -12,6 +12,14 @@
     "anchor": true
   },
   "attributes": {
+    "formId": {
+      "type": "number",
+      "default": 0
+    },
+    "confirmationMail": {
+      "type": "boolean",
+      "default": false
+    },
     "subject": {
       "type": "string",
       "default": "Kontaktanfrage"

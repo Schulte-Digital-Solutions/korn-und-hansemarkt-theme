@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { sendContactForm } from '../lib/api';
 
-  type FieldType = 'text' | 'email' | 'number' | 'tel' | 'textarea' | 'select' | 'checkbox';
+  type FieldType = 'text' | 'email' | 'number' | 'tel' | 'date' | 'textarea' | 'select' | 'checkbox';
 
   interface FormField {
     id: string;
@@ -26,6 +26,7 @@
     submitLabel?: string;
     successMessage?: string;
     privacyNote?: string;
+    confirmationMail?: boolean;
   }
 
   let {
@@ -39,6 +40,7 @@
     submitLabel = 'Nachricht senden',
     successMessage = 'Vielen Dank! Deine Nachricht wurde gesendet.',
     privacyNote = '',
+    confirmationMail = false,
   }: Props = $props();
 
   let fieldValues = $state<Record<string, string | boolean>>({});
@@ -237,6 +239,12 @@
         feedback = 'Bitte eine gueltige Zahl eingeben.';
         return;
       }
+
+      if (field.type === 'date' && value !== '' && Number.isNaN(Date.parse(`${value}T00:00:00`))) {
+        status = 'error';
+        feedback = 'Bitte ein gueltiges Datum eingeben.';
+        return;
+      }
     }
 
     if (hcaptchaEnabled && !hcaptchaToken) {
@@ -275,6 +283,7 @@
         recipientEmail: recipientEmail.trim() || undefined,
         recipientToken: recipientToken.trim() || undefined,
         hcaptchaToken: hcaptchaEnabled ? hcaptchaToken : undefined,
+        confirmationMail,
       });
 
       status = 'success';

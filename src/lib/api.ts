@@ -238,12 +238,13 @@ interface ContactFormPayload {
     id: string;
     name: string;
     label: string;
-    type: 'text' | 'email' | 'number' | 'tel' | 'textarea' | 'select' | 'checkbox';
+    type: 'text' | 'email' | 'number' | 'tel' | 'date' | 'textarea' | 'select' | 'checkbox';
     required: boolean;
     placeholder?: string;
     options?: string[];
     value: string | boolean;
   }>;
+  confirmationMail?: boolean;
   fieldsToken?: string;
   name: string;
   email: string;

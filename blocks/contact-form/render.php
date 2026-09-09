@@ -11,15 +11,21 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-$subject         = sanitize_text_field( $attributes['subject'] ?? __( 'Kontaktanfrage', 'korn-und-hansemarkt' ) );
-$recipient_email = sanitize_email( $attributes['recipientEmail'] ?? '' );
-$recipient_token = kuh_create_recipient_token( $recipient_email );
-$fields          = kuh_sanitize_contact_block_fields( $attributes['fields'] ?? array() );
-$form_title      = sanitize_text_field( $attributes['formTitle'] ?? '' );
-$form_intro      = sanitize_textarea_field( $attributes['formIntro'] ?? '' );
-$submit_label    = sanitize_text_field( $attributes['submitLabel'] ?? __( 'Nachricht senden', 'korn-und-hansemarkt' ) );
-$success_message = sanitize_text_field( $attributes['successMessage'] ?? __( 'Vielen Dank! Deine Nachricht wurde gesendet.', 'korn-und-hansemarkt' ) );
-$privacy_note    = sanitize_textarea_field( $attributes['privacyNote'] ?? '' );
+$form_id = (int) ( $attributes['formId'] ?? 0 );
+$form    = ( $form_id > 0 && 'publish' === get_post_status( $form_id ) && 'kuh_form' === get_post_type( $form_id ) )
+    ? kuh_form_get_config( $form_id )
+    : null;
+
+$subject           = sanitize_text_field( $form['subject'] ?? $attributes['subject'] ?? __( 'Kontaktanfrage', 'korn-und-hansemarkt' ) );
+$recipient_email   = sanitize_email( $form['recipientEmail'] ?? $attributes['recipientEmail'] ?? '' );
+$recipient_token   = kuh_create_recipient_token( $recipient_email );
+$fields            = $form ? $form['fields'] : kuh_sanitize_contact_block_fields( $attributes['fields'] ?? array() );
+$form_title        = sanitize_text_field( $form['formTitle'] ?? $attributes['formTitle'] ?? '' );
+$form_intro        = sanitize_textarea_field( $form['formIntro'] ?? $attributes['formIntro'] ?? '' );
+$submit_label      = sanitize_text_field( $form['submitLabel'] ?? $attributes['submitLabel'] ?? __( 'Nachricht senden', 'korn-und-hansemarkt' ) );
+$success_message   = sanitize_text_field( $form['successMessage'] ?? $attributes['successMessage'] ?? __( 'Vielen Dank! Deine Nachricht wurde gesendet.', 'korn-und-hansemarkt' ) );
+$privacy_note      = sanitize_textarea_field( $form['privacyNote'] ?? $attributes['privacyNote'] ?? '' );
+$confirmation_mail = (bool) ( $form['confirmationMail'] ?? $attributes['confirmationMail'] ?? false );
 
 if ( empty( $fields ) ) {
     $fields = kuh_sanitize_contact_block_fields( array(
@@ -58,9 +64,10 @@ $block_data = array(
     'fieldsToken'    => kuh_create_form_fields_token( $fields ),
     'formTitle'      => $form_title,
     'formIntro'      => $form_intro,
-    'submitLabel'    => $submit_label,
-    'successMessage' => $success_message,
-    'privacyNote'    => $privacy_note,
+    'submitLabel'      => $submit_label,
+    'successMessage'   => $success_message,
+    'privacyNote'      => $privacy_note,
+    'confirmationMail' => $confirmation_mail,
 );
 
 $wrapper_attributes = get_block_wrapper_attributes( array(

@@ -252,4 +252,5 @@ require_once KUH_THEME_DIR . '/inc/event-map-data.php';
 require_once KUH_THEME_DIR . '/inc/program-cpt.php';
 require_once KUH_THEME_DIR . '/inc/program-import.php';
 require_once KUH_THEME_DIR . '/inc/contact-form.php';
+require_once KUH_THEME_DIR . '/inc/form-builder.php';
 require_once KUH_THEME_DIR . '/inc/abilities.php';

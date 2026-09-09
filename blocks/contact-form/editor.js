@@ -6,13 +6,15 @@
   const { registerBlockType } = wp.blocks;
   const { useBlockProps, InspectorControls } = wp.blockEditor;
   const { PanelBody, TextControl, TextareaControl, ToggleControl, SelectControl, Button, Notice } = wp.components;
-  const { createElement: el, Fragment } = wp.element;
+  const { createElement: el, Fragment, useState, useEffect } = wp.element;
+  const apiFetch = wp.apiFetch;
 
   const FIELD_TYPE_OPTIONS = [
     { label: 'Text', value: 'text' },
     { label: 'E-Mail', value: 'email' },
     { label: 'Nummer', value: 'number' },
     { label: 'Telefon', value: 'tel' },
+    { label: 'Datum', value: 'date' },
     { label: 'Textarea', value: 'textarea' },
     { label: 'Select', value: 'select' },
     { label: 'Checkbox', value: 'checkbox' },
@@ -42,6 +44,8 @@
     edit({ attributes, setAttributes }) {
       const blockProps = useBlockProps({ className: 'kuh-contact-form-editor' });
       const {
+        formId = 0,
+        confirmationMail = false,
         subject,
         recipientEmail,
         fields = [],
@@ -51,6 +55,17 @@
         successMessage,
         privacyNote,
       } = attributes;
+
+      const [savedForms, setSavedForms] = useState([]);
+      const [formsError, setFormsError] = useState(false);
+
+      useEffect(() => {
+        apiFetch({ path: '/wp/v2/kuh_form?per_page=100&status=publish&context=edit' })
+          .then((forms) => setSavedForms(Array.isArray(forms) ? forms : []))
+          .catch(() => setFormsError(true));
+      }, []);
+
+      const hasFormRef = Number(formId) > 0;
 
       const normalizedFields = Array.isArray(fields) ? fields : [];
 
@@ -85,6 +100,29 @@
           null,
           el(
             PanelBody,
+            { title: 'Gespeichertes Formular', initialOpen: true },
+            el(SelectControl, {
+              label: 'Formular auswaehlen',
+              value: String(formId),
+              options: [
+                { label: 'Keines (Block-Felder verwenden)', value: '0' },
+                ...savedForms.map((form) => ({
+                  label: form.title?.rendered || `Formular #${form.id}`,
+                  value: String(form.id),
+                })),
+              ],
+              onChange: (value) => setAttributes({ formId: parseInt(value, 10) }),
+              help: 'Formulare werden unter "Formulare" im Backend verwaltet.',
+            }),
+            formsError
+              ? el(Notice, { status: 'warning', isDismissible: false }, 'Formulare konnten nicht geladen werden.')
+              : null,
+            hasFormRef
+              ? el(Notice, { status: 'info', isDismissible: false }, 'Felder, Texte und Versand-Einstellungen kommen aus dem gespeicherten Formular. Die Block-Einstellungen unten werden ignoriert.')
+              : null
+          ),
+          hasFormRef ? null : el(
+            PanelBody,
             { title: 'Versand', initialOpen: true },
             el(TextControl, {
               label: 'Betreff',
@@ -103,9 +141,15 @@
               label: 'Erfolgsmeldung',
               value: successMessage,
               onChange: (value) => setAttributes({ successMessage: value }),
+            }),
+            el(ToggleControl, {
+              label: 'Bestaetigungsmail an Absender',
+              checked: Boolean(confirmationMail),
+              onChange: (value) => setAttributes({ confirmationMail: value }),
+              help: 'Sendet eine Kopie der Angaben als Empfangsbestaetigung an die angegebene E-Mail-Adresse.',
             })
           ),
-          el(
+          hasFormRef ? null : el(
             PanelBody,
             { title: `Felder (${normalizedFields.length})`, initialOpen: true },
             normalizedFields.map((field, index) =>
@@ -222,7 +266,7 @@
               )
             )
           ),
-          el(
+          hasFormRef ? null : el(
             PanelBody,
             { title: 'Texte & Labels', initialOpen: false },
             el(TextControl, {
@@ -261,15 +305,18 @@
               },
             },
             el('strong', null, 'Kontaktformular (SPA)'),
-            formTitle ? el('p', { style: { margin: '0.5rem 0 0', color: '#111827', fontWeight: '600' } }, formTitle) : null,
-            el('p', { style: { margin: '0.5rem 0 0', color: '#374151' } }, `Betreff: ${subject || 'Kontaktanfrage'}`),
-            el(
+            hasFormRef
+              ? el('p', { style: { margin: '0.5rem 0 0', color: '#111827', fontWeight: '600' } }, `Verknuepftes Formular: ${savedForms.find((f) => f.id === Number(formId))?.title?.rendered || `#${formId}`}`)
+              : null,
+            !hasFormRef && formTitle ? el('p', { style: { margin: '0.5rem 0 0', color: '#111827', fontWeight: '600' } }, formTitle) : null,
+            hasFormRef ? null : el('p', { style: { margin: '0.5rem 0 0', color: '#374151' } }, `Betreff: ${subject || 'Kontaktanfrage'}`),
+            hasFormRef ? null : el(
               'p',
               { style: { margin: '0.25rem 0 0', color: '#374151' } },
               recipientEmail ? `Empfaenger: ${recipientEmail}` : 'Empfaenger: Standard aus Theme-Einstellungen'
             ),
-            el('p', { style: { margin: '0.25rem 0 0', color: '#374151' } }, `Felder: ${normalizedFields.length}`),
-            el('p', { style: { margin: '0.25rem 0 0', color: '#374151' } }, `Button: ${submitLabel || 'Nachricht senden'}`),
+            hasFormRef ? null : el('p', { style: { margin: '0.25rem 0 0', color: '#374151' } }, `Felder: ${normalizedFields.length}`),
+            hasFormRef ? null : el('p', { style: { margin: '0.25rem 0 0', color: '#374151' } }, `Button: ${submitLabel || 'Nachricht senden'}`),
             el(Notice, { status: 'info', isDismissible: false }, 'Das eigentliche Formular wird im Frontend von der SPA gerendert.')
           )
         )
