@@ -231,20 +231,17 @@ add_action( 'admin_enqueue_scripts', 'kuh_form_admin_assets' );
 /**
  * Vier grundlegende Formularvorlagen einmalig anlegen.
  *
- * Die Migration ist idempotent: Bereits vorhandene Formular-Beitraege und
- * eine bereits gesetzte Migrationsmarke bleiben unveraendert.
+ * Die Migration ist idempotent: Bereits vorhandene Formular-Beitraege bleiben
+ * unveraendert; alte transliterierte Standardtitel werden einmalig korrigiert.
  */
 function kuh_form_seed_defaults() {
-    if ( get_option( 'kuh_form_defaults_seeded', false ) ) {
-        return;
-    }
-
     $forms = array(
         array(
-            'title'  => 'Beitrittserklaerung',
+            'title'  => 'Beitrittserklärung',
+            'legacy_titles' => array( 'Beitrittserklaerung' ),
             'config' => array(
                 'subject'          => 'Beitrittsantrag Korn- und Hansemarkt e.V.',
-                'formTitle'        => 'Beitrittserklaerung',
+                'formTitle'        => 'Beitrittserklärung',
                 'formIntro'        => 'Bitte fuelle alle Pflichtfelder aus. Deine Angaben werden vertraulich verarbeitet.',
                 'confirmationMail' => true,
                 'fields'           => array(
@@ -263,10 +260,11 @@ function kuh_form_seed_defaults() {
             ),
         ),
         array(
-            'title'  => 'Kuenstlervertrag',
+            'title'  => 'Künstlervertrag',
+            'legacy_titles' => array( 'Kuenstlervertrag' ),
             'config' => array(
                 'subject'          => 'Kuenstlervertrag',
-                'formTitle'        => 'Kuenstlervertrag',
+                'formTitle'        => 'Künstlervertrag',
                 'confirmationMail' => true,
                 'fields'           => array(
                     array( 'name' => 'name', 'label' => 'Name, Vorname', 'type' => 'text', 'required' => true, 'cols' => 2 ),
@@ -290,6 +288,7 @@ function kuh_form_seed_defaults() {
         ),
         array(
             'title'  => 'Standanmeldung',
+            'legacy_titles' => array(),
             'config' => array(
                 'subject'          => 'Standanmeldung',
                 'formTitle'        => 'Standanmeldung',
@@ -315,10 +314,11 @@ function kuh_form_seed_defaults() {
             ),
         ),
         array(
-            'title'  => 'Mitgliedschaft kuendigen',
+            'title'  => 'Mitgliedschaft kündigen',
+            'legacy_titles' => array( 'Mitgliedschaft kuendigen' ),
             'config' => array(
                 'subject'          => 'Kuendigung Mitgliedschaft',
-                'formTitle'        => 'Mitgliedschaft kuendigen',
+                'formTitle'        => 'Mitgliedschaft kündigen',
                 'confirmationMail' => true,
                 'fields'           => array(
                     array( 'name' => 'name', 'label' => 'Name, Vorname', 'type' => 'text', 'required' => true, 'cols' => 2 ),
@@ -334,6 +334,19 @@ function kuh_form_seed_defaults() {
 
     foreach ( $forms as $form ) {
         $existing = get_page_by_title( $form['title'], OBJECT, 'kuh_form' );
+        if ( ! $existing && ! empty( $form['legacy_titles'] ) ) {
+            foreach ( $form['legacy_titles'] as $legacy_title ) {
+                $existing = get_page_by_title( $legacy_title, OBJECT, 'kuh_form' );
+                if ( $existing ) {
+                    wp_update_post( array(
+                        'ID'         => $existing->ID,
+                        'post_title' => $form['title'],
+                    ) );
+                    break;
+                }
+            }
+        }
+
         if ( $existing ) {
             continue;
         }
