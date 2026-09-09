@@ -227,3 +227,131 @@ function kuh_form_admin_assets( $hook ) {
     wp_enqueue_script( $handle );
 }
 add_action( 'admin_enqueue_scripts', 'kuh_form_admin_assets' );
+
+/**
+ * Vier grundlegende Formularvorlagen einmalig anlegen.
+ *
+ * Die Migration ist idempotent: Bereits vorhandene Formular-Beitraege und
+ * eine bereits gesetzte Migrationsmarke bleiben unveraendert.
+ */
+function kuh_form_seed_defaults() {
+    if ( get_option( 'kuh_form_defaults_seeded', false ) ) {
+        return;
+    }
+
+    $forms = array(
+        array(
+            'title'  => 'Beitrittserklaerung',
+            'config' => array(
+                'subject'          => 'Beitrittsantrag Korn- und Hansemarkt e.V.',
+                'formTitle'        => 'Beitrittserklaerung',
+                'formIntro'        => 'Bitte fuelle alle Pflichtfelder aus. Deine Angaben werden vertraulich verarbeitet.',
+                'confirmationMail' => true,
+                'fields'           => array(
+                    array( 'name' => 'name', 'label' => 'Name, Vorname', 'type' => 'text', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'beruf_firma', 'label' => 'Beruf / Firma', 'type' => 'text', 'cols' => 2 ),
+                    array( 'name' => 'strasse', 'label' => 'Strasse, Hausnummer', 'type' => 'text', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'plz_ort', 'label' => 'PLZ, Ort', 'type' => 'text', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'telefon', 'label' => 'Telefon', 'type' => 'tel', 'cols' => 2 ),
+                    array( 'name' => 'email', 'label' => 'E-Mail', 'type' => 'email', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'kreditinstitut', 'label' => 'Kreditinstitut', 'type' => 'text', 'cols' => 2 ),
+                    array( 'name' => 'iban', 'label' => 'IBAN', 'type' => 'text', 'cols' => 2 ),
+                    array( 'name' => 'bic', 'label' => 'BIC', 'type' => 'text', 'cols' => 2 ),
+                    array( 'name' => 'angaben_bestaetigt', 'label' => 'Ich bestaetige die Richtigkeit meiner Angaben.', 'type' => 'checkbox', 'required' => true, 'cols' => 4 ),
+                    array( 'name' => 'sepa_mandat', 'label' => 'Ich ermaechtige den Korn- und Hansemarkt e.V., den Mitgliedsbeitrag per SEPA-Lastschrift einzuziehen.', 'type' => 'checkbox', 'required' => true, 'cols' => 4 ),
+                ),
+            ),
+        ),
+        array(
+            'title'  => 'Kuenstlervertrag',
+            'config' => array(
+                'subject'          => 'Kuenstlervertrag',
+                'formTitle'        => 'Kuenstlervertrag',
+                'confirmationMail' => true,
+                'fields'           => array(
+                    array( 'name' => 'name', 'label' => 'Name, Vorname', 'type' => 'text', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'kunstler_handwerker', 'label' => 'Kuenstlerin / Handwerkerin', 'type' => 'text', 'cols' => 2 ),
+                    array( 'name' => 'strasse', 'label' => 'Strasse, Hausnummer', 'type' => 'text', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'plz_ort', 'label' => 'PLZ, Ort', 'type' => 'text', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'telefon', 'label' => 'Telefon', 'type' => 'tel', 'cols' => 2 ),
+                    array( 'name' => 'email', 'label' => 'E-Mail', 'type' => 'email', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'auftritt_freitag', 'label' => 'Auftritt Freitag (Datum)', 'type' => 'date', 'cols' => 2 ),
+                    array( 'name' => 'auftritt_samstag', 'label' => 'Auftritt Samstag (Datum)', 'type' => 'date', 'cols' => 2 ),
+                    array( 'name' => 'auftritt_sonntag', 'label' => 'Auftritt Sonntag (Datum)', 'type' => 'date', 'cols' => 2 ),
+                    array( 'name' => 'auftritt_zeiten', 'label' => 'Auftrittszeiten / weitere Angaben', 'type' => 'textarea', 'cols' => 4 ),
+                    array( 'name' => 'walking_act', 'label' => 'Walking-Act', 'type' => 'select', 'options' => array( 'Nein', 'Ja' ), 'cols' => 2 ),
+                    array( 'name' => 'walking_act_thema', 'label' => 'Walking-Act Thema', 'type' => 'text', 'cols' => 2 ),
+                    array( 'name' => 'honorar', 'label' => 'Honorar (EUR)', 'type' => 'number', 'cols' => 2 ),
+                    array( 'name' => 'uebernachtung', 'label' => 'Uebernachtung / Zimmer', 'type' => 'select', 'options' => array( 'Keine', 'Einzelzimmer', 'Doppelzimmer' ), 'cols' => 2 ),
+                    array( 'name' => 'sonstiges', 'label' => 'Sonstiges', 'type' => 'textarea', 'cols' => 4 ),
+                    array( 'name' => 'angaben_bestaetigt', 'label' => 'Ich bestaetige die Richtigkeit meiner Angaben.', 'type' => 'checkbox', 'required' => true, 'cols' => 4 ),
+                ),
+            ),
+        ),
+        array(
+            'title'  => 'Standanmeldung',
+            'config' => array(
+                'subject'          => 'Standanmeldung',
+                'formTitle'        => 'Standanmeldung',
+                'confirmationMail' => true,
+                'fields'           => array(
+                    array( 'name' => 'name', 'label' => 'Name, Vorname', 'type' => 'text', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'gewerbe', 'label' => 'Gewerbe / Angebot', 'type' => 'text', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'strasse', 'label' => 'Strasse, Hausnummer', 'type' => 'text', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'plz_ort', 'label' => 'PLZ, Ort', 'type' => 'text', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'telefon', 'label' => 'Telefon', 'type' => 'tel', 'cols' => 2 ),
+                    array( 'name' => 'email', 'label' => 'E-Mail', 'type' => 'email', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'stand', 'label' => 'Stand', 'type' => 'select', 'options' => array( 'Leihstand', 'Eigener Stand' ), 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'stand_masse', 'label' => 'Masse eigener Stand', 'type' => 'text', 'cols' => 2 ),
+                    array( 'name' => 'strom', 'label' => 'Strom', 'type' => 'checkbox', 'cols' => 1 ),
+                    array( 'name' => 'kraftstrom', 'label' => 'Kraftstrom', 'type' => 'checkbox', 'cols' => 1 ),
+                    array( 'name' => 'wasser', 'label' => 'Wasser', 'type' => 'checkbox', 'cols' => 1 ),
+                    array( 'name' => 'beleuchtung', 'label' => 'Beleuchtung', 'type' => 'checkbox', 'cols' => 1 ),
+                    array( 'name' => 'personen_betrieb', 'label' => 'Personenanzahl (Betrieb)', 'type' => 'number', 'cols' => 2 ),
+                    array( 'name' => 'personen_aufbau', 'label' => 'Personenanzahl (Aufbau)', 'type' => 'number', 'cols' => 2 ),
+                    array( 'name' => 'sonstiges', 'label' => 'Sonstiges', 'type' => 'textarea', 'cols' => 4 ),
+                    array( 'name' => 'angaben_bestaetigt', 'label' => 'Ich bestaetige die Richtigkeit meiner Angaben.', 'type' => 'checkbox', 'required' => true, 'cols' => 4 ),
+                ),
+            ),
+        ),
+        array(
+            'title'  => 'Mitgliedschaft kuendigen',
+            'config' => array(
+                'subject'          => 'Kuendigung Mitgliedschaft',
+                'formTitle'        => 'Mitgliedschaft kuendigen',
+                'confirmationMail' => true,
+                'fields'           => array(
+                    array( 'name' => 'name', 'label' => 'Name, Vorname', 'type' => 'text', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'mitgliedsnummer', 'label' => 'Mitgliedsnummer (falls bekannt)', 'type' => 'text', 'cols' => 2 ),
+                    array( 'name' => 'email', 'label' => 'E-Mail', 'type' => 'email', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'kuendigung_zum', 'label' => 'Kuendigung zum (Datum)', 'type' => 'date', 'required' => true, 'cols' => 2 ),
+                    array( 'name' => 'bemerkung', 'label' => 'Bemerkung', 'type' => 'textarea', 'cols' => 4 ),
+                    array( 'name' => 'kuendigung_bestaetigt', 'label' => 'Ich kuendige meine Mitgliedschaft hiermit fristgerecht.', 'type' => 'checkbox', 'required' => true, 'cols' => 4 ),
+                ),
+            ),
+        ),
+    );
+
+    foreach ( $forms as $form ) {
+        $existing = get_page_by_title( $form['title'], OBJECT, 'kuh_form' );
+        if ( $existing ) {
+            continue;
+        }
+
+        $post_id = wp_insert_post(
+            array(
+                'post_title'  => $form['title'],
+                'post_type'   => 'kuh_form',
+                'post_status' => 'publish',
+            ),
+            true
+        );
+
+        if ( ! is_wp_error( $post_id ) ) {
+            update_post_meta( $post_id, 'kuh_form_config', kuh_form_sanitize_config( $form['config'] ) );
+        }
+    }
+
+    update_option( 'kuh_form_defaults_seeded', current_time( 'mysql' ), false );
+}
+add_action( 'admin_init', 'kuh_form_seed_defaults' );
