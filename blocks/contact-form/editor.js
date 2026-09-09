@@ -5,40 +5,9 @@
 (function () {
   const { registerBlockType } = wp.blocks;
   const { useBlockProps, InspectorControls } = wp.blockEditor;
-  const { PanelBody, TextControl, TextareaControl, ToggleControl, SelectControl, Button, Notice } = wp.components;
+  const { PanelBody, TextControl, TextareaControl, ToggleControl, SelectControl, Notice } = wp.components;
   const { createElement: el, Fragment, useState, useEffect } = wp.element;
   const apiFetch = wp.apiFetch;
-
-  const FIELD_TYPE_OPTIONS = [
-    { label: 'Text', value: 'text' },
-    { label: 'E-Mail', value: 'email' },
-    { label: 'Nummer', value: 'number' },
-    { label: 'Telefon', value: 'tel' },
-    { label: 'Datum', value: 'date' },
-    { label: 'Textarea', value: 'textarea' },
-    { label: 'Select', value: 'select' },
-    { label: 'Checkbox', value: 'checkbox' },
-  ];
-
-  const WIDTH_OPTIONS = [
-    { label: '25 %', value: '1' },
-    { label: '50 %', value: '2' },
-    { label: '100 %', value: '4' },
-  ];
-
-  function createField(type = 'text') {
-    const fullWidthTypes = ['textarea', 'checkbox'];
-    return {
-      id: `field_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-      name: 'feld',
-      label: 'Neues Feld',
-      type,
-      required: false,
-      placeholder: '',
-      options: type === 'select' ? ['Option 1', 'Option 2'] : [],
-      cols: fullWidthTypes.includes(type) ? 4 : 2,
-    };
-  }
 
   registerBlockType('kuh/contact-form', {
     edit({ attributes, setAttributes }) {
@@ -48,7 +17,6 @@
         confirmationMail = false,
         subject,
         recipientEmail,
-        fields = [],
         formTitle,
         formIntro,
         submitLabel,
@@ -66,31 +34,6 @@
       }, []);
 
       const hasFormRef = Number(formId) > 0;
-
-      const normalizedFields = Array.isArray(fields) ? fields : [];
-
-      const updateField = (index, patch) => {
-        const next = [...normalizedFields];
-        next[index] = { ...next[index], ...patch };
-        setAttributes({ fields: next });
-      };
-
-      const removeField = (index) => {
-        const next = normalizedFields.filter((_, i) => i !== index);
-        setAttributes({ fields: next });
-      };
-
-      const moveField = (index, direction) => {
-        const next = [...normalizedFields];
-        const target = index + direction;
-        if (target < 0 || target >= next.length) return;
-        [next[index], next[target]] = [next[target], next[index]];
-        setAttributes({ fields: next });
-      };
-
-      const addField = (type) => {
-        setAttributes({ fields: [...normalizedFields, createField(type)] });
-      };
 
       return el(
         Fragment,
@@ -151,123 +94,6 @@
           ),
           hasFormRef ? null : el(
             PanelBody,
-            { title: `Felder (${normalizedFields.length})`, initialOpen: true },
-            normalizedFields.map((field, index) =>
-              el(
-                'div',
-                {
-                  key: field.id || index,
-                  style: {
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    padding: '12px',
-                    marginBottom: '12px',
-                    background: '#fff',
-                  },
-                },
-                el(
-                  'div',
-                  { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' } },
-                  el('strong', null, `Feld ${index + 1}`),
-                  el(
-                    'div',
-                    { style: { display: 'flex', gap: '4px' } },
-                    el(Button, {
-                      variant: 'secondary',
-                      isSmall: true,
-                      disabled: index === 0,
-                      onClick: () => moveField(index, -1),
-                      title: 'Nach oben',
-                    }, '↑'),
-                    el(Button, {
-                      variant: 'secondary',
-                      isSmall: true,
-                      disabled: index === normalizedFields.length - 1,
-                      onClick: () => moveField(index, 1),
-                      title: 'Nach unten',
-                    }, '↓'),
-                    el(Button, {
-                      isDestructive: true,
-                      isSmall: true,
-                      onClick: () => removeField(index),
-                      title: 'Feld entfernen',
-                    }, '✕')
-                  )
-                ),
-                el(TextControl, {
-                  label: 'Feldname (technisch)',
-                  value: field.name || '',
-                  onChange: (value) => updateField(index, { name: value }),
-                  help: 'Wird in der E-Mail als Kennung verwendet.',
-                }),
-                el(TextControl, {
-                  label: 'Label',
-                  value: field.label || '',
-                  onChange: (value) => updateField(index, { label: value }),
-                }),
-                el(SelectControl, {
-                  label: 'Typ',
-                  value: field.type || 'text',
-                  options: FIELD_TYPE_OPTIONS,
-                  onChange: (value) => {
-                    const patch = { type: value };
-                    if (value === 'select' && (!Array.isArray(field.options) || field.options.length === 0)) {
-                      patch.options = ['Option 1', 'Option 2'];
-                    }
-                    updateField(index, patch);
-                  },
-                }),
-                field.type !== 'checkbox'
-                  ? el(TextControl, {
-                      label: 'Platzhalter',
-                      value: field.placeholder || '',
-                      onChange: (value) => updateField(index, { placeholder: value }),
-                    })
-                  : null,
-                field.type === 'select'
-                  ? el(TextareaControl, {
-                      label: 'Select-Optionen (eine pro Zeile)',
-                      value: Array.isArray(field.options) ? field.options.join('\n') : '',
-                      onChange: (value) => {
-                        const options = value
-                          .split('\n')
-                          .map((v) => v.trim())
-                          .filter(Boolean);
-                        updateField(index, { options });
-                      },
-                    })
-                  : null,
-                el(SelectControl, {
-                  label: 'Breite (Desktop)',
-                  value: String(field.cols ?? 2),
-                  options: WIDTH_OPTIONS,
-                  onChange: (value) => updateField(index, { cols: parseInt(value, 10) }),
-                }),
-                el(ToggleControl, {
-                  label: 'Pflichtfeld',
-                  checked: Boolean(field.required),
-                  onChange: (value) => updateField(index, { required: value }),
-                })
-              )
-            ),
-            el(
-              'div',
-              { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
-              FIELD_TYPE_OPTIONS.map((opt) =>
-                el(
-                  Button,
-                  {
-                    key: opt.value,
-                    variant: 'secondary',
-                    onClick: () => addField(opt.value),
-                  },
-                  `+ ${opt.label}`
-                )
-              )
-            )
-          ),
-          hasFormRef ? null : el(
-            PanelBody,
             { title: 'Texte & Labels', initialOpen: false },
             el(TextControl, {
               label: 'Formular-Titel',
@@ -308,14 +134,15 @@
             hasFormRef
               ? el('p', { style: { margin: '0.5rem 0 0', color: '#111827', fontWeight: '600' } }, `Verknuepftes Formular: ${savedForms.find((f) => f.id === Number(formId))?.title?.rendered || `#${formId}`}`)
               : null,
-            !hasFormRef && formTitle ? el('p', { style: { margin: '0.5rem 0 0', color: '#111827', fontWeight: '600' } }, formTitle) : null,
+            !hasFormRef
+              ? el('p', { style: { margin: '0.5rem 0 0', color: '#b91c1c' } }, 'Bitte oben ein gespeichertes Formular auswählen.')
+              : null,
             hasFormRef ? null : el('p', { style: { margin: '0.5rem 0 0', color: '#374151' } }, `Betreff: ${subject || 'Kontaktanfrage'}`),
             hasFormRef ? null : el(
               'p',
               { style: { margin: '0.25rem 0 0', color: '#374151' } },
               recipientEmail ? `Empfaenger: ${recipientEmail}` : 'Empfaenger: Standard aus Theme-Einstellungen'
             ),
-            hasFormRef ? null : el('p', { style: { margin: '0.25rem 0 0', color: '#374151' } }, `Felder: ${normalizedFields.length}`),
             hasFormRef ? null : el('p', { style: { margin: '0.25rem 0 0', color: '#374151' } }, `Button: ${submitLabel || 'Nachricht senden'}`),
             el(Notice, { status: 'info', isDismissible: false }, 'Das eigentliche Formular wird im Frontend von der SPA gerendert.')
           )
