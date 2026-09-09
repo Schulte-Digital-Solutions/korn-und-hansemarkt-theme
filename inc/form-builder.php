@@ -342,12 +342,20 @@ function kuh_form_seed_defaults() {
                         'ID'         => $existing->ID,
                         'post_title' => $form['title'],
                     ) );
+                    $legacy_config = kuh_form_get_config( $existing->ID );
+                    $legacy_config['formTitle'] = $form['config']['formTitle'];
+                    update_post_meta( $existing->ID, 'kuh_form_config', kuh_form_sanitize_config( $legacy_config ) );
                     break;
                 }
             }
         }
 
         if ( $existing ) {
+            $existing_config = kuh_form_get_config( $existing->ID );
+            if ( in_array( $existing_config['formTitle'], $form['legacy_titles'], true ) ) {
+                $existing_config['formTitle'] = $form['config']['formTitle'];
+                update_post_meta( $existing->ID, 'kuh_form_config', kuh_form_sanitize_config( $existing_config ) );
+            }
             continue;
         }
 
