@@ -26,6 +26,8 @@ $noscript_layout_style = 'grid' === $variant
 $noscript_logo_style = 'grid' === $variant
     ? 'display:block;width:100%;height:auto;object-fit:contain;'
     : sprintf( 'height:%dpx;width:auto;object-fit:contain;', $logo_height );
+// Im Grid werden die Logos immer in Farbe dargestellt, nur das Karussell wird ausgegraut.
+$noscript_logo_filter = 'grid' === $variant ? '' : 'filter:grayscale(1);opacity:0.6;';
 
 $partners = kuh_get_partners_data();
 
@@ -69,7 +71,7 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                 <?php foreach ( $partners as $partner ) : ?>
                     <?php if ( $partner['logo'] ) : ?>
                         <?php if ( $partner['url'] ) : ?>
-                            <a href="<?php echo esc_url( $partner['url'] ); ?>" target="_blank" rel="noopener noreferrer" style="display:block;filter:grayscale(1);opacity:0.6;">
+                            <a href="<?php echo esc_url( $partner['url'] ); ?>" target="_blank" rel="noopener noreferrer" style="display:block;<?php echo esc_attr( $noscript_logo_filter ); ?>">
                                 <img src="<?php echo esc_url( $partner['logo'] ); ?>"
                                      alt="<?php echo esc_attr( $partner['name'] ); ?>"
                                      style="<?php echo esc_attr( $noscript_logo_style ); ?>" />
@@ -77,7 +79,7 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                         <?php else : ?>
                             <img src="<?php echo esc_url( $partner['logo'] ); ?>"
                                  alt="<?php echo esc_attr( $partner['name'] ); ?>"
-                                 style="<?php echo esc_attr( $noscript_logo_style ); ?>filter:grayscale(1);opacity:0.6;" />
+                                 style="<?php echo esc_attr( $noscript_logo_style . $noscript_logo_filter ); ?>" />
                         <?php endif; ?>
                     <?php endif; ?>
                 <?php endforeach; ?>

@@ -170,7 +170,7 @@
                 href={partner.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="block w-full grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
+                class="block w-full transition-all duration-300 hover:opacity-80"
               >
                 <img
                   src={partner.logo}
@@ -183,7 +183,7 @@
               <img
                 src={partner.logo}
                 alt={partner.name}
-                class="block w-full h-auto object-contain grayscale opacity-60"
+                class="block w-full h-auto object-contain"
                 loading="lazy"
               />
             {/if}
