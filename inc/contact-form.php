@@ -594,7 +594,7 @@ function kuh_verify_hcaptcha( $token, $remote_ip ) {
     }
 
     if ( empty( $token ) ) {
-        return new WP_Error( 'hcaptcha_missing', __( 'Bitte bestaetige die Captcha-Pruefung.', 'korn-und-hansemarkt' ), array( 'status' => 400 ) );
+        return new WP_Error( 'hcaptcha_missing', __( 'Bitte bestätige die Captcha-Prüfung.', 'korn-und-hansemarkt' ), array( 'status' => 400 ) );
     }
 
     $response = wp_remote_post( 'https://hcaptcha.com/siteverify', array(
@@ -612,7 +612,7 @@ function kuh_verify_hcaptcha( $token, $remote_ip ) {
 
     $payload = json_decode( wp_remote_retrieve_body( $response ), true );
     if ( empty( $payload['success'] ) ) {
-        return new WP_Error( 'hcaptcha_failed', __( 'Captcha-Pruefung fehlgeschlagen.', 'korn-und-hansemarkt' ), array( 'status' => 400 ) );
+        return new WP_Error( 'hcaptcha_failed', __( 'Captcha-Prüfung fehlgeschlagen.', 'korn-und-hansemarkt' ), array( 'status' => 400 ) );
     }
 
     return true;

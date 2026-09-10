@@ -253,7 +253,7 @@
 
     if (hcaptchaEnabled && !hcaptchaToken) {
       status = 'error';
-      feedback = 'Bitte bestaetige die Captcha-Pruefung.';
+      feedback = 'Bitte bestätige die Captcha-Prüfung.';
       return;
     }
 
