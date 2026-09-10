@@ -2,6 +2,21 @@
 	margin: 1.5em 0 0.5em;
 }
 
+.kuh-form-builder .kuh-form-placeholders {
+	margin: -6px 0 1em;
+	color: #646970;
+	font-size: 12px;
+	list-style: none;
+}
+
+.kuh-form-builder .kuh-form-placeholders li {
+	margin: 0 0 2px;
+}
+
+.kuh-form-builder .kuh-form-placeholders code {
+	font-size: 12px;
+}
+
 .kuh-form-builder .kuh-field {
 	background: #fff;
 	border: 1px solid #c3c4c7;

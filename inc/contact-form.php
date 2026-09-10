@@ -84,6 +84,8 @@ function kuh_handle_contact_submit( WP_REST_Request $request ) {
     $requested_recipient = sanitize_email( $params['recipientEmail'] ?? '' );
     $recipient_token     = sanitize_text_field( $params['recipientToken'] ?? '' );
     $fields_token        = sanitize_text_field( $params['fieldsToken'] ?? '' );
+    $form_id             = (int) ( $params['formId'] ?? 0 );
+    $form_token          = sanitize_text_field( $params['formToken'] ?? '' );
     $confirmation_mail   = ! empty( $params['confirmationMail'] );
     $legacy_name         = sanitize_text_field( $params['name'] ?? '' );
     $legacy_email        = sanitize_email( $params['email'] ?? '' );
@@ -192,6 +194,12 @@ function kuh_handle_contact_submit( WP_REST_Request $request ) {
         }
     }
 
+    // Serverseitige Formular-Konfiguration hat Vorrang vor den Client-Angaben.
+    $form_config = kuh_get_verified_form_config( $form_id, $form_token );
+    if ( $form_config ) {
+        $confirmation_mail = (bool) $form_config['confirmationMail'];
+    }
+
     $site_name = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
     $mail_subject = sprintf(
         '[%s] %s',
@@ -210,17 +218,11 @@ function kuh_handle_contact_submit( WP_REST_Request $request ) {
     $reply_name  = '';
     $reply_email = '';
 
+    $data_lines = kuh_build_form_data_lines( $fields );
+    $body       = array_merge( $body, $data_lines );
+
     foreach ( $fields as $field ) {
-        $label = $field['label'] ?: $field['name'];
-        $value = $field['value'];
-
-        if ( 'checkbox' === $field['type'] ) {
-            $value_str = $value ? __( 'Ja', 'korn-und-hansemarkt' ) : __( 'Nein', 'korn-und-hansemarkt' );
-        } else {
-            $value_str = (string) $value;
-        }
-
-        $body[] = sprintf( '%s: %s', $label, '' === trim( $value_str ) ? '-' : $value_str );
+        $value_str = kuh_format_form_field_value( $field );
 
         if ( 'email' === $field['type'] && '' === $reply_email && is_email( $value_str ) ) {
             $reply_email = $value_str;
@@ -249,55 +251,81 @@ function kuh_handle_contact_submit( WP_REST_Request $request ) {
     kuh_increment_rate_limit( $client_ip );
 
     if ( $confirmation_mail && ! empty( $reply_email ) ) {
+        $sender_name  = $reply_name ?: $reply_email;
+        $timestamp    = wp_date( 'd.m.Y H:i' );
+        $placeholders = array(
+            '{name}'    => $sender_name,
+            '{email}'   => $reply_email,
+            '{betreff}' => $subject ?: '-',
+            '{datum}'   => $timestamp,
+            '{website}' => $site_name,
+            '{daten}'   => implode( "\n", $data_lines ),
+        );
+
+        // Betreff und Text stammen aus der Formular-Konfiguration im Backend.
+        $custom_subject = trim( (string) ( $form_config['confirmationSubject'] ?? '' ) );
+        $custom_message = trim( (string) ( $form_config['confirmationMessage'] ?? '' ) );
+        $include_data   = $form_config ? ! empty( $form_config['confirmationIncludeData'] ) : true;
+
         $confirm_subject = sprintf(
             '[%s] %s',
             $site_name,
-            __( 'Empfangsbestaetigung deiner Anfrage', 'korn-und-hansemarkt' )
+            '' !== $custom_subject
+                ? kuh_form_apply_placeholders( $custom_subject, $fields, $placeholders )
+                : __( 'Empfangsbestaetigung deiner Anfrage', 'korn-und-hansemarkt' )
         );
 
-        $confirm_lines = array(
-            sprintf(
-                /* translators: %s: Name des Ansprechpartners */
-                __( 'Hallo %s,', 'korn-und-hansemarkt' ),
-                $reply_name ?: $reply_email
-            ),
-            '',
-            __( 'wir haben deine Anfrage erhalten. Nachfolgend eine Kopie deiner Angaben:', 'korn-und-hansemarkt' ),
-            '',
-            'Betreff: ' . ( $subject ?: '-' ),
-            '',
-        );
+        if ( '' !== $custom_message ) {
+            $confirm_lines = explode( "\n", kuh_form_apply_placeholders( $custom_message, $fields, $placeholders ) );
 
-        foreach ( $fields as $field ) {
-            $label = $field['label'] ?: $field['name'];
-            $value = $field['value'];
-
-            if ( 'checkbox' === $field['type'] ) {
-                $value_str = $value ? __( 'Ja', 'korn-und-hansemarkt' ) : __( 'Nein', 'korn-und-hansemarkt' );
-            } else {
-                $value_str = (string) $value;
+            if ( $include_data ) {
+                $confirm_lines[] = '';
+                $confirm_lines[] = __( 'Deine Angaben:', 'korn-und-hansemarkt' );
+                $confirm_lines[] = '';
+                $confirm_lines   = array_merge( $confirm_lines, $data_lines );
+                $confirm_lines[] = '';
+                $confirm_lines[] = sprintf(
+                    /* translators: %s: Datum/Uhrzeit */
+                    __( 'Zeitpunkt: %s', 'korn-und-hansemarkt' ),
+                    $timestamp
+                );
             }
+        } else {
+            $confirm_lines = array(
+                sprintf(
+                    /* translators: %s: Name des Ansprechpartners */
+                    __( 'Hallo %s,', 'korn-und-hansemarkt' ),
+                    $sender_name
+                ),
+                '',
+                __( 'wir haben deine Anfrage erhalten. Nachfolgend eine Kopie deiner Angaben:', 'korn-und-hansemarkt' ),
+                '',
+                'Betreff: ' . ( $subject ?: '-' ),
+                '',
+            );
 
-            $confirm_lines[] = sprintf( '%s: %s', $label, '' === trim( $value_str ) ? '-' : $value_str );
+            $confirm_lines   = array_merge( $confirm_lines, $data_lines );
+            $confirm_lines[] = '';
+            $confirm_lines[] = sprintf(
+                /* translators: %s: Datum/Uhrzeit */
+                __( 'Zeitpunkt: %s', 'korn-und-hansemarkt' ),
+                $timestamp
+            );
+            $confirm_lines[] = '';
+            $confirm_lines[] = __( 'Freundliche Gruesse', 'korn-und-hansemarkt' );
+            $confirm_lines[] = $site_name;
         }
 
-        $confirm_lines[] = '';
-        $confirm_lines[] = sprintf(
-            /* translators: %s: Datum/Uhrzeit */
-            __( 'Zeitpunkt: %s', 'korn-und-hansemarkt' ),
-            wp_date( 'd.m.Y H:i' )
-        );
-        $confirm_lines[] = '';
-        $confirm_lines[] = __( 'Freundliche Gruesse', 'korn-und-hansemarkt' );
-        $confirm_lines[] = $site_name;
-
-        $confirm_body = $confirm_lines;
+        $confirm_headers = array( 'Content-Type: text/plain; charset=UTF-8' );
+        if ( is_email( $recipient ) ) {
+            $confirm_headers[] = 'Reply-To: ' . $site_name . ' <' . sanitize_email( $recipient ) . '>';
+        }
 
         $confirm_sent = wp_mail(
             $reply_email,
             $confirm_subject,
-            implode( "\n", $confirm_body ),
-            array( 'Content-Type: text/plain; charset=UTF-8' )
+            implode( "\n", $confirm_lines ),
+            $confirm_headers
         );
 
         if ( ! $confirm_sent && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
@@ -309,6 +337,112 @@ function kuh_handle_contact_submit( WP_REST_Request $request ) {
         'success' => true,
         'message' => __( 'Vielen Dank! Deine Nachricht wurde gesendet.', 'korn-und-hansemarkt' ),
     ), 200 );
+}
+
+/**
+ * Token fuer eine Formular-ID erzeugen.
+ *
+ * Damit kann der Server die im Backend hinterlegte Konfiguration
+ * (u. a. den Text der Bestaetigungsmail) laden, ohne dem Client
+ * zu vertrauen.
+ */
+function kuh_create_form_token( $form_id ) {
+    $form_id = (int) $form_id;
+    if ( $form_id <= 0 ) {
+        return '';
+    }
+
+    return hash_hmac( 'sha256', 'kuh_form:' . $form_id, wp_salt( 'auth' ) );
+}
+
+/**
+ * Token einer Formular-ID pruefen.
+ */
+function kuh_verify_form_token( $form_id, $token ) {
+    $expected = kuh_create_form_token( $form_id );
+    if ( empty( $expected ) || empty( $token ) ) {
+        return false;
+    }
+
+    return hash_equals( $expected, (string) $token );
+}
+
+/**
+ * Konfiguration eines Formulars anhand von ID + Token laden.
+ *
+ * @return array|null Konfiguration oder null, wenn nicht verifizierbar.
+ */
+function kuh_get_verified_form_config( $form_id, $token ) {
+    $form_id = (int) $form_id;
+
+    if ( $form_id <= 0 || ! kuh_verify_form_token( $form_id, $token ) ) {
+        return null;
+    }
+
+    if ( 'kuh_form' !== get_post_type( $form_id ) || 'publish' !== get_post_status( $form_id ) ) {
+        return null;
+    }
+
+    return kuh_form_get_config( $form_id );
+}
+
+/**
+ * Einen Feldwert fuer die Mail-Ausgabe formatieren.
+ */
+function kuh_format_form_field_value( $field ) {
+    $type  = $field['type'] ?? 'text';
+    $value = $field['value'] ?? '';
+
+    if ( 'checkbox' === $type ) {
+        return ! empty( $value ) ? __( 'Ja', 'korn-und-hansemarkt' ) : __( 'Nein', 'korn-und-hansemarkt' );
+    }
+
+    // ISO-Datum lesbar ausgeben (auch in der Kundenmail).
+    if ( 'date' === $type && '' !== (string) $value ) {
+        $date = \DateTime::createFromFormat( 'Y-m-d', (string) $value );
+        if ( $date && $date->format( 'Y-m-d' ) === (string) $value ) {
+            return $date->format( 'd.m.Y' );
+        }
+    }
+
+    return (string) $value;
+}
+
+/**
+ * Alle Formularangaben als "Label: Wert"-Zeilen aufbereiten.
+ */
+function kuh_build_form_data_lines( $fields ) {
+    $lines = array();
+
+    foreach ( $fields as $field ) {
+        $label     = ! empty( $field['label'] ) ? $field['label'] : ( $field['name'] ?? '' );
+        $value_str = kuh_format_form_field_value( $field );
+        $lines[]   = sprintf( '%s: %s', $label, '' === trim( $value_str ) ? '-' : $value_str );
+    }
+
+    return $lines;
+}
+
+/**
+ * Platzhalter im Backend-Text der Bestaetigungsmail ersetzen.
+ *
+ * Neben den festen Platzhaltern ({name}, {email}, ...) wird jedes
+ * Formularfeld ueber {feld:feldname} verfuegbar gemacht.
+ */
+function kuh_form_apply_placeholders( $text, $fields, $context ) {
+    $replacements = $context;
+
+    foreach ( $fields as $field ) {
+        $name = $field['name'] ?? '';
+        if ( '' === $name ) {
+            continue;
+        }
+
+        $value_str = kuh_format_form_field_value( $field );
+        $replacements[ '{feld:' . $name . '}' ] = '' === trim( $value_str ) ? '-' : $value_str;
+    }
+
+    return strtr( (string) $text, $replacements );
 }
 
 /**

@@ -89,7 +89,7 @@
               label: 'Bestaetigungsmail an Absender',
               checked: Boolean(confirmationMail),
               onChange: (value) => setAttributes({ confirmationMail: value }),
-              help: 'Sendet eine Kopie der Angaben als Empfangsbestaetigung an die angegebene E-Mail-Adresse.',
+              help: 'Sendet eine Empfangsbestaetigung mit Standardtext. Ein eigener Text laesst sich nur in einem gespeicherten Formular hinterlegen.',
             })
           ),
           hasFormRef ? null : el(

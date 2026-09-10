@@ -16,6 +16,8 @@
   }
 
   interface Props {
+    formId?: number;
+    formToken?: string;
     subject?: string;
     recipientEmail?: string;
     recipientToken?: string;
@@ -30,6 +32,8 @@
   }
 
   let {
+    formId = 0,
+    formToken = '',
     subject = 'Kontaktanfrage',
     recipientEmail = '',
     recipientToken = '',
@@ -284,6 +288,8 @@
         recipientToken: recipientToken.trim() || undefined,
         hcaptchaToken: hcaptchaEnabled ? hcaptchaToken : undefined,
         confirmationMail,
+        formId: formId || undefined,
+        formToken: formToken || undefined,
       });
 
       status = 'success';

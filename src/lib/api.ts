@@ -245,6 +245,8 @@ interface ContactFormPayload {
     value: string | boolean;
   }>;
   confirmationMail?: boolean;
+  formId?: number;
+  formToken?: string;
   fieldsToken?: string;
   name: string;
   email: string;

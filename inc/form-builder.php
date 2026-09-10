@@ -17,15 +17,33 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function kuh_form_default_config() {
     return array(
-        'subject'          => __( 'Kontaktanfrage', 'korn-und-hansemarkt' ),
-        'recipientEmail'   => '',
-        'formTitle'        => '',
-        'formIntro'        => '',
-        'submitLabel'      => __( 'Nachricht senden', 'korn-und-hansemarkt' ),
-        'successMessage'   => __( 'Vielen Dank! Deine Nachricht wurde gesendet.', 'korn-und-hansemarkt' ),
-        'privacyNote'      => '',
-        'confirmationMail' => false,
-        'fields'           => array(),
+        'subject'                 => __( 'Kontaktanfrage', 'korn-und-hansemarkt' ),
+        'recipientEmail'          => '',
+        'formTitle'               => '',
+        'formIntro'               => '',
+        'submitLabel'             => __( 'Nachricht senden', 'korn-und-hansemarkt' ),
+        'successMessage'          => __( 'Vielen Dank! Deine Nachricht wurde gesendet.', 'korn-und-hansemarkt' ),
+        'privacyNote'             => '',
+        'confirmationMail'        => false,
+        'confirmationSubject'     => '',
+        'confirmationMessage'     => '',
+        'confirmationIncludeData' => true,
+        'fields'                  => array(),
+    );
+}
+
+/**
+ * Verfuegbare Platzhalter fuer die Bestaetigungsmail (Key => Beschreibung).
+ */
+function kuh_form_confirmation_placeholders() {
+    return array(
+        '{name}'    => __( 'Name aus dem ersten ausgefuellten Textfeld', 'korn-und-hansemarkt' ),
+        '{email}'   => __( 'E-Mail-Adresse des Absenders', 'korn-und-hansemarkt' ),
+        '{betreff}' => __( 'Betreff des Formulars', 'korn-und-hansemarkt' ),
+        '{datum}'   => __( 'Datum und Uhrzeit des Absendens', 'korn-und-hansemarkt' ),
+        '{website}' => __( 'Name der Website', 'korn-und-hansemarkt' ),
+        '{daten}'   => __( 'Auflistung aller Formularangaben', 'korn-und-hansemarkt' ),
+        '{feld:x}'  => __( 'Einzelner Feldwert, z. B. {feld:telefon}', 'korn-und-hansemarkt' ),
     );
 }
 
@@ -80,15 +98,21 @@ function kuh_form_sanitize_config( $config ) {
     $config   = is_array( $config ) ? $config : array();
 
     $clean = array(
-        'subject'          => sanitize_text_field( $config['subject'] ?? $defaults['subject'] ),
-        'recipientEmail'   => sanitize_email( $config['recipientEmail'] ?? '' ),
-        'formTitle'        => sanitize_text_field( $config['formTitle'] ?? '' ),
-        'formIntro'        => sanitize_textarea_field( $config['formIntro'] ?? '' ),
-        'submitLabel'      => sanitize_text_field( $config['submitLabel'] ?? $defaults['submitLabel'] ),
-        'successMessage'   => sanitize_text_field( $config['successMessage'] ?? $defaults['successMessage'] ),
-        'privacyNote'      => sanitize_textarea_field( $config['privacyNote'] ?? '' ),
-        'confirmationMail' => ! empty( $config['confirmationMail'] ),
-        'fields'           => kuh_sanitize_contact_block_fields( $config['fields'] ?? array() ),
+        'subject'                 => sanitize_text_field( $config['subject'] ?? $defaults['subject'] ),
+        'recipientEmail'          => sanitize_email( $config['recipientEmail'] ?? '' ),
+        'formTitle'               => sanitize_text_field( $config['formTitle'] ?? '' ),
+        'formIntro'               => sanitize_textarea_field( $config['formIntro'] ?? '' ),
+        'submitLabel'             => sanitize_text_field( $config['submitLabel'] ?? $defaults['submitLabel'] ),
+        'successMessage'          => sanitize_text_field( $config['successMessage'] ?? $defaults['successMessage'] ),
+        'privacyNote'             => sanitize_textarea_field( $config['privacyNote'] ?? '' ),
+        'confirmationMail'        => ! empty( $config['confirmationMail'] ),
+        'confirmationSubject'     => sanitize_text_field( $config['confirmationSubject'] ?? '' ),
+        'confirmationMessage'     => sanitize_textarea_field( $config['confirmationMessage'] ?? '' ),
+        // Bestandskonfigurationen ohne den Schluessel behalten das bisherige Verhalten (Kopie anhaengen).
+        'confirmationIncludeData' => array_key_exists( 'confirmationIncludeData', $config )
+            ? ! empty( $config['confirmationIncludeData'] )
+            : $defaults['confirmationIncludeData'],
+        'fields'                  => kuh_sanitize_contact_block_fields( $config['fields'] ?? array() ),
     );
 
     return $clean;
@@ -143,8 +167,33 @@ function kuh_form_render_meta_box( $post ) {
         <p>
             <label>
                 <input type="checkbox" id="kuh-form-confirmation" <?php checked( $config['confirmationMail'] ); ?>>
-                <strong><?php esc_html_e( 'Bestaetigungsmail an Absender senden (Kopie der Angaben)', 'korn-und-hansemarkt' ); ?></strong>
-            </label>
+                <strong><?php esc_html_e( 'Bestaetigungsmail an Absender senden', 'korn-und-hansemarkt' ); ?></strong>
+            </label><br>
+            <span class="description"><?php esc_html_e( 'Die Mail geht an die erste ausgefuellte E-Mail-Adresse des Formulars.', 'korn-und-hansemarkt' ); ?></span>
+        </p>
+
+        <h4><?php esc_html_e( 'Bestaetigungsmail an den Kunden', 'korn-und-hansemarkt' ); ?></h4>
+        <p>
+            <label for="kuh-form-confirmation-subject"><strong><?php esc_html_e( 'Betreff der Bestaetigungsmail', 'korn-und-hansemarkt' ); ?></strong></label><br>
+            <input type="text" id="kuh-form-confirmation-subject" class="widefat" value="<?php echo esc_attr( $config['confirmationSubject'] ); ?>">
+            <span class="description"><?php esc_html_e( 'Leer lassen fuer "Empfangsbestaetigung deiner Anfrage".', 'korn-und-hansemarkt' ); ?></span>
+        </p>
+        <p>
+            <label for="kuh-form-confirmation-message"><strong><?php esc_html_e( 'Text der Bestaetigungsmail', 'korn-und-hansemarkt' ); ?></strong></label><br>
+            <textarea id="kuh-form-confirmation-message" class="widefat" rows="10"><?php echo esc_textarea( $config['confirmationMessage'] ); ?></textarea>
+            <span class="description"><?php esc_html_e( 'Leer lassen fuer den Standardtext. Verfuegbare Platzhalter:', 'korn-und-hansemarkt' ); ?></span>
+        </p>
+        <ul class="kuh-form-placeholders">
+            <?php foreach ( kuh_form_confirmation_placeholders() as $token => $description ) : ?>
+                <li><code><?php echo esc_html( $token ); ?></code> &ndash; <?php echo esc_html( $description ); ?></li>
+            <?php endforeach; ?>
+        </ul>
+        <p>
+            <label>
+                <input type="checkbox" id="kuh-form-confirmation-include-data" <?php checked( $config['confirmationIncludeData'] ); ?>>
+                <strong><?php esc_html_e( 'Kopie der Formularangaben automatisch anhaengen', 'korn-und-hansemarkt' ); ?></strong>
+            </label><br>
+            <span class="description"><?php esc_html_e( 'Deaktivieren, wenn die Angaben ueber den Platzhalter {daten} im Text selbst platziert werden.', 'korn-und-hansemarkt' ); ?></span>
         </p>
 
         <h4><?php esc_html_e( 'Texte', 'korn-und-hansemarkt' ); ?></h4>
@@ -240,10 +289,12 @@ function kuh_form_seed_defaults() {
             'title'  => 'Beitrittserklärung',
             'legacy_titles' => array( 'Beitrittserklaerung' ),
             'config' => array(
-                'subject'          => 'Beitrittsantrag Korn- und Hansemarkt e.V.',
-                'formTitle'        => 'Beitrittserklärung',
-                'formIntro'        => 'Bitte fuelle alle Pflichtfelder aus. Deine Angaben werden vertraulich verarbeitet.',
-                'confirmationMail' => true,
+                'subject'             => 'Beitrittsantrag Korn- und Hansemarkt e.V.',
+                'formTitle'           => 'Beitrittserklärung',
+                'formIntro'           => 'Bitte fuelle alle Pflichtfelder aus. Deine Angaben werden vertraulich verarbeitet.',
+                'confirmationMail'    => true,
+                'confirmationSubject' => 'Deine Beitrittserklärung ist bei uns eingegangen',
+                'confirmationMessage' => "Hallo {name},\n\nvielen Dank für deine Beitrittserklärung zum Korn- und Hansemarkt e.V. Wir haben deine Angaben erhalten und melden uns, sobald die Mitgliedschaft eingerichtet ist.\n\nFreundliche Grüße\n{website}",
                 'fields'           => array(
                     array( 'name' => 'name', 'label' => 'Name, Vorname', 'type' => 'text', 'required' => true, 'cols' => 2 ),
                     array( 'name' => 'beruf_firma', 'label' => 'Beruf / Firma', 'type' => 'text', 'cols' => 2 ),
@@ -263,9 +314,11 @@ function kuh_form_seed_defaults() {
             'title'  => 'Künstlervertrag',
             'legacy_titles' => array( 'Kuenstlervertrag' ),
             'config' => array(
-                'subject'          => 'Kuenstlervertrag',
-                'formTitle'        => 'Künstlervertrag',
-                'confirmationMail' => true,
+                'subject'             => 'Kuenstlervertrag',
+                'formTitle'           => 'Künstlervertrag',
+                'confirmationMail'    => true,
+                'confirmationSubject' => 'Deine Angaben zum Künstlervertrag sind eingegangen',
+                'confirmationMessage' => "Hallo {name},\n\nvielen Dank für deine Angaben zum Künstlervertrag. Wir prüfen die Daten und senden dir den Vertrag zeitnah zu.\n\nFreundliche Grüße\n{website}",
                 'fields'           => array(
                     array( 'name' => 'name', 'label' => 'Name, Vorname', 'type' => 'text', 'required' => true, 'cols' => 2 ),
                     array( 'name' => 'kunstler_handwerker', 'label' => 'Kuenstlerin / Handwerkerin', 'type' => 'text', 'cols' => 2 ),
@@ -290,9 +343,11 @@ function kuh_form_seed_defaults() {
             'title'  => 'Standanmeldung',
             'legacy_titles' => array(),
             'config' => array(
-                'subject'          => 'Standanmeldung',
-                'formTitle'        => 'Standanmeldung',
-                'confirmationMail' => true,
+                'subject'             => 'Standanmeldung',
+                'formTitle'           => 'Standanmeldung',
+                'confirmationMail'    => true,
+                'confirmationSubject' => 'Deine Standanmeldung ist eingegangen',
+                'confirmationMessage' => "Hallo {name},\n\nvielen Dank für deine Standanmeldung zum Korn- und Hansemarkt. Wir melden uns nach der Platzvergabe mit allen weiteren Informationen bei dir.\n\nFreundliche Grüße\n{website}",
                 'fields'           => array(
                     array( 'name' => 'name', 'label' => 'Name, Vorname', 'type' => 'text', 'required' => true, 'cols' => 2 ),
                     array( 'name' => 'gewerbe', 'label' => 'Gewerbe / Angebot', 'type' => 'text', 'required' => true, 'cols' => 2 ),
@@ -317,9 +372,11 @@ function kuh_form_seed_defaults() {
             'title'  => 'Mitgliedschaft kündigen',
             'legacy_titles' => array( 'Mitgliedschaft kuendigen' ),
             'config' => array(
-                'subject'          => 'Kuendigung Mitgliedschaft',
-                'formTitle'        => 'Mitgliedschaft kündigen',
-                'confirmationMail' => true,
+                'subject'             => 'Kuendigung Mitgliedschaft',
+                'formTitle'           => 'Mitgliedschaft kündigen',
+                'confirmationMail'    => true,
+                'confirmationSubject' => 'Deine Kündigung ist bei uns eingegangen',
+                'confirmationMessage' => "Hallo {name},\n\nwir haben deine Kündigung zum {feld:kuendigung_zum} erhalten und bestätigen dir hiermit den Eingang. Eine gesonderte Rückmeldung erfolgt nur, falls Rückfragen bestehen.\n\nFreundliche Grüße\n{website}",
                 'fields'           => array(
                     array( 'name' => 'name', 'label' => 'Name, Vorname', 'type' => 'text', 'required' => true, 'cols' => 2 ),
                     array( 'name' => 'mitgliedsnummer', 'label' => 'Mitgliedsnummer (falls bekannt)', 'type' => 'text', 'cols' => 2 ),
