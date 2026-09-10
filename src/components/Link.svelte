@@ -19,10 +19,16 @@
     return '';
   })();
 
-  const fullHref = $derived(base + (href.startsWith('/') ? href : '/' + href));
-
-  const isExternal = $derived(/^https?:\/\//i.test(href));
+  // Externe Ziele (http(s), protokoll-relativ, mailto:, tel: usw.) und reine
+  // Anker dürfen nicht mit dem Basispfad präfixiert werden.
+  const isExternal = $derived(/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href));
   const isHashOnly = $derived(href.startsWith('#'));
+
+  const fullHref = $derived(
+    isExternal || isHashOnly
+      ? href
+      : base + (href.startsWith('/') ? href : '/' + href)
+  );
 
   function handleClick(e: MouseEvent) {
     if (isExternal || isHashOnly) {
