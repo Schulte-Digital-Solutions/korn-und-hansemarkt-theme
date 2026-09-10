@@ -266,6 +266,9 @@ function kuh_material_palette_light( array $keys ) {
         'on-primary'                 => kuh_on_color( $primary ),
         'primary-container'          => $primary_container,
         'on-primary-container'       => kuh_on_color( $primary_container ),
+        // Aufgehellte Markenfarbe – ausschliesslich fuer Interaktionszustaende
+        // (Hover, Fokus-Rahmen), nie als flaechige oder Text-Farbe.
+        'primary-bright'             => kuh_tone( $primary, 80 ),
 
         // Secondary
         'secondary'                  => $secondary,
@@ -314,17 +317,24 @@ function kuh_material_palette_light( array $keys ) {
 /**
  * Erzeugt die komplette Material-3-Palette (Dark Scheme) aus Key Colors.
  *
- * Im Dark Scheme werden die Rollen tonal invertiert:
- * - primary: heller Ton der Key Color (Tone 80)
+ * Im Dark Scheme werden die Neutralen tonal invertiert:
  * - primary-container: dunkler Ton (Tone 30)
- * - on-primary: dunkler Ton (Tone 20)
  * - surface-Neutrale: sehr dunkel (Tone 6..24)
  *
- * @param array $keys Assoziatives Array mit mindestens 'primary'.
- *                    Optional: 'secondary', 'tertiary', 'error'.
+ * Die Primaerfarbe folgt `$key_color_mode`:
+ * - 'brand'   (Standard): die Markenfarbe bleibt unveraendert dunkel und dient
+ *              als Flaechenfarbe (Buttons, Header, CTA) mit weisser Schrift.
+ * - 'lighten' (M3-Standard): zu dunkle Key Colors werden auf Tone 80
+ *              aufgehellt und wirken dann als helle Akzentfarbe.
+ * Die Fehlerfarbe wird immer aufgehellt – sie muss als Text lesbar bleiben.
+ *
+ * @param array  $keys           Assoziatives Array mit mindestens 'primary'.
+ *                               Optional: 'secondary', 'tertiary', 'error'.
+ * @param int    $intensity      0..100, verschiebt die Surface-Helligkeit.
+ * @param string $key_color_mode 'brand' oder 'lighten'.
  * @return array<string,string> slug => hex
  */
-function kuh_material_palette_dark( array $keys, int $intensity = 50 ) {
+function kuh_material_palette_dark( array $keys, int $intensity = 50, string $key_color_mode = 'brand' ) {
     $primary   = $keys['primary']   ?? '#6750a4';
     $secondary = $keys['secondary'] ?? $primary;
     $tertiary  = $keys['tertiary']  ?? $primary;
@@ -351,7 +361,10 @@ function kuh_material_palette_dark( array $keys, int $intensity = 50 ) {
         return $color_hex;
     };
 
-    $p_role = $make_dark_role( $primary );
+    // Im 'brand'-Modus bleibt die Primaerfarbe die dunkle Markenfarbe. Secondary
+    // und Tertiary werden weiter automatisch aufgehellt: sie werden im Theme als
+    // Text-/Icon-Farbe eingesetzt und muessen auf dunklem Grund lesbar bleiben.
+    $p_role = ( 'lighten' === $key_color_mode ) ? $make_dark_role( $primary ) : $primary;
     $s_role = $make_dark_role( $secondary );
     $t_role = $make_dark_role( $tertiary );
     $e_role = $make_dark_role( $error );
@@ -367,6 +380,9 @@ function kuh_material_palette_dark( array $keys, int $intensity = 50 ) {
         'on-primary'                 => kuh_on_color( $p_role ),
         'primary-container'          => $primary_container,
         'on-primary-container'       => kuh_on_color( $primary_container ),
+        // Aufgehellte Markenfarbe – ausschliesslich fuer Interaktionszustaende
+        // (Hover, Fokus-Rahmen), nie als flaechige oder Text-Farbe.
+        'primary-bright'             => kuh_tone( $primary, 80 ),
 
         // Secondary
         'secondary'                  => $s_role,

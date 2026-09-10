@@ -123,7 +123,7 @@
                 </div>
                 <Link
                   href="/post/{post.slug}"
-                  class="inline-block mt-4 text-secondary hover:text-primary text-sm font-medium transition-colors"
+                  class="inline-block mt-4 text-secondary hover:text-primary dark:hover:text-primary-bright text-sm font-medium transition-colors"
                 >
                   Weiterlesen →
                 </Link>

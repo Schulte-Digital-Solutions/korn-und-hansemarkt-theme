@@ -6,9 +6,11 @@
     href: string;
     class?: string;
     children: Snippet;
+    /** Weitere Attribute (z. B. aria-current) werden an das <a> durchgereicht. */
+    [key: string]: unknown;
   }
 
-  let { href, class: className = '', children }: Props = $props();
+  let { href, class: className = '', children, ...rest }: Props = $props();
 
   // Basispfad für das href-Attribut
   const base = (() => {
@@ -40,6 +42,6 @@
   }
 </script>
 
-<a href={fullHref} class={className} onclick={handleClick}>
+<a href={fullHref} class={className} onclick={handleClick} {...rest}>
   {@render children()}
 </a>

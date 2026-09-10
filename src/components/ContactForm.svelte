@@ -316,7 +316,7 @@
 
 <form onsubmit={onSubmit} class="space-y-5 rounded-2xl border border-stone-200/80 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-surface-container-low" novalidate>
   {#if formTitle}
-    <h3 class="text-xl font-semibold text-emerald-900 dark:text-primary">{formTitle}</h3>
+    <h3 class="text-xl font-semibold text-emerald-900 dark:text-on-surface">{formTitle}</h3>
   {/if}
 
   {#if formIntro}
@@ -334,7 +334,7 @@
             placeholder={field.placeholder ?? ''}
             rows="6"
             required={field.required}
-            class="rounded-xl border border-stone-300 bg-white px-4 py-3 text-stone-900 outline-none transition placeholder:text-stone-500 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100 dark:border-white/15 dark:bg-surface-container dark:text-on-surface dark:placeholder:text-on-surface/50 dark:focus:border-primary dark:focus:ring-white/10"
+            class="rounded-xl border border-stone-300 bg-white px-4 py-3 text-stone-900 outline-none transition placeholder:text-stone-500 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100 dark:border-white/15 dark:bg-surface-container dark:text-on-surface dark:placeholder:text-on-surface/50 dark:focus:border-primary-bright dark:focus:ring-white/10"
           ></textarea>
         </label>
       {:else if field.type === 'select'}
@@ -344,7 +344,7 @@
             value={getStringValue(field.id)}
             oninput={(event: Event) => setStringValue(field.id, (event.currentTarget as HTMLSelectElement).value)}
             required={field.required}
-            class="rounded-xl border border-stone-300 bg-white px-4 py-3 text-stone-900 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100 dark:border-white/15 dark:bg-surface-container dark:text-on-surface dark:focus:border-primary dark:focus:ring-white/10"
+            class="rounded-xl border border-stone-300 bg-white px-4 py-3 text-stone-900 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100 dark:border-white/15 dark:bg-surface-container dark:text-on-surface dark:focus:border-primary-bright dark:focus:ring-white/10"
           >
             <option value="">Bitte auswählen</option>
             {#each field.options ?? [] as option}
@@ -363,8 +363,8 @@
               class="sr-only"
             />
             <span class={getBoolValue(field.id)
-              ? 'flex h-5 w-5 items-center justify-center rounded border-2 border-emerald-900 bg-emerald-900 transition dark:border-primary dark:bg-primary dark:text-on-primary'
-              : 'flex h-5 w-5 items-center justify-center rounded border-2 border-stone-300 bg-white transition hover:border-emerald-700 dark:border-white/20 dark:bg-surface-container dark:hover:border-primary'
+              ? 'flex h-5 w-5 items-center justify-center rounded border-2 border-emerald-900 bg-emerald-900 transition dark:border-outline dark:bg-primary dark:text-on-primary'
+              : 'flex h-5 w-5 items-center justify-center rounded border-2 border-stone-300 bg-white transition hover:border-emerald-700 dark:border-white/20 dark:bg-surface-container dark:hover:border-primary-bright'
             }>
               {#if getBoolValue(field.id)}
                 <svg class="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -384,7 +384,7 @@
             oninput={(event: Event) => setStringValue(field.id, (event.currentTarget as HTMLInputElement).value)}
             placeholder={field.placeholder ?? ''}
             required={field.required}
-            class="rounded-xl border border-stone-300 bg-white px-4 py-3 text-stone-900 outline-none transition placeholder:text-stone-500 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100 dark:border-white/15 dark:bg-surface-container dark:text-on-surface dark:placeholder:text-on-surface/50 dark:focus:border-primary dark:focus:ring-white/10"
+            class="rounded-xl border border-stone-300 bg-white px-4 py-3 text-stone-900 outline-none transition placeholder:text-stone-500 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100 dark:border-white/15 dark:bg-surface-container dark:text-on-surface dark:placeholder:text-on-surface/50 dark:focus:border-primary-bright dark:focus:ring-white/10"
           />
         </label>
       {/if}
@@ -403,7 +403,7 @@
   <button
     type="submit"
     disabled={status === 'loading'}
-    class="inline-flex items-center justify-center rounded-xl bg-emerald-900 px-5 py-3 font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-primary dark:text-on-primary dark:hover:brightness-110"
+    class="inline-flex items-center justify-center rounded-xl bg-emerald-900 px-5 py-3 font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-primary dark:text-on-primary dark:ring-1 dark:ring-outline dark:hover:brightness-150"
   >
     {#if status === 'loading'}
       Wird gesendet...

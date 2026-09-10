@@ -196,7 +196,7 @@
       <div class="max-w-7xl mx-auto px-6 mt-10 text-center">
         <a
           href={buttonUrl}
-          class="inline-flex items-center justify-center rounded-xl bg-emerald-900 px-6 py-3 font-semibold text-white transition hover:bg-emerald-800 dark:bg-primary dark:text-on-primary dark:hover:brightness-110"
+          class="inline-flex items-center justify-center rounded-xl bg-emerald-900 px-6 py-3 font-semibold text-white transition hover:bg-emerald-800 dark:bg-primary dark:text-on-primary dark:ring-1 dark:ring-outline dark:hover:brightness-150"
         >
           {buttonLabel}
         </a>
