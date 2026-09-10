@@ -57,6 +57,8 @@ if ( empty( $fields ) ) {
 }
 
 $block_data = array(
+    'formId'         => $form ? $form_id : 0,
+    'formToken'      => $form ? kuh_create_form_token( $form_id ) : '',
     'subject'        => $subject,
     'recipientEmail' => $recipient_email,
     'recipientToken' => $recipient_token,
