@@ -20,11 +20,13 @@ function kuh_enqueue_assets() {
     $use_dev_server = false;
 
     if ( $is_dev ) {
-        // Prüfe ob der Vite Dev-Server läuft
-        $sock = @fsockopen( 'localhost', 5173, $errno, $errstr, 1 );
-        if ( $sock ) {
+        // Nur bei einer echten HTTP-Antwort den Dev-Server verwenden.
+        $dev_response = wp_remote_get( 'http://localhost:5173/@vite/client', array(
+            'timeout'   => 1,
+            'sslverify' => false,
+        ) );
+        if ( ! is_wp_error( $dev_response ) && 200 === (int) wp_remote_retrieve_response_code( $dev_response ) ) {
             $use_dev_server = true;
-            fclose( $sock );
         }
     }
 
