@@ -706,10 +706,20 @@ function kuh_output_darkmode_css() {
             $bn_bg
         );
         // Icons/Labels der Links. Der aktive Eintrag (aria-current="page")
-        // wird ausgespart, damit seine hellere Farbe erhalten bleibt und der
-        // aktuelle Menuepunkt erkennbar ist.
+        // wird ausgespart, damit seine Farbe aus der Komponente erhalten bleibt.
+        //
+        // Die inaktiven Eintraege werden dabei gegen den Navigations-
+        // Hintergrund abgedunkelt. Sonst waeren sie heller als der aktive
+        // Eintrag (on-primary #ffffff gegenueber on-surface #e2e5e4) und die
+        // Hierarchie stuende auf dem Kopf. Hover/Fokus holen die volle Farbe
+        // zurueck.
         printf(
-            "html.dark nav.fixed.bottom-0 a:not([aria-current]) { color: %s !important; }\n",
+            "html.dark nav.fixed.bottom-0 a:not([aria-current]) { color: color-mix(in srgb, %s 72%%, %s) !important; }\n",
+            $bn_text_color,
+            $bn_bg
+        );
+        printf(
+            "html.dark nav.fixed.bottom-0 a:not([aria-current]):hover, html.dark nav.fixed.bottom-0 a:not([aria-current]):focus-visible { color: %s !important; }\n",
             $bn_text_color
         );
     }

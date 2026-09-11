@@ -68,4 +68,18 @@
   :global(.cta-section-content .wp-block-button__link:hover) {
     background-color: var(--color-secondary-container);
   }
+
+  /* Darkmode: die CTA-Flaeche ist selbst das dunkle Markengruen. Der Button
+     darf deshalb nicht `surface-container-lowest` bleiben – dunkelgruene
+     Schrift auf Fast-Schwarz waere unlesbar (~1.3:1). Stattdessen wird der
+     Button hell und traegt das Markengruen als Schrift, wie im Light Mode.
+     Hover nutzt das aufgehellte Gruen (`primary-bright`). */
+  :global(html.dark .cta-section-content .wp-block-button__link) {
+    background-color: var(--color-on-surface);
+    color: var(--color-primary);
+  }
+  :global(html.dark .cta-section-content .wp-block-button__link:hover) {
+    background-color: var(--color-primary-bright);
+    color: var(--color-primary);
+  }
 </style>

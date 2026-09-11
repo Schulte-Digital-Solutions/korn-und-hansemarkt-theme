@@ -33,7 +33,17 @@ function getGutenbergBackgroundColor(btn: HTMLElement, computed: CSSStyleDeclara
     return computed.backgroundColor;
 }
 
-function getGutenbergTextColor(btn: HTMLElement, computed: CSSStyleDeclaration): string {
+/**
+ * Liefert die im Editor gesetzte Textfarbe – oder null, wenn der Redakteur
+ * keine gesetzt hat.
+ *
+ * Wichtig: hier bewusst *kein* Fallback auf `on-primary`. Sonst waere
+ * `--kuh-button-outline-text-color` immer belegt und der CSS-Fallback in
+ * app.css koennte nie greifen. Im Darkmode braucht der Hover aber eine andere
+ * Farbe als im Light Mode (dort invertiert er auf hell mit dunkelgruener
+ * Schrift) – das regelt der Fallback `var(--color-primary)`.
+ */
+function getGutenbergTextColor(btn: HTMLElement): string | null {
     // 1) Inline-Style (Custom Color im Editor)
     const inlineColor = btn.style.color;
     if (inlineColor) return inlineColor;
@@ -49,8 +59,8 @@ function getGutenbergTextColor(btn: HTMLElement, computed: CSSStyleDeclaration):
         }
     }
 
-    // 3) Fallback
-    return resolvePresetColor('on-primary') || computed.color;
+    // 3) Keine explizite Farbe -> CSS-Fallback entscheiden lassen
+    return null;
 }
 
 export function applyOutlineButtonColors(root: ParentNode = document): void {
@@ -71,7 +81,7 @@ export function applyOutlineButtonColors(root: ParentNode = document): void {
     buttons.forEach((btn) => {
         const computed = window.getComputedStyle(btn);
         const bg = getGutenbergBackgroundColor(btn, computed);
-        const text = getGutenbergTextColor(btn, computed);
+        const text = getGutenbergTextColor(btn);
 
         // Nur anwenden, wenn überhaupt eine Hintergrundfarbe gesetzt ist
         // (transparent / rgba(0,0,0,0) ignorieren)
@@ -82,9 +92,12 @@ export function applyOutlineButtonColors(root: ParentNode = document): void {
             bg === '';
 
         const outlineColor = isTransparent ? computed.color : bg;
-        const outlineTextColor = text;
 
         btn.style.setProperty('--kuh-button-outline-color', outlineColor);
-        btn.style.setProperty('--kuh-button-outline-text-color', outlineTextColor);
+        if (text) {
+            btn.style.setProperty('--kuh-button-outline-text-color', text);
+        } else {
+            btn.style.removeProperty('--kuh-button-outline-text-color');
+        }
     });
 }

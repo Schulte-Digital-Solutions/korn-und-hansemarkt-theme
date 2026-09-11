@@ -93,13 +93,13 @@
 
     <!-- Titel -->
     {#if showTitle}
-      <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+      <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-on-surface mb-4">
         {@html post.title.rendered}
       </h1>
     {/if}
 
     <!-- Meta -->
-    <div class="flex items-center gap-4 text-gray-500 text-sm mb-8 pb-8 border-b border-gray-200">
+    <div class="flex items-center gap-4 text-gray-500 dark:text-on-surface-variant text-sm mb-8 pb-8 border-b border-gray-200 dark:border-outline-variant">
       <time>{new Date(post.date).toLocaleDateString('de-DE', {
         year: 'numeric',
         month: 'long',

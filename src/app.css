@@ -328,16 +328,37 @@ html.dark .wp-block-button.is-style-outline > .wp-element-button:hover {
   color: var(--kuh-button-outline-text-color, var(--color-primary)) !important;
 }
 
+/* Secondary, Tertiary und Error werden im Darkmode aufgehellt, damit sie als
+   Textfarbe lesbar bleiben. Als Button-*Flaeche* kippt dadurch das Verhaeltnis:
+   eine im Editor gesetzte helle Schrift (z. B. "on-primary" = weiss) steht dann
+   auf hellem Grund (weiss auf #dcb594 = 1.9:1). Deshalb bekommen genau diese
+   drei Flaechen im Darkmode ihre zugehoerige on-Farbe aus der Palette. */
+html.dark .wp-block-button__link.has-secondary-background-color,
+html.dark .wp-element-button.has-secondary-background-color {
+  color: var(--color-on-secondary) !important;
+}
+html.dark .wp-block-button__link.has-tertiary-background-color,
+html.dark .wp-element-button.has-tertiary-background-color {
+  color: var(--color-on-tertiary) !important;
+}
+html.dark .wp-block-button__link.has-error-background-color,
+html.dark .wp-element-button.has-error-background-color {
+  color: var(--color-on-error) !important;
+}
+
 /* Gefuellte Buttons brauchen auf dunklem Grund eine sichtbare Kante, weil
-   Dunkelgruen und Surface nah beieinander liegen. */
+   Dunkelgruen und Surface nah beieinander liegen (WCAG 1.4.11).
+   Bewusst `outline` statt `box-shadow`: der 3D-Effekt nutzt einen inset-Shadow
+   und Schatten-Presets aus dem Editor landen als *inline* box-shadow am Button
+   (`box-shadow: var(--wp--preset--shadow--natural)`). Ein box-shadow-Ring
+   wuerde davon ueberschrieben oder muesste sie per !important verdraengen.
+   Ein Outline legt sich unabhaengig darueber und gilt so fuer alle Varianten
+   (fill, 3D, shadow) gleich. Beim Tastatur-Fokus ersetzt der Fokusring des
+   Browsers das Outline - das ist gewollt, er ist deutlich auffaelliger. */
 html.dark .wp-block-button:not(.is-style-outline) > .wp-block-button__link,
 html.dark .wp-block-button:not(.is-style-outline) > .wp-element-button {
-  box-shadow: 0 0 0 1px var(--color-outline);
-}
-html.dark .wp-block-button.is-style-3d > .wp-block-button__link,
-html.dark .wp-block-button.is-style-3d > .wp-element-button {
-  box-shadow: inset 0 calc(var(--kuh-button-3d-depth) * -1) 0 0 rgba(0, 0, 0, 0.28),
-    0 0 0 1px var(--color-outline) !important;
+  outline: 1px solid var(--color-outline);
+  outline-offset: -1px;
 }
 
 /* WordPress-spezifische Klassen */
@@ -590,6 +611,11 @@ html.dark .wp-block-button.is-style-3d > .wp-element-button {
 .wp-block-table.is-style-minimal tbody tr:hover {
   background-color: transparent;
   color: var(--color-primary);
+}
+/* Darkmode: der Hover darf nicht auf das dunkle Markengruen gehen - hier ist
+   das aufgehellte Gruen genau richtig (Hover ist sein einziger Einsatzzweck). */
+html.dark .wp-block-table.is-style-minimal tbody tr:hover {
+  color: var(--color-primary-bright);
 }
 
 /* Variante: card - jede Zeile als eigene Karte */
