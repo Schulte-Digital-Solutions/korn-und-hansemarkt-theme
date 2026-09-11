@@ -11,7 +11,7 @@ const ServerSideRender = wp.serverSideRender;
 
 registerBlockType('kuh/partner-overview', {
   edit({ attributes, setAttributes }) {
-    const { title, showTitle, logoMinWidth } = attributes;
+    const { title, showTitle, logoMinWidth, showButton, buttonLabel, buttonUrl } = attributes;
 
     const blockProps = useBlockProps({
       style: {
@@ -50,6 +50,22 @@ registerBlockType('kuh/partner-overview', {
             min: 80,
             max: 480,
             step: 10,
+          }),
+          el(ToggleControl, {
+            label: 'Button zur Partnerseite anzeigen',
+            help: 'Auf der Partnerseite selbst in der Regel nicht nötig.',
+            checked: showButton,
+            onChange: function (val) { setAttributes({ showButton: val }); },
+          }),
+          showButton && el(TextControl, {
+            label: 'Button-Beschriftung',
+            value: buttonLabel,
+            onChange: function (val) { setAttributes({ buttonLabel: val }); },
+          }),
+          showButton && el(TextControl, {
+            label: 'Button-URL',
+            value: buttonUrl,
+            onChange: function (val) { setAttributes({ buttonUrl: val }); },
           })
         )
       ),

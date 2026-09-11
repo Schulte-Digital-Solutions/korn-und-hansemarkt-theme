@@ -25,6 +25,18 @@
     "logoMinWidth": {
       "type": "number",
       "default": 160
+    },
+    "showButton": {
+      "type": "boolean",
+      "default": false
+    },
+    "buttonLabel": {
+      "type": "string",
+      "default": "Zur Partnerseite"
+    },
+    "buttonUrl": {
+      "type": "string",
+      "default": "https://kornundhansemarkt.de/verein#partner"
     }
   },
   "textdomain": "korn-und-hansemarkt",
