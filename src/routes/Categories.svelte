@@ -53,20 +53,20 @@
   />
 {:else}
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-    <h1 class="text-3xl font-bold text-gray-900 mb-8">Kategorien</h1>
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-on-surface mb-8">Kategorien</h1>
 
     {#if categories.length === 0}
-      <p class="text-gray-500">Keine Kategorien vorhanden.</p>
+      <p class="text-gray-500 dark:text-on-surface-variant">Keine Kategorien vorhanden.</p>
     {:else}
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {#each categories as cat}
           <Link
             href="/category/{cat.slug}"
-            class="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+            class="block bg-white dark:bg-surface-container rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
           >
-            <h2 class="text-xl font-semibold text-gray-900 mb-2">{cat.name}</h2>
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-on-surface mb-2">{cat.name}</h2>
             {#if cat.description}
-              <p class="text-gray-600 text-sm mb-3">{cat.description}</p>
+              <p class="text-gray-600 dark:text-on-surface-variant text-sm mb-3">{cat.description}</p>
             {/if}
             <span class="text-[var(--color-secondary)] text-sm font-medium">
               {cat.count} {cat.count === 1 ? 'Beitrag' : 'Beiträge'}

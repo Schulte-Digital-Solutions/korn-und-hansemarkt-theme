@@ -454,6 +454,25 @@ function kuh_customize_register_darkmode( $wp_customize ) {
         ),
     ) );
 
+    // Umgang mit den Markenfarben im Darkmode
+    $wp_customize->add_setting( 'kuh_darkmode_key_color_mode', array(
+        'default'           => 'brand',
+        'sanitize_callback' => function( $value ) {
+            return in_array( $value, array( 'brand', 'lighten' ), true ) ? $value : 'brand';
+        },
+        'transport'         => 'refresh',
+    ) );
+    $wp_customize->add_control( 'kuh_darkmode_key_color_mode', array(
+        'label'       => __( 'Markenfarbe im Darkmode', 'korn-und-hansemarkt' ),
+        'description' => __( 'Original: das dunkle Markengrün bleibt Flächenfarbe (Buttons, Header, CTA) mit weißer Schrift. Aufgehellt: Material-3-Standard, das Grün wird zur hellen Akzentfarbe.', 'korn-und-hansemarkt' ),
+        'section'     => 'kuh_darkmode',
+        'type'        => 'select',
+        'choices'     => array(
+            'brand'   => __( 'Original (dunkles Markengrün als Fläche)', 'korn-und-hansemarkt' ),
+            'lighten' => __( 'Aufgehellt (Material-3-Standard)', 'korn-und-hansemarkt' ),
+        ),
+    ) );
+
     // Darkmode-Intensität (Helligkeit der Surfaces)
     $wp_customize->add_setting( 'kuh_darkmode_intensity', array(
         'default'           => 60,
@@ -475,7 +494,7 @@ function kuh_customize_register_darkmode( $wp_customize ) {
     $wp_customize->add_setting( 'kuh_darkmode_heading_style', array(
         'default'           => 'lighten',
         'sanitize_callback' => function( $value ) {
-            return in_array( $value, array( 'none', 'outline', 'lighten', 'backdrop' ), true ) ? $value : 'lighten';
+            return in_array( $value, array( 'none', 'outline', 'lighten', 'brand', 'backdrop' ), true ) ? $value : 'lighten';
         },
         'transport'         => 'refresh',
     ) );
@@ -485,10 +504,11 @@ function kuh_customize_register_darkmode( $wp_customize ) {
         'section'     => 'kuh_darkmode',
         'type'        => 'select',
         'choices'     => array(
-            'none'     => __( 'Keine Anpassung', 'korn-und-hansemarkt' ),
-            'outline'  => __( 'Outline (heller Konturstrich)', 'korn-und-hansemarkt' ),
-            'lighten'  => __( 'Nur Überschriften aufhellen', 'korn-und-hansemarkt' ),
-            'backdrop' => __( 'Hinterlegte Badge (Primary-Container)', 'korn-und-hansemarkt' ),
+            'none'      => __( 'Keine Anpassung', 'korn-und-hansemarkt' ),
+            'outline'   => __( 'Outline (heller Konturstrich)', 'korn-und-hansemarkt' ),
+            'lighten'   => __( 'Weiß (empfohlen)', 'korn-und-hansemarkt' ),
+            'brand'     => __( 'Aufgehelltes Markengrün', 'korn-und-hansemarkt' ),
+            'backdrop'  => __( 'Hinterlegte Badge (Primary-Container)', 'korn-und-hansemarkt' ),
         ),
     ) );
 
@@ -588,7 +608,8 @@ function kuh_output_darkmode_css() {
 
     $palette = kuh_material_palette_dark(
         kuh_current_dark_key_colors(),
-        (int) get_theme_mod( 'kuh_darkmode_intensity', 60 )
+        (int) get_theme_mod( 'kuh_darkmode_intensity', 60 ),
+        (string) get_theme_mod( 'kuh_darkmode_key_color_mode', 'brand' )
     );
 
     echo "<style id=\"kuh-darkmode-tokens\">\n";
@@ -623,6 +644,10 @@ function kuh_output_darkmode_css() {
             $selectors, $accent, $accent, $accent, $accent
         );
     } elseif ( 'lighten' === $style ) {
+        // Weiss (genauer: der neutrale on-surface-Ton) – maximale Lesbarkeit
+        // auf dunklem Grund, ohne helles Gruen im Fliesstext.
+        printf( "%s { color: var(--color-on-surface) !important; }\n", $selectors );
+    } elseif ( 'brand' === $style ) {
         $light = kuh_tone( $keys['primary'], 80 );
         printf( "%s { color: %s !important; }\n", $selectors, $light );
     } elseif ( 'backdrop' === $style ) {
@@ -680,9 +705,21 @@ function kuh_output_darkmode_css() {
             "html.dark nav.fixed.bottom-0 { background-color: %s !important; }\n",
             $bn_bg
         );
-        // Icons/Labels der Links; Tailwind-Hover-/Aktiv-Zustände (bg-white/5, text-primary) bleiben als Overlay erhalten.
+        // Icons/Labels der Links. Der aktive Eintrag (aria-current="page")
+        // wird ausgespart, damit seine Farbe aus der Komponente erhalten bleibt.
+        //
+        // Die inaktiven Eintraege werden dabei gegen den Navigations-
+        // Hintergrund abgedunkelt. Sonst waeren sie heller als der aktive
+        // Eintrag (on-primary #ffffff gegenueber on-surface #e2e5e4) und die
+        // Hierarchie stuende auf dem Kopf. Hover/Fokus holen die volle Farbe
+        // zurueck.
         printf(
-            "html.dark nav.fixed.bottom-0 a { color: %s !important; }\n",
+            "html.dark nav.fixed.bottom-0 a:not([aria-current]) { color: color-mix(in srgb, %s 72%%, %s) !important; }\n",
+            $bn_text_color,
+            $bn_bg
+        );
+        printf(
+            "html.dark nav.fixed.bottom-0 a:not([aria-current]):hover, html.dark nav.fixed.bottom-0 a:not([aria-current]):focus-visible { color: %s !important; }\n",
             $bn_text_color
         );
     }

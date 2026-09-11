@@ -288,7 +288,7 @@
 
 <section class="max-w-7xl mx-auto px-4 sm:px-6 py-12">
   {#if showTitle && title}
-    <h2 class="text-4xl font-headline text-primary text-center mb-8">{title}</h2>
+    <h2 class="text-4xl font-headline text-primary dark:text-on-surface text-center mb-8">{title}</h2>
   {/if}
 
   <div class="flex flex-wrap items-center gap-3 mb-8">
@@ -346,7 +346,7 @@
       <button
         type="button"
         onclick={resetFilters}
-        class="inline-flex items-center gap-1 rounded-xl border border-outline-variant/40 px-3 py-2 text-sm text-on-surface-variant hover:text-primary transition-colors"
+        class="inline-flex items-center gap-1 rounded-xl border border-outline-variant/40 px-3 py-2 text-sm text-on-surface-variant hover:text-primary dark:hover:text-primary-bright transition-colors"
       >
         <span class="material-symbols-outlined text-[1.1rem]">filter_alt_off</span>
         Filter zurücksetzen
@@ -369,7 +369,7 @@
     <div class="space-y-8">
       {#each groupedItems as group (`${group.year}-${group.items[0]?.item.id ?? 'empty'}`)}
         <section aria-label={`Jahr ${group.year}`}>
-          <h3 class="mb-4 border-b border-outline-variant/40 pb-2 text-2xl font-headline text-primary">
+          <h3 class="mb-4 border-b border-outline-variant/40 pb-2 text-2xl font-headline text-primary dark:text-on-surface">
             {group.year}
           </h3>
           <div class="gallery-grid" style:--kuh-gallery-columns={columns}>
@@ -421,7 +421,7 @@
                           href={photographer.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          class="text-secondary hover:text-primary transition-colors"
+                          class="text-secondary hover:text-primary dark:hover:text-primary-bright transition-colors"
                         >{photographer.name}</a>
                       {:else}
                         {photographer.name}

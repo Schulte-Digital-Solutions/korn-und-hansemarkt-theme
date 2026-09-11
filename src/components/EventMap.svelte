@@ -1273,8 +1273,8 @@
   {#if title}
     <div class="pb-2 text-center">
       <h2
-        class="m-0 mb-2 text-[clamp(2rem,5vw,3rem)] leading-[1.1]"
-        style="font-family: var(--font-headline, serif); color: var(--color-primary, #011e08);"
+        class="kuh-event-map-title m-0 mb-2 text-[clamp(2rem,5vw,3rem)] leading-[1.1]"
+        style="font-family: var(--font-headline, serif); color: var(--kuh-map-title-color, var(--color-primary, #011e08));"
       >{title}</h2>
       {#if subtitle}
         <p
@@ -1442,6 +1442,19 @@
 
   :global(.kuh-event-map-canvas .maplibregl-ctrl-group button) {
     color: var(--color-primary, #011e08);
+  }
+
+  /* Darkmode: `--color-primary` ist hier das dunkle Markengruen und liegt auf
+     dunklen Flaechen (Surface bzw. surface-container-lowest im Popup und in
+     der Control-Group). Als Textfarbe waere es unlesbar - deshalb on-surface. */
+  :global(html.dark) .kuh-event-map-title {
+    --kuh-map-title-color: var(--color-on-surface);
+  }
+  :global(html.dark .kuh-popup-name) {
+    color: var(--color-on-surface);
+  }
+  :global(html.dark .kuh-event-map-canvas .maplibregl-ctrl-group button) {
+    color: var(--color-on-surface);
   }
 
   /* ── Responsiv ───────────────────────────────────────────────────── */

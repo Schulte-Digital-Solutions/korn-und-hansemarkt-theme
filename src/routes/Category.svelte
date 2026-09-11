@@ -91,14 +91,14 @@
   </ErrorState>
 {:else}
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-    <h1 class="text-3xl font-bold text-gray-900 mb-8">Kategorie: {categoryName}</h1>
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-on-surface mb-8">Kategorie: {categoryName}</h1>
 
     {#if posts.length === 0}
-      <p class="text-gray-500">Keine Beiträge in dieser Kategorie.</p>
+      <p class="text-gray-500 dark:text-on-surface-variant">Keine Beiträge in dieser Kategorie.</p>
     {:else}
       <div class="space-y-8">
         {#each posts as post}
-          <article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+          <article class="bg-white dark:bg-surface-container rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
             <div class="flex flex-col md:flex-row">
               {#if post.featured_image_url}
                 <div class="md:w-1/3 flex-shrink-0">
@@ -110,20 +110,20 @@
                 </div>
               {/if}
               <div class="p-6 flex-1">
-                <h2 class="text-xl font-semibold text-gray-900 mb-2">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-on-surface mb-2">
                   <Link href="/post/{post.slug}" class="hover:text-[var(--color-secondary)] transition-colors">
                     {@html post.title.rendered}
                   </Link>
                 </h2>
-                <time class="text-gray-400 text-xs mb-3 block">
+                <time class="text-gray-400 dark:text-on-surface-variant text-xs mb-3 block">
                   {new Date(post.date).toLocaleDateString('de-DE')}
                 </time>
-                <div class="text-gray-600 text-sm line-clamp-3">
+                <div class="text-gray-600 dark:text-on-surface-variant text-sm line-clamp-3">
                   {@html post.excerpt.rendered}
                 </div>
                 <Link
                   href="/post/{post.slug}"
-                  class="inline-block mt-4 text-secondary hover:text-primary text-sm font-medium transition-colors"
+                  class="inline-block mt-4 text-secondary hover:text-primary dark:hover:text-primary-bright text-sm font-medium transition-colors"
                 >
                   Weiterlesen →
                 </Link>

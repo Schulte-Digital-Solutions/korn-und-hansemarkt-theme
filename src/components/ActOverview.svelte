@@ -123,7 +123,7 @@
           placeholder="Nach Name, Genre oder Bühne suchen"
           class="w-full rounded-xl bg-surface-container-low pl-10 pr-4 py-3 text-sm text-on-surface
                  placeholder:text-on-surface/40 border border-outline-variant/30
-                 focus:outline-none focus:border-primary"
+                 focus:outline-none focus:border-primary dark:focus:border-primary-bright"
         />
       </label>
 
@@ -131,7 +131,7 @@
         <select
           bind:value={activeGenre}
           class="rounded-xl bg-surface-container-low px-4 py-3 text-sm text-on-surface
-                 border border-outline-variant/30 focus:outline-none focus:border-primary"
+                 border border-outline-variant/30 focus:outline-none focus:border-primary dark:focus:border-primary-bright"
         >
           <option value="all">Alle Genres</option>
           {#each genres as genre}

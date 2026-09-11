@@ -136,7 +136,8 @@
       {@const isActive = isItemActive(navItem)}
       <Link
         href={navItem.href}
-        class="flex-1 basis-0 min-w-0 h-11 mx-1 rounded-xl flex flex-col items-center justify-center no-underline transition-colors duration-200 {isActive ? 'text-emerald-900 bg-emerald-50 dark:text-primary dark:bg-white/10' : 'text-stone-500 hover:text-emerald-700 dark:text-on-surface-variant dark:hover:text-on-surface dark:hover:bg-white/5'}"
+        aria-current={isActive ? 'page' : undefined}
+        class="flex-1 basis-0 min-w-0 h-11 mx-1 rounded-xl flex flex-col items-center justify-center no-underline transition-colors duration-200 {isActive ? 'text-emerald-900 bg-emerald-50 dark:text-on-surface dark:bg-white/10' : 'text-stone-500 hover:text-emerald-700 dark:text-on-surface-variant dark:hover:text-on-surface dark:hover:bg-white/5'}"
       >
         <span
           class="material-symbols-outlined"
