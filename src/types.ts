@@ -90,7 +90,7 @@ declare global {
     cmplz_set_blocked_content_container?: () => void;
     cmplz_has_consent?: (category: string) => boolean;
     hcaptcha?: {
-      render: (container: HTMLElement, params: { sitekey: string; theme?: 'light' | 'dark'; callback?: (token: string) => void; 'expired-callback'?: () => void; 'error-callback'?: () => void }) => string | number;
+      render: (container: HTMLElement, params: { sitekey: string; theme?: 'light' | 'dark'; hl?: string; callback?: (token: string) => void; 'expired-callback'?: () => void; 'error-callback'?: () => void }) => string | number;
       reset: (widgetId?: string | number) => void;
       remove: (widgetId?: string | number) => void;
     };

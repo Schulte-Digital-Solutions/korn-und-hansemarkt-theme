@@ -116,6 +116,12 @@
     fieldValues = { ...fieldValues, [fieldId]: value };
   }
 
+  function getHcaptchaLang(): string {
+    const lang = (document.documentElement.lang ?? '').trim().toLowerCase();
+    if (!lang) return 'de';
+    return lang.split('-')[0];
+  }
+
   function loadHcaptchaScript(): Promise<void> {
     return new Promise((resolve, reject) => {
       const existing = document.querySelector<HTMLScriptElement>('script[data-kuh-hcaptcha="true"]');
@@ -130,7 +136,7 @@
       }
 
       const script = document.createElement('script');
-      script.src = 'https://js.hcaptcha.com/1/api.js?render=explicit';
+      script.src = `https://js.hcaptcha.com/1/api.js?render=explicit&hl=${encodeURIComponent(getHcaptchaLang())}`;
       script.async = true;
       script.defer = true;
       script.dataset.kuhHcaptcha = 'true';
@@ -157,6 +163,7 @@
     captchaWidgetId = window.hcaptcha.render(captchaContainer, {
       sitekey: hcaptchaSiteKey,
       theme: hcaptchaTheme,
+      hl: getHcaptchaLang(),
       callback: (token: string) => {
         hcaptchaToken = token;
       },
